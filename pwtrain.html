@@ -1,0 +1,103 @@
+<!doctype html>
+<style>
+#help { max-width: 600px; margin-left: auto; margin-right: auto; }
+body { text-align: center; margin-left: auto; margin-right: auto; }
+#chunk { font-size: larger; }
+#run { color: green; font-weight: bold; font-size: larger; }
+</style>
+<div id=gen-form>
+  <div id=help>
+    Generate a random password and learn it in chunks. First you will be shown the last 3
+    or 4 characters of the generated password. When you type it correctly 7 times
+    in a row, you will be shown the second to last chunk. When you type that
+    followed by the last chunk (the first chunk that you learned) 7 times, you
+    will be shown the third to last chunk, and so on until you have learned all of
+    your new password.
+  </div>
+  <label for=len>Length:</label> <input id=len value=20>
+  <br>
+  <input type=checkbox id=alt checked><label for=alt>Alternate hands</label>
+  <br>
+</div>
+<button id=gen>Generate</button>
+<div id=chunk></div>
+<form id=train-form>
+<input type=password id=train hidden>
+</form>
+<div id=run></div>
+<script>
+var $ = function(i) { return document.querySelector('#' + i); }
+var LOWERCASE = 'abcdefghijklmnopqrstuvwxyz';
+var UPPERCASE = LOWERCASE.toUpperCase();
+var DIGITS = '0123456789';
+var SYMBOLS = ',./<>?;\':"[]\\{}|`~!@#$%^&*()-=_+';
+var ALPHABET = UPPERCASE + LOWERCASE + DIGITS + SYMBOLS;
+var LEFT_HAND = '`123456qwertasdfgzxcvb';
+var RIGHT_HAND = "7890-=yuiop[]\\hjkl;'nm,./";
+var CHUNK_TIMES = 7;
+var START_LEFT_HAND = true;
+
+function contains_any(s1, s2) {
+  for (var i = 0; i < s2.length; ++i) {
+    if (s1.indexOf(s2[i]) >= 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function choice(s) {
+  return s.charAt(Math.floor(Math.random() * s.length));
+}
+
+function random_pw(n, alt) {
+  var s;
+  do {
+    s = '';
+    for (var i = 0; i < n; ++i) {
+      s += choice(alt ? [LEFT_HAND, RIGHT_HAND][(s.length + (START_LEFT_HAND ? 0 : 1)) % 2] : ALPHABET);
+    }
+  } while (!contains_any(s, LOWERCASE) ||
+           !(alt || contains_any(s, UPPERCASE)) ||
+           !contains_any(s, DIGITS) ||
+           !contains_any(s, SYMBOLS));
+  return s;
+}
+
+$('train').onkeydown = function() {
+  $('chunk').innerText = String.fromCharCode(160);
+};
+
+$('gen').onclick = function() {
+  $('gen-form').hidden = true;
+  $('train').hidden = false;
+  $('train').select();
+  $('train').focus();
+  $('gen').innerText = 'Regenerate';
+  var pw = random_pw(parseInt($('len').value) || 20, $('alt').checked);
+  console.debug(pw);
+  var chunkn = $('alt').checked ? 4 : 3;
+  var run = 0;
+  var len = chunkn;
+  $('chunk').innerText = pw.slice(-len);
+  $('train-form').onsubmit = function() {
+    var correct = ($('train').value === pw.slice(-len));
+    if (correct && (run < (CHUNK_TIMES - 1))) {
+      run += 1;
+      $('run').innerText += String.fromCharCode(0x2713);
+    } else {
+      // !correct || (run >= (CHUNK_TIMES - 1))
+      if (correct) {
+        len += chunkn;
+      }
+      run = 0;
+      $('run').innerText = String.fromCharCode(160);
+      if (!correct || (len <= pw.length)) {
+        $('chunk').innerText = pw.slice(-len, chunkn - len) || pw.slice(-len);
+      }
+    }
+    $('train').value = '';
+    return false;
+  };
+}
+</script>
