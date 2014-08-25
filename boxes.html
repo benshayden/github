@@ -1,0 +1,65 @@
+<canvas></canvas>
+<script>
+var s = parseFloat(location.search.slice(1)) || 6;
+document.body.style.margin = 0;
+var c = document.body.children[0];
+c.width = innerWidth * devicePixelRatio;
+c.height = innerHeight * devicePixelRatio;
+c.style.width = innerWidth + 'px';
+c.style.height = innerHeight + 'px';
+var x = c.getContext('2d');
+x.font = (s*4) + 'px Arial';
+function draw() {
+  x.clearRect(0, 0, c.width, c.height);
+  location.hash.slice(1).replace(/\+/g, ' ').split(' ').forEach(function(o) {
+    x.beginPath();
+    o = o.split(',');
+    var ellipse = false;
+    if (o && (o[0] === 'ellipse')) {
+      ellipse = true;
+      o.splice(0, 1);
+    }
+    if (!o || o.length < 4) {
+      return;
+    }
+    for (var i = 0; i < 4; ++i) {
+      if (isNaN(parseFloat(o[i]))) {
+        return;
+      }
+      o[i] = s * parseFloat(o[i]);
+    }
+    if (o[4]) {
+      if (o[5] && !isNaN(parseFloat(o[5]))) {
+        o[5] = parseFloat(o[5]);
+        if (o[6] && !isNaN(parseFloat(o[6]))) {
+          o[6] = parseFloat(o[6]);
+        } else {
+          o[6] = s * 4;
+        }
+      } else {
+        o[5] = 2;
+        o[6] = s * 4;
+      }
+      x.fillText(o[4], o[0] + o[5], o[1] + o[6]);
+      o.splice(4, o.length - 4);
+    }
+    if (ellipse) {
+      x.moveTo(o[0], o[1] - o[3]/2); // A1
+      x.bezierCurveTo(
+        o[0] + o[2]/2, o[1] - o[3]/2, // C1
+        o[0] + o[2]/2, o[1] + o[3]/2, // C2
+        o[0], o[1] + o[3]/2); // A2
+      x.bezierCurveTo(
+        o[0] - o[2]/2, o[1] + o[3]/2, // C3
+        o[0] - o[2]/2, o[1] - o[3]/2, // C4
+        o[0], o[1] - o[3]/2); // A1
+    } else {
+      x.rect.apply(x, o);
+    }
+    x.stroke();
+    x.closePath();
+  });
+}
+draw();
+addEventListener('hashchange', draw);
+</script>
