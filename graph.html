@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>javascript scientific graphing tool</title>
+<style>
+canvas{border:1px solid black;}
+tr{vertical-align: top;}
+</style>
+<script>
+function _elem(tag, parent) {
+  var elem = document.createElement(tag);
+  parent.appendChild(elem);
+  return elem;
+}
+
+function _remove_children(elem) {
+  while (elem.hasChildNodes()) {
+    elem.removeChild(elem.lastChild);
+  }
+  try {elem.innerText = '';}catch(e){}
+  try {elem.textContent = '';}catch(e){}
+}
+
+function _set_text(elem, text) {
+  _remove_children(elem);
+  elem.appendChild(document.createTextNode(text));
+}
+
+String.prototype.x = function String_x(n) {
+  return n ? Array(n+1).join(this) : '';
+};
+
+Array.prototype.sum = function Array_sum() {
+  return this.length ? this.reduce(function Array_sum_reduce(a,b){return a+b;}) : 0;
+};
+
+Array.prototype.mean = function Array_mean() {
+  return this.sum() / this.length;
+};
+
+Array.prototype.stddev = function Array_stddev() {
+  if (this.length < 2) return 0;
+  var v1 = 0.0;
+  var v2 = 0.0;
+  var mean = this.mean();
+  for (var i = 0; i < this.length; i++) {
+    var d = this[i] - mean;
+    v1 += Math.pow(d, 2);
+    v2 += d;
+  }
+  return Math.sqrt(Math.max(0, (v1 - (Math.pow(v2, 2) / this.length)) / (this.length-1)));
+};
+
+Array.prototype.max = function Array_max() {
+  return this.length ? this.reduce(function Array_max_reduce(a,b){return Math.max(a,b)}) : 0;
+};
+
+Array.prototype.min = function Array_min() {
+  return this.length ? this.reduce(function Array_min_reduce(a,b){return Math.min(a,b)}) : 0;
+};
+
+function Dataset() {
+  var dataset = this;
+  dataset.graphs = [];
+  dataset.n = Dataset.all.length;
+  Dataset.all.push(dataset);
+  Dataset.current = dataset;
+  var datasets_table = document.getElementById('datasets');
+  var tr = _elem('tr', datasets_table);
+  var td = _elem('td', tr);
+  td.rowSpan = 2;
+  dataset.save_all = _elem('button', td);
+  _set_text(dataset.save_all, 'Save All Graphs for Dataset ' + dataset.n);
+  dataset.save_all.onclick = function save_all_click() {
+    dataset.graphs.map(function save_graph(g){g.save();});
+  };
+  dataset.graph_container = _elem('div', td);
+
+  td = _elem('td', tr);
+  var run = _elem('button', td);
+  _set_text(run, 'Run Dataset ' + dataset.n);
+  run.style.display = 'block';
+  dataset.code_text = _elem('textarea', td);
+  dataset.code_error = _elem('pre', td);
+  dataset.code_error.style.color = 'red';
+  dataset.save_code = _elem('a', td);
+  dataset.save_code.style.display = 'block';
+  _set_text(dataset.save_code, 'Save code' + dataset.n + '.js');
+  dataset.save_code.download = 'code' + dataset.n + '.js';
+  
+  if (('code' + dataset.n) in localStorage) {
+    dataset.code_text.value = localStorage['code' + dataset.n];
+  } else if (dataset.n == 0) {
+    var sample = document.getElementById('sample_code');
+    dataset.code_text.value = sample.innerText || sample.textContent;
+  }
+  dataset.code_text.onkeyup = function code_keyup() {
+    localStorage['code' + dataset.n] = dataset.code_text.value;
+    dataset.save_code.href = 'data:text,' + encodeURI(dataset.code_text.value);
+    var lines = dataset.code_text.value.split('\n');
+    dataset.code_text.rows = Math.min(20, lines.length + 1);
+    dataset.code_text.cols = lines.map(function code_keyup_map(line){return line.length;}).max() + 3;
+  };
+  dataset.code_text.onkeyup();
+
+  tr = _elem('tr', datasets_table);
+  td = _elem('td', tr);
+  dataset.data_text = _elem('textarea', td);
+  dataset.data_text.rows = 10;
+  dataset.save_data = _elem('a', td);
+  dataset.save_data.style.display = 'block';
+  _set_text(dataset.save_data, 'Save data' + dataset.n + '.csv');
+  dataset.save_data.download = 'data' + dataset.n + '.csv';
+  
+  if (('data' + dataset.n) in localStorage) {
+    dataset.data_text.value = localStorage['data' + dataset.n];
+  } else if (dataset.n == 0) {
+    var cols = 5;
+    function rand_data(label) {
+      var res = [label];
+      var mean = Math.random() * 150;
+      var variance = mean / 3;
+      for (var i = 0; i < cols; ++i) {
+        res.push(parseInt(100 * (mean + (Math.random() * variance) - (variance / 2))) / 100);
+      }
+      return res.join(',');
+    }
+    var labels = 'aisle bdellium czar djinn euphrates fohn gnarly hour irk jalapenos knick-knack llama mnemonic ndomo ouija pterodactyl qat'.split(' ');
+    dataset.data_text.value = ['Awesome Graph!,' + labels.slice(0, cols).join(',')].concat(
+      labels.slice(cols, cols+8).map(rand_data)).join('\n');
+  }
+  dataset.data_text.onkeyup = function data_keyup() {
+    localStorage['data' + dataset.n] = dataset.data_text.value;
+    dataset.save_data.href = 'data:text,' + encodeURI(dataset.data_text.value);
+    var lines = dataset.data_text.value.split('\n');
+    dataset.data_text.rows = Math.min(10, lines.length + 1);
+    dataset.data_text.cols = lines.map(function data_keyup_map(line){return line.length;}).max() + 3;
+  };
+  dataset.data_text.onkeyup();
+
+  run.onclick = function run_click() {
+    Dataset.current = dataset;
+    _set_text(dataset.code_error, '');
+    dataset.graphs = [];
+    dataset.save_all.style.display = 'none';
+    _remove_children(dataset.graph_container);
+    var csv = dataset.data_text.value.split('\n').map(function csv_split_row(row){
+      return row.split(',');
+    });
+    try {
+      process(csv);
+    } catch (code_err) {
+      _set_text(dataset.code_error, code_err.stack);
+    }
+    dataset.graphs.map(function(g){
+      g.save_button.href = g.canvas.toDataURL();
+    });
+  };
+  run.onclick();
+}
+Dataset.all = [];
+Dataset.current = null;
+
+function Graph(filename, w, h) {
+  this.dataset = Dataset.current;
+  this.filename = filename;
+  this.canvas = _elem('canvas', this.dataset.graph_container);
+  this.canvas.style.display = 'block';
+  this.canvas.width = w;
+  this.canvas.height = h;
+  this.context = this.canvas.getContext('2d');
+  this.save_button = _elem('a', this.dataset.graph_container);
+  _set_text(this.save_button, 'Save ' + this.filename);
+  this.save_button.download = this.filename + '.png';
+  if (this.dataset.graphs.length > 0) {
+    this.dataset.save_all.style.display = 'block';
+    _elem('hr', this.dataset.graph_container);
+  }
+  this.dataset.graphs.push(this);
+}
+
+// https://developer.mozilla.org/en-US/docs/DOM/CanvasRenderingContext2D
+Graph.prototype.rect = function graph_rect(x, y, w, h, options) {
+  options = options || {};
+  this.context.fillStyle = options.color || 'black';
+  if (options.fill) {
+    this.context.fillRect(x, y, w, h);
+  } else {
+    this.context.strokeRect(x, y, w, h);
+  }
+};
+
+Graph.prototype.line = function graph_line(x1, y1, x2, y2, options) {
+  options = options || {};
+  this.context.fillStyle = options.color || 'black';
+  this.context.lineWidth = options.width || 1;
+  this.context.moveTo(x1, y1);
+  this.context.lineTo(x2, y2);
+  this.context.stroke();
+};
+
+Graph.prototype.text = function graph_text(str, x, y, options) {
+  options = options || {};
+  options.degrees = options.degrees || 0;
+  if (options.degrees) {
+    this.context.save();
+    this.context.translate(x, y);
+    x = y = 0;
+    this.context.rotate(-Math.PI * options.degrees / 180.0);
+  }
+  this.context.font = options.font || '20px Arial';
+  this.context.textAlign = 'center';
+  this.context.fillStyle = options.color || 'black';
+  this.context.fillText(str, x, y);
+  if (options.degrees) {
+    this.context.restore();
+  }
+};
+
+Graph.prototype.save = function graph_save() {
+  this.save_button.click();
+};
+
+Graph.prototype.errorbar = function graph_errorbar(x, top, bottom, w) {
+  this.line(x, top, x, bottom);
+  this.line(x - w, bottom, x + w, bottom);
+  this.line(x - w, top, x + w, top);
+};
+
+function process(raw_csv) {
+  var csv = raw_csv.filter(
+    function filter_raw_csv(row){return row;}
+  ).map(function map_raw_csv(row) {
+    return row.filter(
+      function filter_raw_row(cell){return cell;}
+    ).map(function parse_raw_csv_float(cell) {
+      var asfloat = parseFloat(cell);
+      return isNaN(asfloat) ? cell : asfloat;
+    });
+  });
+  eval(Dataset.current.code_text.value);
+}
+
+function onload() {
+  function stored_dataset(n) {
+    return ((('code' + n) in localStorage) &&
+            (('data' + n) in localStorage));
+  }
+  for (var dataset = 0; ((dataset == 0) || stored_dataset(dataset)); ++dataset) {
+    new Dataset();
+  }
+  document.getElementById('new_dataset').onclick = function new_dataset_click() {
+    new Dataset();
+  };
+}
+</script>
+</head>
+<body onload='onload()'>
+<table id=datasets>
+</table>
+<button id=new_dataset>New Dataset</button><br>
+<small style='color:grey;'>Paste your CSV data into the data window, write javascript to generate a graph exactly how you want it.<br>
+The blue 'Save' links download the graph PNG, code JS, and data CSV.<br>
+Your code and data are automatically stored in localStorage every time you press a key and retrieved if you accidentally close the window, but don't rely on this. localStorage is not as reliable as a hard drive. Please Save your code often.<br>
+You can manage graphs for multiple CSVs by clicking 'New Dataset'.<br>
+Bugs in your code will show in red below your code.</small>
+<div style='display:none;' id=sample_code>var g = new Graph(csv[0][0], 300, 300);
+// g.text(string, x, y, {color: 'black', degrees: 0, font: '20px Arial'});
+// g.line(x1, y1, x2, y2, {color: 'black', width: 1});
+// g.rect(x, y, w, h, {fill: false, color: 'black'});
+
+var axes_margin = 25;
+var col_w = 20;
+var col_margin = col_w / 2;
+
+// Draw axes
+var x_axis_y = g.canvas.height - axes_margin;
+g.line(axes_margin, axes_margin, axes_margin, x_axis_y);
+g.line(axes_margin, x_axis_y, g.canvas.width - axes_margin, x_axis_y);
+
+// Always label your axes!
+g.text('time [s]', g.canvas.width/2, g.canvas.height-10, {font: '15px Arial'});
+g.text('height [cm]', 15, g.canvas.height/2, {degrees:90, font: '15px Arial'});
+
+function colx(col) {
+  return axes_margin + col_margin + (col * (col_margin + col_w));
+}
+
+// Draw the columns and errorbars.
+for (var row = 1; row &lt; csv.length; ++row) {
+  var x = colx(row - 1);
+  var mean = csv[row].slice(1).mean();
+  var stddev = csv[row].slice(1).stddev();
+  var top = x_axis_y - mean;
+  g.rect(x, top, col_w, mean, {fill: true, color: 'green'});
+  g.errorbar(x + (col_w / 2), top - stddev, top + stddev, col_w / 4);
+}
+
+// Draw stars-n-bars over/between columns to indicate significance.
+function sigbar(stars, start, end, y) {
+  start = colx(start) + (col_w / 2);
+  end = colx(end) + (col_w / 2);
+  g.line(start, y, end, y);
+  g.line(start, y, start, y + 10);
+  g.line(end, y, end, y + 10);
+  g.text('*'.x(stars), (start + end) / 2, y);
+}
+sigbar(2, 1, 3, 25);
+sigbar(1, 2, 3, 50);
+sigbar(3, 2, 4, 75);
+</div>
+</body>
+</html>
