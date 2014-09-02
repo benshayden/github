@@ -32,7 +32,7 @@ int duty = 0;
 int step = 100;
 
 #define delayMilliseconds delay
-void delaySeconds(int n) {
+void delaySeconds(unsigned long n) {
   while (n) {
     period_t p = SLEEP_1S;
     if (n >= 8) {
