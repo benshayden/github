@@ -1,3 +1,5 @@
+// Scroll down to SETTINGS
+
 // https://www.pjrc.com/teensy/td_libs_Wire.html
 // http://www.adafruit.com/products/1065
 // https://www.pjrc.com/teensy/external_power.html
@@ -9,49 +11,69 @@
 #include <SPI.h>
 #include <RTClib.h>
 #include <RTC_DS3231.h>
-
-#define LIGHT 11
-#define PERIOD_MS 20
-#define TRANSFER_LINEAR
-//#define TRANSFER_GAMMA
-//#define TRANSFER_SIGMOID
-//#define TRANSFER_GAMMA_SIGMOID
-#define GAMMA 2
-#define SIGMOID_SCALE 7
-//#define FAKE_CLOCK
+#include <Time.h>
+#include <Timezone.h>
 
 #define kuint32max 0xffffffff
 #define ARRAYSIZE(a) ((sizeof(a) == 0) ? 0 : (sizeof(a) / sizeof(a[0])))
+TimeChangeRule EDT = {"EDT", Second, Sun, Mar, 2, -240};
+TimeChangeRule EST = {"EST", First, Sun, Nov, 2, -300};
+TimeChangeRule CDT = {"CDT", Second, Sun, Mar, 2, -300};
+TimeChangeRule CST = {"CST", First, Sun, Nov, 2, -360};
+TimeChangeRule MDT = {"MDT", Second, Sun, Mar, 2, -360};
+TimeChangeRule MST = {"MST", First, Sun, Nov, 2, -420};
+TimeChangeRule PDT = {"PDT", Second, Sun, Mar, 2, -420};
+TimeChangeRule PST = {"PST", First, Sun, Nov, 2, -480};
+#define EASTERN EDT, EST
+#define CENTRAL CDT, CST
+#define MOUNTAIN MDT, MST
+#define PACIFIC PDT, PST
 
+// SETTINGS
+
+Timezone myTZ(PACIFIC);
+
+// number of pin controlling the light. HIGH = on, LOW = off.
+#define LIGHT 11
+
+// PWM cycle time
+#define PERIOD_MS 20
+
+// How should the PWM duty cycle sweep?
+// SWEEP(0.0) = 0.0; SWEEP(1.0) = 1.0;
+#define SWEEP(x) x
+// http://en.wikipedia.org/wiki/Gamma_correction
+//#define SWEEP(x) pow(x, 2)
+//#define SWEEP(x) sigmoid(x)
+//#define SWEEP(x) pow(x, 2) * sigmoid(x)
+
+// Decrease to make sigmoid() more gradual, increase to make dark darker and
+// light lighter.
+#define SIGMOID_SCALE 7
+
+// Uncomment to use arduino's crappy clock instead of an RTC.
+//#define FAKE_CLOCK
+
+// The light clock does not turn on in the morning on these weekdays so you can
+// sleep in.
 // Days since 2000/1/1.
-static const uint16_t holidays[] PROGMEM = {};
-// uint16_t dayMillenium() const;
-// uint16_t DateTime::dayMillenium() const {return date2days(yOff, m, d);}
+#define HOLIDAYS 
 
-bool isHoliday(uint16_t day) {
+// END SETTINGS
+
+static const uint16_t holidays[] PROGMEM = {HOLIDAYS};
+bool isHoliday(uint32_t t) {
+  t -= SECS_YR_2000;
+  uint16_t day = t / SECS_PER_DAY;
   // TODO binary search
   for (uint8_t i = 0; i < ARRAYSIZE(holidays); ++i) {
-    if (day == pgm_read_word(holidays + i)) {
+    if (day == pgm_read_word(&(holidays[i]))) {
       return true;
     }
   }
   return false;
 }
 
-// dst[even] = dayMillenium() when Daylight Savings Time begins. dst[odd] DST ends.
-uint16_t dst[] PROGMEM = {};
-
-bool isDST(uint16_t day) {
-  if (day < pgm_read_word(dst)) return false;
-  for (uint8_t i = 1; i < ARRAYSIZE(dst); ++i) {
-    if ((pgm_read_word(dst + i - 1) < day) && (day < pgm_read_word(dst + i))) {
-      return (i % 2);
-    }
-  }
-  return false;
-}
-
-#define delayMilliseconds delay
 void delaySeconds(unsigned long n) {
   while (n) {
     period_t p = SLEEP_1S;
@@ -77,37 +99,18 @@ double sigmoid(double x) {
 
 #define PERIOD_US (1000 * PERIOD_MS)
 
+// Synchronous! Blocks for total_min minutes!
 void fade(bool on, double total_min) {
-  double total_s = total_min * 60.0;
-  double start_pct = on ? 0.0 : 100.0;
-  double end_pct = on ? 100.0 : 0.0;
-  double duty_us = start_pct * PERIOD_MS * 10;
-  int start_us = start_pct * PERIOD_MS * 10;
-  int end_us = end_pct * PERIOD_MS * 10;
-  double range_us = abs(end_us - start_us);
-  double range_pct = end_pct - start_pct;
-#if defined(TRANSFER_LINEAR)
-  double step_us = (range_pct * PERIOD_MS * PERIOD_MS) / total_s;
-#elif defined(TRANSFER_GAMMA) || defined(TRANSFER_SIGMOID) || defined(TRANSFER_GAMMA_SIGMOID)
-  double step_pct = range_pct * PERIOD_MS / (1000.0 * total_s);
-#endif
-  while (on ? (duty_us < end_us) : (duty_us > end_us)) {
+  const double end = on ? 1.0 : 0.0;
+  double start = 1.0 - end;
+  double step = PERIOD_MS / (1000.0 * 60.0 * total_min);
+  while (on ? (start < end) : (start > end)) {
+    int duty_us = SWEEP(start) * PERIOD_US;
     digitalWrite(LIGHT, HIGH);
-    delayMicroseconds((int) duty_us);
+    delayMicroseconds(duty_us);
     digitalWrite(LIGHT, LOW);
-    delayMicroseconds((int) (PERIOD_US - duty_us));
-#if defined(TRANSFER_LINEAR)
-    duty_us += step_us;
-#elif defined(TRANSFER_GAMMA)
-    start_pct += step_pct;
-    duty_us = pow(start_pct, GAMMA) * PERIOD_US;
-#elif defined(TRANSFER_SIGMOID)
-    start_pct += step_pct;
-    duty_us = sigmoid(start_pct) * PERIOD_US
-#elif defined(TRANSFER_GAMMA_SIGMOID)
-    start_pct += step_pct;
-    duty_us = pow(start_pct, GAMMA) * sigmoid(start_pct) * PERIOD_US;
-#endif
+    delayMicroseconds(PERIOD_US - duty_us);
+    start += step;
   }
   if (on) {
     digitalWrite(LIGHT, HIGH);
@@ -119,6 +122,10 @@ RTC_Millis RTCm;
 #else
 RTC_DS3231 RTC;
 #endif
+
+time_t RTCunixtime() {
+  return RTC.now().unixtime();
+}
 
 void setup() {
   pinMode(LIGHT, OUTPUT);
@@ -132,15 +139,16 @@ void setup() {
     // Set the RTC to the date & time this sketch was compiled
     RTC.adjust(compiled);
   }
-  DateTime now = RTC.now();
-  if (now.unixtime() < compiled.unixtime()) {
+  DateTime dt = RTC.now();
+  if (dt.unixtime() < compiled.unixtime()) {
     Serial.println("RTC is older than compile time!  Updating");
     RTC.adjust(compiled);
   }
+  setSyncProvider(RTCunixtime);
 }
 
-bool isWeekDay(uint8_t dayOfWeek) {
-  return (dayOfWeek >= 1) && (dayOfWeek <= 5);
+bool isWeekDay(uint8_t d) {
+  return (d >= 1) && (d <= 5);
 }
 
 uint16_t minutesUntil(const DateTime& t, int8_t h, int8_t m) {
@@ -155,35 +163,29 @@ uint16_t minutesUntil(const DateTime& t, int8_t h, int8_t m) {
 }
 
 void loop() {
-  DateTime now = RTC.now();
-  Serial.print(now.unixtime());
-  Serial.print(" ");
-  Serial.print(now.dayMillenium());
-  Serial.print(" ");
-  Serial.println(isDST(now.dayMillenium()) ? "DST" : "notDST");
-  if (isDST(now.dayMillenium())) {
-    now = DateTime(now.unixtime() + (60 * 60));
-    Serial.println(now.unixtime());
-  }
+  time_t utc = now();
+  TimeChangeRule* tcr;
+  time_t local = myTZ.toLocal(utc, &tcr);
+  DateTime localdt = local;
 
   uint16_t minutes = 24 * 60;
-  if (isWeekDay(now.dayOfWeek()) &&
-      !isHoliday(now.dayMillenium())) {
-    minutes = min(minutes, minutesUntil(now, 6, 30));
+  uint8_t dow = dayOfWeek(local);
+  if (isWeekDay(dow) && !isHoliday(local)) {
+    minutes = min(minutes, minutesUntil(localdt, 6, 30));
     if (minutes == 0) {
       fade(1, 20);
     } else {
-      minutes = min(minutes, minutesUntil(now, 7, 0));
+      minutes = min(minutes, minutesUntil(localdt, 7, 0));
       if (minutes == 0) {
         fade(0, 1);
       }
     }
   } else {
-    minutes = min(minutes, minutesUntil(now, 19, 0));
+    minutes = min(minutes, minutesUntil(localdt, 19, 0));
     if (minutes == 0) {
       fade(1, 10);
     } else {
-      minutes = min(minutes, minutesUntil(now, 21, 15));
+      minutes = min(minutes, minutesUntil(localdt, 21, 15));
       if (minutes == 0) {
         fade(0, 30);
       }
