@@ -118,7 +118,7 @@ void fade(bool on, double total_min) {
 }
 
 #ifdef FAKE_CLOCK
-RTC_Millis RTCm;
+RTC_Millis RTC;
 #else
 RTC_DS3231 RTC;
 #endif
