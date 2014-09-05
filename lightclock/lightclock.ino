@@ -169,8 +169,7 @@ void loop() {
   DateTime localdt = local;
 
   uint16_t minutes = 24 * 60;
-  uint8_t dow = dayOfWeek(local);
-  if (isWeekDay(dow) && !isHoliday(local)) {
+  if (isWeekDay(dayOfWeek(local)) && !isHoliday(local)) {
     minutes = min(minutes, minutesUntil(localdt, 6, 30));
     if (minutes == 0) {
       fade(1, 20);
@@ -180,7 +179,8 @@ void loop() {
         fade(0, 1);
       }
     }
-  } else {
+  }
+  if (minutes != 0) {
     minutes = min(minutes, minutesUntil(localdt, 19, 0));
     if (minutes == 0) {
       fade(1, 10);
@@ -192,13 +192,11 @@ void loop() {
     }
   }
 
-  Serial.print("minutes ");
-  Serial.println(minutes);
   if (minutes == 1) {
     delaySeconds(30);
   } else if (minutes > 0) {
-    // Sleep a bit less than the number of minutes until the next event since
-    // the sleep timer is less accurate than the RTC.
+    // Delay a bit less than the number of minutes until the next event since
+    // this timer is less accurate than the RTC.
     delaySeconds(minutes * 55);
   }
 }
