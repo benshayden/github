@@ -40,7 +40,8 @@ function draw() {
         o[5] = 2;
         o[6] = s * 4;
       }
-      x.fillText(o[4] + '\n' + o[2] + 'x' + o[3], o[0] + o[5], o[1] + o[6]);
+      x.fillText(o[4], o[0] + o[5], o[1] + o[6]);
+      x.fillText((o[2] / 12.0) + 'x' + (o[3] / 12.0), o[0] + o[5], o[1] + 2*o[6]);
       o.splice(4, o.length - 4);
     }
     if (ellipse) {
