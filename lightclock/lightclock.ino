@@ -41,25 +41,39 @@ Timezone myTZ(PACIFIC);
 
 // How should the PWM duty cycle sweep?
 // SWEEP(0.0) = 0.0; SWEEP(1.0) = 1.0;
-#define SWEEP(x) x
+//#define SWEEP(x) x
 // http://en.wikipedia.org/wiki/Gamma_correction
 //#define SWEEP(x) pow(x, 2)
 //#define SWEEP(x) sigmoid(x)
-//#define SWEEP(x) pow(x, 2) * sigmoid(x)
+#define SWEEP(x) pow(x, 2) * sigmoid(x)
 
 // Decrease to make sigmoid() more gradual, increase to make dark darker and
 // light lighter.
 #define SIGMOID_SCALE 7
 
 // Uncomment to use arduino's crappy clock instead of an RTC.
-//#define FAKE_CLOCK
+#define FAKE_CLOCK
 
 // The light clock does not turn on in the morning on these weekdays so you can
 // sleep in.
 // Days since 2000/1/1.
 #define HOLIDAYS 
 
+// Uncomment to fade on then off over two minutes when the program starts.
+#define START_FADE
+
 // END SETTINGS
+
+
+#ifdef FAKE_CLOCK
+RTC_Millis RTC;
+#else
+RTC_DS3231 RTC;
+#endif
+
+time_t RTCunixtime() {
+  return RTC.now().unixtime();
+}
 
 static const uint16_t holidays[] PROGMEM = {HOLIDAYS};
 bool isHoliday(uint32_t t) {
@@ -76,6 +90,11 @@ bool isHoliday(uint32_t t) {
 
 void delaySeconds(unsigned long n) {
   while (n) {
+#ifdef FAKE_CLOCK
+    // LowPower doesn't increment millis() correctly.
+    delay(1000);
+    --n;
+#else
     period_t p = SLEEP_1S;
     if (n >= 8) {
       n -= 8;
@@ -87,10 +106,26 @@ void delaySeconds(unsigned long n) {
       n -= 2;
       p = SLEEP_2S;
     } else {
-      n--;
+      --n;
     }
     LowPower.powerDown(p, ADC_OFF, BOD_OFF);
+#endif
+    Serial.print("delaySeconds "); Serial.print(n); Serial.print(" utc "); Serial.println(RTCunixtime());
   }
+}
+
+void delayManyMicroseconds(unsigned long us) {
+  while (us > 4000) {
+    us -= 2000;
+    delay(2);
+  }
+  delayMicroseconds(us);
+}
+
+void superDelay(double s) {
+  // TODO LowPower loop
+  // TODO delay() loop
+  // TODO delayMicroseconds() loop
 }
 
 double sigmoid(double x) {
@@ -101,30 +136,32 @@ double sigmoid(double x) {
 
 // Synchronous! Blocks for total_min minutes!
 void fade(bool on, double total_min) {
+  if (on) Serial.print("fade on");
+  else Serial.print("fade off");
+  Serial.println(total_min);
   const double end = on ? 1.0 : 0.0;
   double start = 1.0 - end;
-  double step = PERIOD_MS / (1000.0 * 60.0 * total_min);
+  double step = (on ? 1.0 : -1.0) * PERIOD_MS / (1000.0 * 60.0 * total_min);
+  int c = 0;
   while (on ? (start < end) : (start > end)) {
-    int duty_us = SWEEP(start) * PERIOD_US;
+    long duty_us = SWEEP(start) * PERIOD_US;
     digitalWrite(LIGHT, HIGH);
-    delayMicroseconds(duty_us);
+    delayManyMicroseconds(duty_us);
     digitalWrite(LIGHT, LOW);
-    delayMicroseconds(PERIOD_US - duty_us);
+    delayManyMicroseconds(PERIOD_US - duty_us);
     start += step;
+    ++c;
+    if (c == 50) {
+      c = 0;
+      Serial.print("start ");
+      Serial.print(start);
+      Serial.print(" duty_us ");
+      Serial.println(duty_us);
+    }
   }
   if (on) {
     digitalWrite(LIGHT, HIGH);
   }
-}
-
-#ifdef FAKE_CLOCK
-RTC_Millis RTCm;
-#else
-RTC_DS3231 RTC;
-#endif
-
-time_t RTCunixtime() {
-  return RTC.now().unixtime();
 }
 
 void setup() {
@@ -132,11 +169,14 @@ void setup() {
   digitalWrite(LIGHT, LOW);
   Serial.begin(9600);
   Wire.begin();
-  RTC.begin();
   DateTime compiled = DateTime(__DATE__, __TIME__);
-  if (! RTC.isrunning()) {
+  compiled = DateTime(compiled.unixtime() + (7 * 60 * 60));
+#ifdef FAKE_CLOCK
+  RTC.adjust(compiled);
+#else
+  RTC.begin();
+  if (!RTC.isrunning()) {
     Serial.println("RTC is NOT running!");
-    // Set the RTC to the date & time this sketch was compiled
     RTC.adjust(compiled);
   }
   DateTime dt = RTC.now();
@@ -144,7 +184,13 @@ void setup() {
     Serial.println("RTC is older than compile time!  Updating");
     RTC.adjust(compiled);
   }
+#endif
   setSyncProvider(RTCunixtime);
+
+#ifdef START_FADE
+  fade(1, 1);
+  fade(0, 1);
+#endif
 }
 
 bool isWeekDay(uint8_t d) {
@@ -164,39 +210,54 @@ uint16_t minutesUntil(const DateTime& t, int8_t h, int8_t m) {
 
 void loop() {
   time_t utc = now();
+  Serial.print("utc ");
+  Serial.println(utc);
   TimeChangeRule* tcr;
   time_t local = myTZ.toLocal(utc, &tcr);
+  Serial.print(tcr->abbrev);
+  Serial.print(" ");
+  Serial.println(local);
   DateTime localdt = local;
+  Serial.print("localdt ");
+  char localdts[30];
+  Serial.println(localdt.toString(localdts, sizeof(localdts)));
+  bool sleepin = !isWeekDay(dayOfWeek(local)) || isHoliday(local);
+  Serial.print("sleepin "); Serial.println(sleepin);
 
   uint16_t minutes = 24 * 60;
-  if (isWeekDay(dayOfWeek(local)) && !isHoliday(local)) {
-    minutes = min(minutes, minutesUntil(localdt, 6, 30));
-    if (minutes == 0) {
+#define CLOCK_READS(h, m) (0 == (minutes = min(minutes, minutesUntil(localdt, (h), (m)))))
+  if (CLOCK_READS(6, 30)) {
+    if (sleepin) {
+      delaySeconds(60);
+      return;
+    } else {
       fade(1, 20);
-    } else {
-      minutes = min(minutes, minutesUntil(localdt, 7, 0));
-      if (minutes == 0) {
-        fade(0, 1);
-      }
+      return;
     }
   }
-  if (minutes != 0) {
-    minutes = min(minutes, minutesUntil(localdt, 19, 0));
-    if (minutes == 0) {
-      fade(1, 10);
+  Serial.print(minutes); Serial.println(" minutes until 6:30");
+  if (CLOCK_READS(7, 00)) {
+    if (sleepin) {
+      delaySeconds(60);
+      return;
     } else {
-      minutes = min(minutes, minutesUntil(localdt, 21, 15));
-      if (minutes == 0) {
-        fade(0, 30);
-      }
+      fade(0, 1);
+      return;
     }
   }
+  Serial.print(minutes); Serial.println(" minutes until 7:00");
+  if (CLOCK_READS(19, 00)) {
+    fade(1, 10);
+    return;
+  }
+  Serial.print(minutes); Serial.println(" minutes until 19:00");
+  if (CLOCK_READS(21, 15)) {
+    fade(0, 30);
+    return;
+  }
+  Serial.print(minutes); Serial.println(" minutes until 21:15");
 
-  if (minutes == 1) {
-    delaySeconds(30);
-  } else if (minutes > 0) {
-    // Delay a bit less than the number of minutes until the next event since
-    // this timer is less accurate than the RTC.
-    delaySeconds(minutes * 55);
-  }
+  // Delay a bit less than the number of minutes until the next event since
+  // this timer is less accurate than the RTC.
+  delaySeconds(minutes * 55);
 }
