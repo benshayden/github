@@ -41,6 +41,7 @@ function draw() {
         o[6] = s * 4;
       }
       x.fillText(o[4], o[0] + o[5], o[1] + o[6]);
+      x.fillText(parseInt(o[2] / (s * 12)) + "'" + ((o[2] / s) % 12) + '"x' + parseInt(o[3] / (s * 12)) + "'" + ((o[3] / s) % 12) + '"', o[0] + o[5], o[1] + 2*o[6]);
       o.splice(4, o.length - 4);
     }
     if (ellipse) {

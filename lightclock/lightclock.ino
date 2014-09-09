@@ -164,6 +164,16 @@ void fade(bool on, double total_min) {
   }
 }
 
+#ifdef FAKE_CLOCK
+RTC_Millis RTC;
+#else
+RTC_DS3231 RTC;
+#endif
+
+time_t RTCunixtime() {
+  return RTC.now().unixtime();
+}
+
 void setup() {
   pinMode(LIGHT, OUTPUT);
   digitalWrite(LIGHT, LOW);
