@@ -34,25 +34,15 @@ TimeChangeRule PST = {"PST", First, Sun, Nov, 2, -480};
 Timezone myTZ(PACIFIC);
 
 // number of pin controlling the light. HIGH = on, LOW = off.
-#define LIGHT 11
+#define LIGHT 13
 
 // PWM cycle time
 #define PERIOD_MS 20
 
 // How should the PWM duty cycle sweep?
 // SWEEP(0.0) = 0.0; SWEEP(1.0) = 1.0;
-//#define SWEEP(x) x
 // http://en.wikipedia.org/wiki/Gamma_correction
-//#define SWEEP(x) pow(x, 2)
-//#define SWEEP(x) sigmoid(x)
-#define SWEEP(x) pow(x, 2) * sigmoid(x)
-
-// Decrease to make sigmoid() more gradual, increase to make dark darker and
-// light lighter.
-#define SIGMOID_SCALE 7
-
-// Uncomment to use arduino's crappy clock instead of an RTC.
-#define FAKE_CLOCK
+#define SWEEP(x) pow(x, 0.2) / (1.0 + exp(10 * (0.5 - x)))
 
 // The light clock does not turn on in the morning on these weekdays so you can
 // sleep in.
@@ -60,19 +50,15 @@ Timezone myTZ(PACIFIC);
 #define HOLIDAYS 
 
 // Uncomment to fade on then off over two minutes when the program starts.
-#define START_FADE
+//#define START_FADE
 
 // END SETTINGS
 
-
-#ifdef FAKE_CLOCK
-RTC_Millis RTC;
-#else
-RTC_DS3231 RTC;
-#endif
+RTC_Millis SoftRTC;
+RTC_DS3231 HardRTC;
 
 time_t RTCunixtime() {
-  return RTC.now().unixtime();
+  return HardRTC.isrunning() ? HardRTC.now().unixtime() : SoftRTC.now().unixtime();
 }
 
 static const uint16_t holidays[] PROGMEM = {HOLIDAYS};
@@ -88,51 +74,41 @@ bool isHoliday(uint32_t t) {
   return false;
 }
 
-void delaySeconds(unsigned long n) {
-  while (n) {
-#ifdef FAKE_CLOCK
-    // LowPower doesn't increment millis() correctly.
-    delay(1000);
-    --n;
-#else
-    period_t p = SLEEP_1S;
-    if (n >= 8) {
-      n -= 8;
-      p = SLEEP_8S;
-    } else if (n >= 4) {
-      n -= 4;
-      p = SLEEP_4S;
-    } else if (n >= 2) {
-      n -= 2;
-      p = SLEEP_2S;
+void delaySeconds(double s) {
+  while (s > 1.0) {
+    if (HardRTC.isrunning()) {
+      period_t p = SLEEP_1S;
+      if (s >= 8.0) {
+        s -= 8.0;
+        p = SLEEP_8S;
+      } else if (s >= 4.0) {
+        s -= 4.0;
+        p = SLEEP_4S;
+      } else if (s >= 2.0) {
+        s -= 2.0;
+        p = SLEEP_2S;
+      } else {
+        s -= 1.0;
+      }
+      LowPower.powerDown(p, ADC_OFF, BOD_OFF);
     } else {
-      --n;
+      // LowPower doesn't increment millis().
+      delay(1000);
+      s -= 1.0;
     }
-    LowPower.powerDown(p, ADC_OFF, BOD_OFF);
-#endif
-    Serial.print("delaySeconds "); Serial.print(n); Serial.print(" utc "); Serial.println(RTCunixtime());
+    Serial.print("delaySeconds ");
+    Serial.print(s);
+    Serial.print(" utc ");
+    Serial.println(RTCunixtime());
   }
+  s *= 1000.0;
+  delay(floor(s));
+  s -= floor(s);
+  s *= 1000.0;
+  delayMicroseconds(floor(s));
 }
 
-void delayManyMicroseconds(unsigned long us) {
-  while (us > 4000) {
-    us -= 2000;
-    delay(2);
-  }
-  delayMicroseconds(us);
-}
-
-void superDelay(double s) {
-  // TODO LowPower loop
-  // TODO delay() loop
-  // TODO delayMicroseconds() loop
-}
-
-double sigmoid(double x) {
-  return 1.0 / (1.0 + exp(SIGMOID_SCALE * (0.5 - x)));
-}
-
-#define PERIOD_US (1000 * PERIOD_MS)
+#define PERIOD_S (((double) PERIOD_MS) / 1000.0)
 
 // Synchronous! Blocks for total_min minutes!
 void fade(bool on, double total_min) {
@@ -141,37 +117,27 @@ void fade(bool on, double total_min) {
   Serial.println(total_min);
   const double end = on ? 1.0 : 0.0;
   double start = 1.0 - end;
-  double step = (on ? 1.0 : -1.0) * PERIOD_MS / (1000.0 * 60.0 * total_min);
+  double step = (on ? 1.0 : -1.0) * PERIOD_S / (60.0 * total_min);
   int c = 0;
   while (on ? (start < end) : (start > end)) {
-    long duty_us = SWEEP(start) * PERIOD_US;
+    double duty_s = SWEEP(start) * PERIOD_S;
     digitalWrite(LIGHT, HIGH);
-    delayManyMicroseconds(duty_us);
+    delaySeconds(duty_s);
     digitalWrite(LIGHT, LOW);
-    delayManyMicroseconds(PERIOD_US - duty_us);
+    delaySeconds(PERIOD_S - duty_s);
     start += step;
     ++c;
     if (c == 50) {
       c = 0;
       Serial.print("start ");
       Serial.print(start);
-      Serial.print(" duty_us ");
-      Serial.println(duty_us);
+      Serial.print(" duty_s ");
+      Serial.println(duty_s);
     }
   }
   if (on) {
     digitalWrite(LIGHT, HIGH);
   }
-}
-
-#ifdef FAKE_CLOCK
-RTC_Millis RTC;
-#else
-RTC_DS3231 RTC;
-#endif
-
-time_t RTCunixtime() {
-  return RTC.now().unixtime();
 }
 
 void setup() {
@@ -180,21 +146,28 @@ void setup() {
   Serial.begin(9600);
   Wire.begin();
   DateTime compiled = DateTime(__DATE__, __TIME__);
+  Serial.print("compiled ");
+  Serial.println(compiled.unixtime());
   compiled = DateTime(compiled.unixtime() + (7 * 60 * 60));
-#ifdef FAKE_CLOCK
-  RTC.adjust(compiled);
-#else
-  RTC.begin();
-  if (!RTC.isrunning()) {
-    Serial.println("RTC is NOT running!");
-    RTC.adjust(compiled);
+  Serial.print("compiled PDT ");
+  Serial.println(compiled.unixtime());
+  SoftRTC.adjust(compiled);
+  Serial.print("SoftRTC ");
+  Serial.println(SoftRTC.now().unixtime());
+  HardRTC.begin();
+  if (!HardRTC.isrunning()) {
+    Serial.println("HardRTC is NOT running!");
+    HardRTC.adjust(compiled);
   }
-  DateTime dt = RTC.now();
+  DateTime dt = HardRTC.now();
+  Serial.print("HardRTC ");
+  Serial.println(dt.unixtime());
   if (dt.unixtime() < compiled.unixtime()) {
     Serial.println("RTC is older than compile time!  Updating");
-    RTC.adjust(compiled);
+    HardRTC.adjust(compiled);
+    Serial.print("HardRTC ");
+    Serial.println(HardRTC.now().unixtime());
   }
-#endif
   setSyncProvider(RTCunixtime);
 
 #ifdef START_FADE
@@ -232,7 +205,8 @@ void loop() {
   char localdts[30];
   Serial.println(localdt.toString(localdts, sizeof(localdts)));
   bool sleepin = !isWeekDay(dayOfWeek(local)) || isHoliday(local);
-  Serial.print("sleepin "); Serial.println(sleepin);
+  Serial.print("sleepin ");
+  Serial.println(sleepin);
 
   uint16_t minutes = 24 * 60;
 #define CLOCK_READS(h, m) (0 == (minutes = min(minutes, minutesUntil(localdt, (h), (m)))))
@@ -245,7 +219,8 @@ void loop() {
       return;
     }
   }
-  Serial.print(minutes); Serial.println(" minutes until 6:30");
+  Serial.print(minutes);
+  Serial.println(" minutes until 6:30");
   if (CLOCK_READS(7, 00)) {
     if (sleepin) {
       delaySeconds(60);
@@ -255,17 +230,20 @@ void loop() {
       return;
     }
   }
-  Serial.print(minutes); Serial.println(" minutes until 7:00");
+  Serial.print(minutes);
+  Serial.println(" minutes until 7:00");
   if (CLOCK_READS(19, 00)) {
     fade(1, 10);
     return;
   }
-  Serial.print(minutes); Serial.println(" minutes until 19:00");
+  Serial.print(minutes);
+  Serial.println(" minutes until 19:00");
   if (CLOCK_READS(21, 15)) {
     fade(0, 30);
     return;
   }
-  Serial.print(minutes); Serial.println(" minutes until 21:15");
+  Serial.print(minutes);
+  Serial.println(" minutes until 21:15");
 
   // Delay a bit less than the number of minutes until the next event since
   // this timer is less accurate than the RTC.
