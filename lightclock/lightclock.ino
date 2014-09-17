@@ -42,7 +42,7 @@ Timezone myTZ(PACIFIC);
 // How should the PWM duty cycle sweep?
 // SWEEP(0.0) = 0.0; SWEEP(1.0) = 1.0;
 // http://en.wikipedia.org/wiki/Gamma_correction
-#define SWEEP(x) pow(x, 0.2) / (1.0 + exp(10 * (0.5 - x)))
+#define SWEEP(x) 1.0 / (1.0 + exp(10 * (0.5 - x)))
 
 // The light clock does not turn on in the morning on these weekdays so you can
 // sleep in.
@@ -145,26 +145,32 @@ void setup() {
   digitalWrite(LIGHT, LOW);
   Serial.begin(9600);
   Wire.begin();
-  DateTime compiled = DateTime(__DATE__, __TIME__);
+  DateTime compiled_local = DateTime(__DATE__, __TIME__);
   Serial.print("compiled ");
-  Serial.println(compiled.unixtime());
-  compiled = DateTime(compiled.unixtime() + (7 * 60 * 60));
-  Serial.print("compiled PDT ");
-  Serial.println(compiled.unixtime());
-  SoftRTC.adjust(compiled);
+  Serial.print(compiled_local.unixtime());
+  TimeChangeRule* tcr;
+  myTZ.toLocal(compiled_local.unixtime(), &tcr);
+  Serial.print(tcr->abbrev);
+  DateTime compiled_utc = DateTime(compiled_local.unixtime() - (60 * tcr->offset));
+  Serial.print(" ");
+  Serial.print(compiled_utc.unixtime());
+  Serial.println(" UTC");
+
+  SoftRTC.adjust(compiled_utc);
   Serial.print("SoftRTC ");
   Serial.println(SoftRTC.now().unixtime());
+
   HardRTC.begin();
   if (!HardRTC.isrunning()) {
     Serial.println("HardRTC is NOT running!");
-    HardRTC.adjust(compiled);
+    HardRTC.adjust(compiled_utc);
   }
   DateTime dt = HardRTC.now();
   Serial.print("HardRTC ");
   Serial.println(dt.unixtime());
-  if (dt.unixtime() < compiled.unixtime()) {
+  if (dt.unixtime() < compiled_utc.unixtime()) {
     Serial.println("RTC is older than compile time!  Updating");
-    HardRTC.adjust(compiled);
+    HardRTC.adjust(compiled_utc);
     Serial.print("HardRTC ");
     Serial.println(HardRTC.now().unixtime());
   }
