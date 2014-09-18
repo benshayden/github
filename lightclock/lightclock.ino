@@ -34,10 +34,10 @@ TimeChangeRule PST = {"PST", First, Sun, Nov, 2, -480};
 Timezone myTZ(PACIFIC);
 
 // number of pin controlling the light. HIGH = on, LOW = off.
-#define LIGHT 13
+#define LIGHT 11
 
 // PWM cycle time
-#define PERIOD_MS 20
+#define PERIOD_MS 10
 
 // How should the PWM duty cycle sweep?
 // SWEEP(0.0) = 0.0; SWEEP(1.0) = 1.0;
@@ -48,9 +48,6 @@ Timezone myTZ(PACIFIC);
 // sleep in.
 // Days since 2000/1/1.
 #define HOLIDAYS 
-
-// Uncomment to fade on then off over two minutes when the program starts.
-//#define START_FADE
 
 // END SETTINGS
 
@@ -108,7 +105,8 @@ void delaySeconds(double s) {
   delayMicroseconds(floor(s));
 }
 
-#define PERIOD_S (((double) PERIOD_MS) / 1000.0)
+double PERIOD_S = (((double) PERIOD_MS) / 1000.0);
+int log_freq = floor(1000.0 / PERIOD_MS);
 
 // Synchronous! Blocks for total_min minutes!
 void fade(bool on, double total_min) {
@@ -118,7 +116,7 @@ void fade(bool on, double total_min) {
   const double end = on ? 1.0 : 0.0;
   double start = 1.0 - end;
   double step = (on ? 1.0 : -1.0) * PERIOD_S / (60.0 * total_min);
-  int c = 0;
+  int log_counter = 0;
   while (on ? (start < end) : (start > end)) {
     double duty_s = SWEEP(start) * PERIOD_S;
     digitalWrite(LIGHT, HIGH);
@@ -126,9 +124,9 @@ void fade(bool on, double total_min) {
     digitalWrite(LIGHT, LOW);
     delaySeconds(PERIOD_S - duty_s);
     start += step;
-    ++c;
-    if (c == 50) {
-      c = 0;
+    ++log_counter;
+    if (log_counter == log_freq) {
+      log_counter = 0;
       Serial.print("start ");
       Serial.print(start);
       Serial.print(" duty_s ");
@@ -176,10 +174,8 @@ void setup() {
   }
   setSyncProvider(RTCunixtime);
 
-#ifdef START_FADE
   fade(1, 1);
   fade(0, 1);
-#endif
 }
 
 bool isWeekDay(uint8_t d) {
