@@ -42,7 +42,7 @@ Timezone myTZ(PACIFIC);
 // How should the PWM duty cycle sweep?
 // SWEEP(0.0) = 0.0; SWEEP(1.0) = 1.0;
 // http://en.wikipedia.org/wiki/Gamma_correction
-#define SWEEP(x) 1.0 / (1.0 + exp(10 * (0.5 - x)))
+#define SWEEP(x) (x / (1.0 + exp(10 * (0.5 - x))))
 
 // The light clock does not turn on in the morning on these weekdays so you can
 // sleep in.
