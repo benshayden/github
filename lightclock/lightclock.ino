@@ -28,10 +28,18 @@ TimeChangeRule PST = {"PST", First, Sun, Nov, 2, -480};
 #define CENTRAL CDT, CST
 #define MOUNTAIN MDT, MST
 #define PACIFIC PDT, PST
+#define CIE1931(L) ((L <= 0.088) ? (L / 9.033) : pow(((L + 0.16) / 1.16), 3))
+#define GAMMA(x) pow(x, 2)
+#define LOGISTIC(x, s) (1.0 / (1.0 + exp((s) * (0.5 - (x)))))
 
 // SETTINGS
 
 Timezone myTZ(PACIFIC);
+
+// No parens, no colons. "08" and "09" are an error; use "8" or "9".
+#define WAKE 6, 15
+
+#define PREBED 20, 0
 
 // number of pin controlling the light. HIGH = on, LOW = off.
 #define LIGHT 11
@@ -41,8 +49,7 @@ Timezone myTZ(PACIFIC);
 
 // How should the PWM duty cycle sweep?
 // SWEEP(0.0) = 0.0; SWEEP(1.0) = 1.0;
-// http://en.wikipedia.org/wiki/Gamma_correction
-#define SWEEP(x) (x / (1.0 + exp(10 * (0.5 - x))))
+#define SWEEP(x) GAMMA(x)
 
 // The light clock does not turn on in the morning on these weekdays so you can
 // sleep in.
@@ -102,23 +109,22 @@ void delaySeconds(double s) {
   delay(floor(s));
   s -= floor(s);
   s *= 1000.0;
-  delayMicroseconds(floor(s));
+  delayMicroseconds(round(s));
 }
 
 double PERIOD_S = (((double) PERIOD_MS) / 1000.0);
 int log_freq = floor(1000.0 / PERIOD_MS);
 
-// Synchronous! Blocks for total_min minutes!
-void fade(bool on, double total_min) {
-  if (on) Serial.print("fade on");
-  else Serial.print("fade off");
+void transition(bool on, double total_min, double scale) {
+  if (on) Serial.print("transition on");
+  else Serial.print("transition off");
   Serial.println(total_min);
   const double end = on ? 1.0 : 0.0;
   double start = 1.0 - end;
   double step = (on ? 1.0 : -1.0) * PERIOD_S / (60.0 * total_min);
   int log_counter = 0;
   while (on ? (start < end) : (start > end)) {
-    double duty_s = SWEEP(start) * PERIOD_S;
+    double duty_s = SWEEP(start) * scale * PERIOD_S;
     digitalWrite(LIGHT, HIGH);
     delaySeconds(duty_s);
     digitalWrite(LIGHT, LOW);
@@ -129,13 +135,30 @@ void fade(bool on, double total_min) {
       log_counter = 0;
       Serial.print("start ");
       Serial.print(start);
-      Serial.print(" duty_s ");
-      Serial.println(duty_s);
+      Serial.print(" duty_us ");
+      Serial.println(round(duty_s * 1e6));
     }
   }
-  if (on) {
-    digitalWrite(LIGHT, HIGH);
+}
+
+void hold(double x, time_t until_utc) {
+  double duty_s = x * PERIOD_S;
+  while (now() < until_utc) {
+    for (int s = 0; s < 10; ++s) {
+      for (int i = 0; i < log_freq; ++i) {
+        digitalWrite(LIGHT, HIGH);
+        delaySeconds(duty_s);
+        digitalWrite(LIGHT, LOW);
+        delaySeconds(PERIOD_S - duty_s);
+      }
+    }
   }
+}
+
+void onholdoff(double on_min, double x, double hold_min, double off_min) {
+  transition(1, on_min, x);
+  hold(x, now() + round(60.0 * hold_min));
+  transition(0, off_min, x);
 }
 
 void setup() {
@@ -174,80 +197,69 @@ void setup() {
   }
   setSyncProvider(RTCunixtime);
 
-  fade(1, 1);
-  fade(0, 1);
+  double tens = 10.0 / 60.0;
+  onholdoff(tens, 0.8, tens, tens);
 }
 
 bool isWeekDay(uint8_t d) {
-  return (d >= 1) && (d <= 5);
+  return (1 <= d) && (d <= 5);
 }
 
-uint16_t minutesUntil(const DateTime& t, int8_t h, int8_t m) {
-  h = (h - t.hour()) % 24;
-  m = m - t.minute();
-  if (m < 0) {
-    m += 60;
-    h -= 1;
-  }
-  h %= 24;
+uint16_t hm2m(uint8_t h, uint8_t m) {
   return (h * 60) + m;
 }
 
 void loop() {
   time_t utc = now();
-  Serial.print("utc ");
-  Serial.println(utc);
   TimeChangeRule* tcr;
   time_t local = myTZ.toLocal(utc, &tcr);
-  Serial.print(tcr->abbrev);
-  Serial.print(" ");
-  Serial.println(local);
   DateTime localdt = local;
-  Serial.print("localdt ");
-  char localdts[30];
-  Serial.println(localdt.toString(localdts, sizeof(localdts)));
   bool sleepin = !isWeekDay(dayOfWeek(local)) || isHoliday(local);
-  Serial.print("sleepin ");
-  Serial.println(sleepin);
-
-  uint16_t minutes = 24 * 60;
-#define CLOCK_READS(h, m) (0 == (minutes = min(minutes, minutesUntil(localdt, (h), (m)))))
-  if (CLOCK_READS(6, 30)) {
+  uint16_t minOfDay = hm2m(localdt.hour(), localdt.minute());
+  uint16_t wakeMin = hm2m(WAKE);
+  uint16_t prebedMin = hm2m(PREBED);
+  Serial.print("loop ");
+  Serial.print(utc);
+  Serial.print("UTC / ");
+  Serial.print(local);
+  Serial.print(tcr->abbrev);
+  Serial.print("; localdt ");
+  char localdts[30];
+  Serial.print(localdt.toString(localdts, sizeof(localdts)));
+  Serial.print("; sleepin ");
+  Serial.print(sleepin);
+  Serial.print("; wakeMin ");
+  Serial.print(wakeMin);
+  Serial.print("; prebedMin ");
+  Serial.print(prebedMin);
+  Serial.print("; minOfDay ");
+  Serial.println(minOfDay);
+  Serial.println();
+#define BETWEEN(a, z) (((a) <= minOfDay) && (minOfDay <= (z)))
+  if (BETWEEN(0, wakeMin - 90)) {
+    delaySeconds(60 * 60);
+  } else if (BETWEEN(wakeMin - 90, wakeMin - 3)) {
     if (sleepin) {
-      delaySeconds(60);
-      return;
+      delaySeconds(60 * 60);
     } else {
-      fade(1, 20);
-      return;
+      delaySeconds(60);
     }
-  }
-  Serial.print(minutes);
-  Serial.println(" minutes until 6:30");
-  if (CLOCK_READS(7, 00)) {
+  } else if (BETWEEN(wakeMin - 3, wakeMin + 3)) {
     if (sleepin) {
-      delaySeconds(60);
-      return;
+      delaySeconds(60 * 60);
     } else {
-      fade(0, 1);
-      return;
+      onholdoff(20, 0.8, 20, 5);
     }
+  } else if (BETWEEN(wakeMin, prebedMin - 90)) {
+    delaySeconds(60 * 60);
+  } else if (BETWEEN(prebedMin - 90, prebedMin - 3)) {
+    delaySeconds(60);
+  } else if (BETWEEN(prebedMin - 3, prebedMin + 3)) {
+    onholdoff(10, 0.9, 80, 30);
+  } else if (BETWEEN(prebedMin, hm2m(24, 60))) {
+    delaySeconds(60 * 60);
+  } else {
+    Serial.println("woops");
+    delaySeconds(60);
   }
-  Serial.print(minutes);
-  Serial.println(" minutes until 7:00");
-  if (CLOCK_READS(19, 00)) {
-    fade(1, 10);
-    return;
-  }
-  Serial.print(minutes);
-  Serial.println(" minutes until 19:00");
-  if (CLOCK_READS(21, 15)) {
-    fade(0, 30);
-    return;
-  }
-  Serial.print(minutes);
-  Serial.println(" minutes until 21:15");
-
-  // Delay a bit less than the number of minutes until the next event since
-  // this timer is less accurate than the RTC.
-  delaySeconds(minutes * 55);
 }
