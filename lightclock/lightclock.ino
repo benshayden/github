@@ -38,7 +38,6 @@ Timezone myTZ(PACIFIC);
 
 // No parens, no colons. "08" and "09" are an error; use "8" or "9".
 #define WAKE 6, 15
-
 #define PREBED 20, 0
 
 // number of pin controlling the light. HIGH = on, LOW = off.
@@ -102,8 +101,8 @@ void delaySeconds(double s) {
     }
     Serial.print("delaySeconds ");
     Serial.print(s);
-    Serial.print(" utc ");
-    Serial.println(RTCunixtime());
+    Serial.print("; utc ");
+    Serial.println(now());
   }
   s *= 1000.0;
   delay(floor(s));
@@ -218,6 +217,7 @@ void loop() {
   uint16_t minOfDay = hm2m(localdt.hour(), localdt.minute());
   uint16_t wakeMin = hm2m(WAKE);
   uint16_t prebedMin = hm2m(PREBED);
+
   Serial.print("loop ");
   Serial.print(utc);
   Serial.print("UTC / ");
@@ -234,32 +234,20 @@ void loop() {
   Serial.print(prebedMin);
   Serial.print("; minOfDay ");
   Serial.println(minOfDay);
-  Serial.println();
-#define BETWEEN(a, z) (((a) <= minOfDay) && (minOfDay <= (z)))
-  if (BETWEEN(0, wakeMin - 90)) {
-    delaySeconds(60 * 60);
-  } else if (BETWEEN(wakeMin - 90, wakeMin - 3)) {
-    if (sleepin) {
-      delaySeconds(60 * 60);
-    } else {
-      delaySeconds(60);
-    }
-  } else if (BETWEEN(wakeMin - 3, wakeMin + 3)) {
-    if (sleepin) {
-      delaySeconds(60 * 60);
-    } else {
-      onholdoff(20, 0.8, 20, 5);
-    }
-  } else if (BETWEEN(wakeMin, prebedMin - 90)) {
-    delaySeconds(60 * 60);
-  } else if (BETWEEN(prebedMin - 90, prebedMin - 3)) {
-    delaySeconds(60);
-  } else if (BETWEEN(prebedMin - 3, prebedMin + 3)) {
-    onholdoff(10, 0.9, 80, 30);
-  } else if (BETWEEN(prebedMin, hm2m(24, 60))) {
-    delaySeconds(60 * 60);
-  } else {
-    Serial.println("woops");
-    delaySeconds(60);
+
+  if (!sleepin && (3 > abs(wakeMin - minOfDay))) {
+    onholdoff(20, 0.8, 20, 5);
+    return;
   }
+  if (3 > abs(prebedMin - minOfDay)) {
+    onholdoff(10, 0.9, 80, 30);
+    return;
+  }
+  double minutes = min(60, min(constrain(wakeMin - minOfDay, 1, 60), constrain(prebedMin - minOfDay, 1, 60)));
+  if (minOfDay > prebedMin) {
+    minutes = 60;
+  }
+  Serial.print("sleeping minutes ");
+  Serial.println(minutes);
+  delaySeconds(60.0 * minutes * 0.7);
 }
