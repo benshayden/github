@@ -6,7 +6,6 @@
 // http://docs.macetech.com/doku.php/chronodot_v2.0
 
 #include <avr/pgmspace.h>
-#include <LowPower.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <RTClib.h>
@@ -14,7 +13,6 @@
 #include <Time.h>
 #include <Timezone.h>
 
-#define kuint32max 0xffffffff
 #define ARRAYSIZE(a) ((sizeof(a) == 0) ? 0 : (sizeof(a) / sizeof(a[0])))
 TimeChangeRule EDT = {"EDT", Second, Sun, Mar, 2, -240};
 TimeChangeRule EST = {"EST", First, Sun, Nov, 2, -300};
@@ -37,14 +35,18 @@ TimeChangeRule PST = {"PST", First, Sun, Nov, 2, -480};
 Timezone myTZ(PACIFIC);
 
 // No parens, no colons. "08" and "09" are an error; use "8" or "9".
-#define WAKE 6, 15
+#define WAKE_ON 30
+#define WAKE 6, 5
 #define PREBED 20, 0
+#define PREBED_ON 10
+#define BED_OFF 30
+#define BED 22, 0
 
 // number of pin controlling the light. HIGH = on, LOW = off.
 #define LIGHT 11
 
 // PWM cycle time
-#define PERIOD_MS 10
+#define PERIOD_MS 1
 
 // How should the PWM duty cycle sweep?
 // SWEEP(0.0) = 0.0; SWEEP(1.0) = 1.0;
@@ -57,11 +59,10 @@ Timezone myTZ(PACIFIC);
 
 // END SETTINGS
 
-RTC_Millis SoftRTC;
 RTC_DS3231 HardRTC;
 
 time_t RTCunixtime() {
-  return HardRTC.isrunning() ? HardRTC.now().unixtime() : SoftRTC.now().unixtime();
+  return HardRTC.now().unixtime();
 }
 
 static const uint16_t holidays[] PROGMEM = {HOLIDAYS};
@@ -79,30 +80,8 @@ bool isHoliday(uint32_t t) {
 
 void delaySeconds(double s) {
   while (s > 1.0) {
-    if (HardRTC.isrunning()) {
-      period_t p = SLEEP_1S;
-      if (s >= 8.0) {
-        s -= 8.0;
-        p = SLEEP_8S;
-      } else if (s >= 4.0) {
-        s -= 4.0;
-        p = SLEEP_4S;
-      } else if (s >= 2.0) {
-        s -= 2.0;
-        p = SLEEP_2S;
-      } else {
-        s -= 1.0;
-      }
-      LowPower.powerDown(p, ADC_OFF, BOD_OFF);
-    } else {
-      // LowPower doesn't increment millis().
-      delay(1000);
-      s -= 1.0;
-    }
-    Serial.print("delaySeconds ");
-    Serial.print(s);
-    Serial.print("; utc ");
-    Serial.println(now());
+    delay(1000);
+    s -= 1.0;
   }
   s *= 1000.0;
   delay(floor(s));
@@ -115,6 +94,7 @@ double PERIOD_S = (((double) PERIOD_MS) / 1000.0);
 int log_freq = floor(1000.0 / PERIOD_MS);
 
 void transition(bool on, double total_min, double scale) {
+  scale = GAMMA(scale);
   if (on) Serial.print("transition on");
   else Serial.print("transition off");
   Serial.println(total_min);
@@ -141,7 +121,9 @@ void transition(bool on, double total_min, double scale) {
 }
 
 void hold(double x, time_t until_utc) {
-  double duty_s = x * PERIOD_S;
+  double duty_s = GAMMA(x) * PERIOD_S;
+  Serial.print("hold ");
+  Serial.println(round(duty_s * 1e6));
   while (now() < until_utc) {
     for (int s = 0; s < 10; ++s) {
       for (int i = 0; i < log_freq; ++i) {
@@ -176,10 +158,6 @@ void setup() {
   Serial.print(compiled_utc.unixtime());
   Serial.println(" UTC");
 
-  SoftRTC.adjust(compiled_utc);
-  Serial.print("SoftRTC ");
-  Serial.println(SoftRTC.now().unixtime());
-
   HardRTC.begin();
   if (!HardRTC.isrunning()) {
     Serial.println("HardRTC is NOT running!");
@@ -208,39 +186,36 @@ uint16_t hm2m(uint8_t h, uint8_t m) {
   return (h * 60) + m;
 }
 
+int16_t wakeMin = hm2m(WAKE);
+int16_t prebedMin = hm2m(PREBED);
+int16_t bedMin = hm2m(BED);
+int16_t bedHoldMin = bedMin - prebedMin - PREBED_ON - BED_OFF;
+
 void loop() {
   time_t utc = now();
   TimeChangeRule* tcr;
   time_t local = myTZ.toLocal(utc, &tcr);
   DateTime localdt = local;
   bool sleepin = !isWeekDay(dayOfWeek(local)) || isHoliday(local);
-  uint16_t minOfDay = hm2m(localdt.hour(), localdt.minute());
-  uint16_t wakeMin = hm2m(WAKE);
-  uint16_t prebedMin = hm2m(PREBED);
+  int16_t minOfDay = hm2m(localdt.hour(), localdt.minute());
 
   Serial.print("loop ");
   Serial.print(utc);
   Serial.print("UTC / ");
   Serial.print(local);
-  Serial.print(tcr->abbrev);
-  Serial.print("; localdt ");
-  char localdts[30];
-  Serial.print(localdt.toString(localdts, sizeof(localdts)));
-  Serial.print("; sleepin ");
-  Serial.print(sleepin);
-  Serial.print("; wakeMin ");
-  Serial.print(wakeMin);
-  Serial.print("; prebedMin ");
-  Serial.print(prebedMin);
-  Serial.print("; minOfDay ");
+  Serial.println(tcr->abbrev);
+  if (sleepin) Serial.println("sleepin");
+  Serial.print("minOfDay ");
   Serial.println(minOfDay);
+  Serial.flush();
 
-  if (!sleepin && (3 > abs(wakeMin - minOfDay))) {
-    onholdoff(20, 0.8, 20, 5);
+  if (!sleepin && ((wakeMin - 1) <= minOfDay) && (minOfDay <= (wakeMin + WAKE_ON))) {
+    onholdoff(20, 0.7, WAKE_ON - (minOfDay - wakeMin), 5);
     return;
   }
-  if (3 > abs(prebedMin - minOfDay)) {
-    onholdoff(10, 0.9, 80, 30);
+  if (((prebedMin - 1) <= minOfDay) && (minOfDay <= (prebedMin + bedHoldMin))) {
+    int16_t bedHold = bedHoldMin - (minOfDay - prebedMin);
+    onholdoff(PREBED_ON, 0.9, bedHold, BED_OFF);
     return;
   }
   double minutes = min(60, min(constrain(wakeMin - minOfDay, 1, 60), constrain(prebedMin - minOfDay, 1, 60)));
