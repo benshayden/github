@@ -99,26 +99,31 @@ void delaySeconds(double s) {
 // sum_dj_min = 60.0 / sum(dj)
 const double sum_dj_min = 0.698924681;
 
+double sweep(uint8_t i) {
+  return 1.0 - sqrt((i - 1) / 256.0);
+}
+
 void onholdoff(double on_min, double x, double hold_min, double off_min) {
   // There are 255 steps. We'll spend some time at all of them. More at lower
-  // steps, less at higher steps, but non-linear.
-  on_min *= sum_dj_min;
-  off_min *= sum_dj_min;
+  // steps, less at higher steps, but non-linear so that the sweep looks linear.
+  double on_secs = on_min * sum_dj_min;
   uint8_t y = x * 256;
   uint8_t i = 1;
   for (; i < y; ++i) {
     analogWrite(LIGHT, i);
-    delaySeconds(on_min * (1.0 - sqrt((i - 1) / 256.0)));
+    delaySeconds(on_secs * sweep(i));
   }
   delaySeconds(hold_min * 60.0);
+  double off_secs = off_min * sum_dj_min;
   for (; i > 0; --i) {
     analogWrite(LIGHT, i);
-    delaySeconds(off_min * (1.0 - sqrt((i - 1) / 256.0)));
+    delaySeconds(off_secs * sweep(i));
   }
   analogWrite(LIGHT, 0);
 }
 
 DateTime dt;
+
 void setup() {
   pinMode(LIGHT, OUTPUT);
   analogWrite(LIGHT, 0);
@@ -153,9 +158,8 @@ void loop() {
   dt = RTC_DS1307::now();
   uint32_t t = dt.unixtime();
   uint32_t d = (t - SECS_YR_2000) / SECS_PER_DAY;
-  if (isDST(d)) {
-    dt = t - 60 * 60;
-  }
+  t += RTC_IS_DST ? (isDST(d) ? 0 : (-60 * 60)) : (isDST(d) ? (60 * 60) : 0);
+  dt = t;
   bool sleepin = !isWeekDay(dt.dayOfWeek()) || isHoliday(d);
   int16_t minOfDay = hm2m(dt.hour(), dt.minute());
   if (!sleepin && ((wakeMin - 1) <= minOfDay) && (minOfDay <= (wakeMin + WAKE_ON))) {
@@ -171,7 +175,7 @@ void loop() {
   if (minOfDay > prebedMin) {
     minutes = 60;
   }
-  // Don't oversleep.
+  // Undersleep so you don't oversleep.
   delaySeconds(50.0 * minutes);
 #endif
 }
