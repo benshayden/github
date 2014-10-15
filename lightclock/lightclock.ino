@@ -45,7 +45,9 @@ class OnHoldOffEvent {
 OnHoldOffEvent wake(6, 5, 7, 30, 30, 5, 150, true);
 OnHoldOffEvent bed(20, 0, 22, 0, 10, 30, 250, false);
 
-#define TEST
+// Uncomment to make a test event that lasts for a few minutes starting every day
+// 1 minute after the sketch was compiled.
+//#define TEST
 
 // You have to uncomment this, compile and run it with the RTC connected once in
 // order to adjust and start it, then comment the next line back out and
