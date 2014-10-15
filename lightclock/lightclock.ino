@@ -3,11 +3,12 @@
 #include <avr/pgmspace.h>
 #include <TinyWireM.h>
 #include <TinyRTClib.h>
+// ATTINYs require pull-up resistors on SDA and SCL
 
 #define ARRAYSIZE(a) ((sizeof(a) == 0) ? 0 : (sizeof(a) / sizeof(a[0])))
 
 // Local time when the sketch was compiled.
-DateTime dt = DateTime(__DATE__, __TIME__);
+DateTime dt;
 
 int16_t hm2m(uint8_t h, uint8_t m) {
   return (h * 60) + m;
@@ -41,9 +42,10 @@ class OnHoldOffEvent {
 
 // SETTINGS:
 
-//OnHoldOffEvent test(11, 40, 11, 45, 1, 1, 255, false);
 OnHoldOffEvent wake(6, 5, 7, 30, 30, 5, 150, true);
 OnHoldOffEvent bed(20, 0, 22, 0, 10, 30, 250, false);
+
+#define TEST
 
 // You have to uncomment this, compile and run it with the RTC connected once in
 // order to adjust and start it, then comment the next line back out and
@@ -62,6 +64,10 @@ OnHoldOffEvent bed(20, 0, 22, 0, 10, 30, 250, false);
 #define HOLIDAYS 
 
 // END SETTINGS
+
+#ifdef TEST
+OnHoldOffEvent test(0, 0, 0, 0, 1, 1, 255, false);
+#endif
 
 #define SECS_YR_2000 946684800UL
 #define SECS_PER_DAY 86400
@@ -199,6 +205,10 @@ void setup() {
   pinMode(LIGHT, OUTPUT);
   analogWrite(LIGHT, 0);
   TinyWireM.begin();
+  dt = DateTime(__DATE__, __TIME__);
+#ifdef TEST
+  test = OnHoldOffEvent(dt.hour(), dt.minute() + 1, dt.hour(), dt.minute() + 5, 1, 1, 255, false);
+#endif
 #ifdef START_CLOCK
   RTC_DS1307::adjust(dt);
 #endif
@@ -217,11 +227,11 @@ void loop() {
   boolean sleepin = !isWeekDay(dt.dayOfWeek()) || isHoliday(d);
   int16_t nowMin = hm2m(dt.hour(), dt.minute());
 #define PROCESS(e) if (e.process(nowMin, sleepin)) return
-#ifdef test
+#ifdef TEST
   PROCESS(test);
 #endif
   PROCESS(wake);
   PROCESS(bed);
-  blink(10, 1000, 1);  // heartbeat
+  // If none of the OnHoldOffEvents returned true, then wait for the next minute.
   delaySeconds(55);
 }
