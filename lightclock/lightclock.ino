@@ -1,26 +1,57 @@
+// Search for SETTINGS
+
 #include <avr/pgmspace.h>
 #include <TinyWireM.h>
 #include <TinyRTClib.h>
 
 #define ARRAYSIZE(a) ((sizeof(a) == 0) ? 0 : (sizeof(a) / sizeof(a[0])))
 
+// Local time when the sketch was compiled.
+DateTime dt = DateTime(__DATE__, __TIME__);
+
+int16_t hm2m(uint8_t h, uint8_t m) {
+  return (h * 60) + m;
+}
+
+class OnHoldOffEvent {
+ public:
+  OnHoldOffEvent(uint8_t startHour, uint8_t startMin,
+                 uint8_t endHour, uint8_t endMin,
+                 uint16_t onMin, uint16_t offMin,
+                 uint8_t maxDuty, boolean exceptSleepin) {
+    startMin_ = hm2m(startHour, startMin);
+    int16_t endMinOfDay = hm2m(endHour, endMin);
+    lastStartMin_ = endMinOfDay - onMin - offMin;
+    onSec_ = onMin * 60;
+    offSec_ = offMin * 60;
+    maxDuty_ = maxDuty;
+    exceptSleepin_ = exceptSleepin;
+  }
+  
+  boolean process(int16_t nowMin, boolean sleepin) const;
+
+ private:
+  int16_t startMin_;
+  int16_t lastStartMin_;
+  int16_t onSec_;
+  int16_t offSec_;
+  uint8_t maxDuty_;
+  boolean exceptSleepin_;
+};
+
 // SETTINGS:
 
-// You have to uncomment this, compile and run it with the RTC connected once in order to adjust and start it, then comment the next line back out in order to run it.
+//OnHoldOffEvent test(11, 40, 11, 45, 1, 1, 255, false);
+OnHoldOffEvent wake(6, 5, 7, 30, 30, 5, 150, true);
+OnHoldOffEvent bed(20, 0, 22, 0, 10, 30, 250, false);
+
+// You have to uncomment this, compile and run it with the RTC connected once in
+// order to adjust and start it, then comment the next line back out and
+// recompile in order to run the sketch.
 //#define START_CLOCK
 
 // Set to false if the RTC was last adjusted during standard (winter) time.
 #define RTC_IS_DST true
-
-// No parens, no colons. "08" and "09" are an error; use "8" or "9".
-#define WAKE_ON 30
-#define WAKE_START 6, 5
-#define WAKE_MAX 0.7
-#define PREBED_START 20, 0
-#define PREBED_ON 10
-#define PREBED_MAX 0.9
-#define BED_OFF 30
-#define PREBED_END 22, 0
 
 // number of pin controlling the light. HIGH = on, LOW = off.
 #define LIGHT 1
@@ -34,9 +65,11 @@
 
 #define SECS_YR_2000 946684800UL
 #define SECS_PER_DAY 86400
+#define SECS_PER_HOUR 3600
 
 static const uint16_t holidays[] PROGMEM = {HOLIDAYS};
-bool isHoliday(uint32_t day) {
+boolean isHoliday(uint32_t day) {
+  if (ARRAYSIZE(holidays) == 0) return false;
   uint16_t imin = 0, imax = ARRAYSIZE(holidays) - 1;
   uint16_t imid = 0;
   while (imax >= imin) {
@@ -54,128 +87,141 @@ bool isHoliday(uint32_t day) {
 }
 
 static const uint16_t dst_days[] PROGMEM = {
-// DST begins on even-indexed elements, ends on odd-indexed elements
-5181, 5419,
-5545, 5783,
-5916, 6154,
-6280, 6518,
-6644, 6882,
-7008, 7246,
-7372, 7610,
-7743, 7981,
-8107, 8345,
-8471, 8709,
-8835, 9073,
-9199, 9437,
-9563, 9801,
-9934, 10172,
-10298, 10536,
-10662, 10900,
+  // DST begins on even-indexed elements, ends on odd-indexed elements
+  // elements are days since 2000 Jan 1.
+  5181, 5419,
+  5545, 5783,
+  5916, 6154,
+  6280, 6518,
+  6644, 6882,
+  7008, 7246,
+  7372, 7610,
+  7743, 7981,
+  8107, 8345,
+  8471, 8709,
+  8835, 9073,
+  9199, 9437,
+  9563, 9801,
+  9934, 10172,
+  10298, 10536,
+  10662, 10900,
 };
-bool isDST(uint32_t day) {
+boolean isDST(uint32_t day) {
   for (uint8_t i = 0; i < ARRAYSIZE(dst_days); ++i) {
-    if (day < pgm_read_word(&(holidays[i]))) {
+    if (day < pgm_read_word(&(dst_days[i]))) {
       return (i % 2) == 1;
     }
   }
   return false;
 }
 
-void delaySeconds(double s) {
-  while (s > 1.0) {
+void blink(uint8_t level, uint16_t ms, uint8_t times) {
+  while (times) {
+    analogWrite(LIGHT, level);
+    delay(ms);
+    analogWrite(LIGHT, 0);
+    delay(ms);
+    --times;
+  }
+}
+
+#define BLINKN_MS 300
+void blinkN(uint32_t n) {
+  while (n) {
+    if ((n % 10) == 0) {
+      blink(10, BLINKN_MS, 1);
+    } else {
+      blink(255, BLINKN_MS, n % 10);
+    }
+    n /= 10;
     delay(1000);
-    s -= 1.0;
   }
-  s *= 1000.0;
-  delay(floor(s));
-  s -= floor(s);
-  s *= 1000.0;
-  delayMicroseconds(round(s));
 }
 
-// dj=[1-math.sqrt(i/256.) for i in xrange(256]
-// di=[j/sum(dj) for j in dj]
-// assert abs(sum(di) - 1) < 1e-6
-// sum_dj_min = 60.0 / sum(dj)
-const double sum_dj_min = 0.698924681;
-
-double sweep(uint8_t i) {
-  return 1.0 - sqrt((i - 1) / 256.0);
+uint16_t sweep(uint32_t i, uint32_t s, uint32_t m) {
+  // 1 <= i < m
+  // 1 <= m <= 255
+  // 1 < s < 60 * 60
+  // sum(sweep(i,s,m) for i in range(1,m)) == s
+  uint32_t q = (s - ((i * s) / m));
+  // 0 < q < s
+  q *= q;
+  if (q > (0xffffffff / 3000)) {
+    q /= max(m, s);
+    if (q > (0xffffffff / 3000)) {
+      q /= min(m, s);
+      q *= 3000;
+    } else {
+      q *= 3000;
+      q /= min(m, s);
+    }
+  } else {
+    q *= 3000;
+    q /= s;
+    q /= m;
+  }
+  return q;
 }
 
-void onholdoff(double on_min, double x, double hold_min, double off_min) {
-  // There are 255 steps. We'll spend some time at all of them. More at lower
-  // steps, less at higher steps, but non-linear so that the sweep looks linear.
-  double on_secs = on_min * sum_dj_min;
-  uint8_t y = x * 256;
+void delaySeconds(uint32_t s) {
+  while (s) {
+    delay(1000);
+    --s;
+  }
+}
+
+void onholdoff(uint32_t ons, uint8_t max_duty, uint16_t holds, uint32_t offs) {
+  // We'll spend some time at each of the max_duty steps. More at lower
+  // steps, less at higher steps, but non-linear so that it looks linear.
   uint8_t i = 1;
-  for (; i < y; ++i) {
+  for (; i < max_duty; ++i) {
     analogWrite(LIGHT, i);
-    delaySeconds(on_secs * sweep(i));
+    delay(sweep(i, ons, max_duty));
   }
-  delaySeconds(hold_min * 60.0);
-  double off_secs = off_min * sum_dj_min;
+  delaySeconds(holds);
   for (; i > 0; --i) {
     analogWrite(LIGHT, i);
-    delaySeconds(off_secs * sweep(i));
+    delay(sweep(i, offs, max_duty));
   }
   analogWrite(LIGHT, 0);
 }
 
-DateTime dt;
+boolean OnHoldOffEvent::process(int16_t nowMin, boolean sleepin) const {
+  if (exceptSleepin_ && sleepin) return false;
+  if ((startMin_ <= nowMin) && (nowMin <= lastStartMin_)) {
+    onholdoff(onSec_, maxDuty_, (lastStartMin_ - nowMin) * 60, offSec_);
+    return true;
+  }
+  return false;
+}
 
 void setup() {
   pinMode(LIGHT, OUTPUT);
   analogWrite(LIGHT, 0);
   TinyWireM.begin();
 #ifdef START_CLOCK
-  // Local time when the sketch was compiled.
-  RTC_DS1307::adjust(DateTime(__DATE__, __TIME__));
-  analogWrite(LIGHT, 200);
-#else
-  double tens = 10.0 / 60.0;
-  onholdoff(tens, 0.8, tens, tens);
+  RTC_DS1307::adjust(dt);
 #endif
 }
 
-bool isWeekDay(uint8_t d) {
+boolean isWeekDay(uint8_t d) {
   return (1 <= d) && (d <= 5);
 }
 
-int16_t hm2m(uint8_t h, uint8_t m) {
-  return (h * 60) + m;
-}
-
-int16_t wakeMin = hm2m(WAKE_START);
-int16_t prebedMin = hm2m(PREBED_START);
-int16_t bedMin = hm2m(PREBED_END);
-int16_t bedHoldMin = bedMin - prebedMin - PREBED_ON - BED_OFF;
-
 void loop() {
-#ifdef START_CLOCK
-  delay(1000);
-#else
   dt = RTC_DS1307::now();
   uint32_t t = dt.unixtime();
   uint32_t d = (t - SECS_YR_2000) / SECS_PER_DAY;
-  t += RTC_IS_DST ? (isDST(d) ? 0 : (-60 * 60)) : (isDST(d) ? (60 * 60) : 0);
+  t += RTC_IS_DST ? (isDST(d) ? 0 : -SECS_PER_HOUR) : (isDST(d) ? SECS_PER_HOUR : 0);
   dt = t;
-  bool sleepin = !isWeekDay(dt.dayOfWeek()) || isHoliday(d);
-  int16_t minOfDay = hm2m(dt.hour(), dt.minute());
-  if (!sleepin && ((wakeMin - 1) <= minOfDay) && (minOfDay <= (wakeMin + WAKE_ON))) {
-    onholdoff(WAKE_ON, WAKE_MAX, WAKE_ON - (minOfDay - wakeMin), 5);
-    return;
-  }
-  if (((prebedMin - 1) <= minOfDay) && (minOfDay <= (prebedMin + bedHoldMin))) {
-    int16_t bedHold = bedHoldMin - (minOfDay - prebedMin);
-    onholdoff(PREBED_ON, PREBED_MAX, bedHold, BED_OFF);
-    return;
-  }
-  double minutes = min(60, min(constrain(wakeMin - minOfDay, 1, 60), constrain(prebedMin - minOfDay, 1, 60)));
-  if (minOfDay > prebedMin) {
-    minutes = 60;
-  }
-  // Undersleep so you don't oversleep.
-  delaySeconds(50.0 * minutes);
+  boolean sleepin = !isWeekDay(dt.dayOfWeek()) || isHoliday(d);
+  int16_t nowMin = hm2m(dt.hour(), dt.minute());
+#define PROCESS(e) if (e.process(nowMin, sleepin)) return
+#ifdef test
+  PROCESS(test);
 #endif
+  PROCESS(wake);
+  PROCESS(bed);
+  blink(10, 1000, 1);  // heartbeat
+  delaySeconds(55);
 }
