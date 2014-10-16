@@ -27,7 +27,7 @@
 
 // Uncomment to make a test event that lasts for a few minutes starting every day
 // 1 minute after the sketch was compiled.
-#define TEST
+//#define TEST
 
 // You have to uncomment this, compile and run it with the RTC connected once in
 // order to adjust and start it, then comment the next line back out and
@@ -50,6 +50,7 @@
 int16_t test_start = 0;
 #define TEST_MAX_DUTY 255
 #define TEST_ON_SEC 30
+#define TEST_HOLD_SEC 10
 #define TEST_OFF_SEC 30
 
 #define WAKE_START ((60 * WAKE_START_HOUR) + WAKE_START_MIN)
@@ -180,8 +181,7 @@ void delaySweep(uint16_t i, uint16_t s, uint16_t m) {
   // ((s-(i*s/m))**2)*1000*3/(s*m)
   // If that's more than 30000, then just delaySeconds() instead.
   // Order of operations affects underflow/overflow.
-  uint16_t ism = muldiv16(i, s, m);
-  uint16_t sism = s - ism;
+  uint16_t sism = s - muldiv16(s, i, m);
   uint16_t q = muldiv16(muldiv16(sism, sism, s), 3, m);
   if (q > 30) {
     delaySeconds(q);
@@ -206,14 +206,6 @@ void onholdoff(uint16_t ons, uint8_t max_duty, uint16_t holds, uint16_t offs) {
     delaySweep(i, offs, max_duty);
   }
   analogWrite(LIGHT, 0);
-}
-
-boolean process(uint16_t nowMin, uint16_t startMin, uint16_t lastStartMin, uint16_t onSec, uint8_t maxDuty, uint16_t offSec) {
-  if ((startMin <= nowMin) && (nowMin <= lastStartMin)) {
-    onholdoff(onSec, maxDuty, (lastStartMin - nowMin) * 60, offSec);
-    return true;
-  }
-  return false;
 }
 
 DateTime dt;
@@ -243,14 +235,20 @@ void loop() {
   dt = t;
   uint16_t nowMin = (60 * ((uint16_t) dt.hour())) + dt.minute();
 #ifdef TEST
-  if (test_start && process(nowMin, test_start, test_start + 1, TEST_ON_SEC, TEST_MAX_DUTY, TEST_OFF_SEC)) {
-    test_start = 0;
+  if (test_start && (test_start <= nowMin)) {
+    onholdoff(TEST_ON_SEC, TEST_MAX_DUTY, TEST_HOLD_SEC, TEST_OFF_SEC);
     return;
   }
 #endif
   if (isWeekDay(dt.dayOfWeek()) && !isHoliday(d) &&
-      process(nowMin, WAKE_START, WAKE_LAST_START, WAKE_ON_SEC, WAKE_MAX_DUTY, WAKE_OFF_SEC)) return;
-  if (process(nowMin, BED_START, BED_LAST_START, BED_ON_SEC, BED_MAX_DUTY, BED_OFF_SEC)) return;
+      (WAKE_START <= nowMin) && (nowMin <= WAKE_LAST_START)) {
+    onholdoff(WAKE_ON_SEC, WAKE_MAX_DUTY, (WAKE_LAST_START - nowMin) * 60, WAKE_OFF_SEC);
+    return;
+  }
+  if ((BED_START <= nowMin) && (nowMin <= BED_LAST_START)) {
+    onholdoff(BED_ON_SEC, BED_MAX_DUTY, (BED_LAST_START - nowMin) * 60, BED_OFF_SEC);
+    return;
+  }
   // If none of the OnHoldOffEvents returned true, then wait for the next minute.
   delaySeconds(55);
 }
