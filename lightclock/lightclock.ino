@@ -25,8 +25,8 @@
 #define BED_OFF_MIN 30
 #define BED_MAX_DUTY 255
 
-// Uncomment to make a test event that lasts for a few minutes starting every day
-// 1 minute after the sketch was compiled.
+// Uncomment to make a test event that runs for a few seconds
+// shortly after the sketch was compiled.
 //#define TEST
 
 // You have to uncomment this, compile and run it with the RTC connected once in
@@ -47,7 +47,7 @@
 
 // END SETTINGS
 
-int16_t test_start = 0;
+uint16_t test_start = 0;
 #define TEST_MAX_DUTY 255
 #define TEST_ON_SEC 30
 #define TEST_HOLD_SEC 10
@@ -64,10 +64,6 @@ int16_t test_start = 0;
 #define BED_LAST_START (BED_END - BED_ON_MIN - BED_OFF_MIN)
 #define BED_ON_SEC (60 * BED_ON_MIN)
 #define BED_OFF_SEC (60 * BED_OFF_MIN)
-
-#define SECS_YR_2000 946684800UL
-#define SECS_PER_DAY 86400
-#define SECS_PER_HOUR 3600
 
 uint16_t holidays[] PROGMEM = {HOLIDAYS};
 boolean isHoliday(uint16_t day) {
@@ -214,11 +210,13 @@ void setup() {
   pinMode(LIGHT, OUTPUT);
   analogWrite(LIGHT, 0);
   TinyWireM.begin();
+#if defined(TEST) || defined(START_CLOCK)
   dt = DateTime(__DATE__, __TIME__);
-#ifdef TEST
+#endif
+#if defined(TEST)
   test_start = (60 * ((uint16_t) dt.hour())) + dt.minute() + 1;
 #endif
-#ifdef START_CLOCK
+#if defined(START_CLOCK)
   RTC_DS1307::adjust(dt);
 #endif
 }
@@ -229,18 +227,35 @@ boolean isWeekDay(uint8_t d) {
 
 void loop() {
   dt = RTC_DS1307::now();
-  uint32_t t = dt.unixtime();
-  uint32_t d = (t - SECS_YR_2000) / SECS_PER_DAY;
-  t += RTC_IS_DST ? (isDST(d) ? 0 : -SECS_PER_HOUR) : (isDST(d) ? SECS_PER_HOUR : 0);
-  dt = t;
-  uint16_t nowMin = (60 * ((uint16_t) dt.hour())) + dt.minute();
+  uint16_t d = dt.day2000();
+  uint16_t h = dt.hour();
+  if (RTC_IS_DST && !isDST(d)) {
+    // subtract an hour
+    if (h == 0) {
+      h += 23;
+      d -= 1;
+    } else {
+      --h;
+    }
+  } else if (!RTC_IS_DST && isDST(d)) {
+    // add an hour
+    if (h == 23) {
+      h = 0;
+      d += 1;
+    } else {
+      ++h;
+    }
+  }
+  uint16_t nowMin = (60 * h) + dt.minute();
+
 #ifdef TEST
   if (test_start && (test_start <= nowMin)) {
     onholdoff(TEST_ON_SEC, TEST_MAX_DUTY, TEST_HOLD_SEC, TEST_OFF_SEC);
+    test_start = 0;
     return;
   }
 #endif
-  if (isWeekDay(dt.dayOfWeek()) && !isHoliday(d) &&
+  if (isWeekDay((d + 6) % 7) && !isHoliday(d) &&
       (WAKE_START <= nowMin) && (nowMin <= WAKE_LAST_START)) {
     onholdoff(WAKE_ON_SEC, WAKE_MAX_DUTY, (WAKE_LAST_START - nowMin) * 60, WAKE_OFF_SEC);
     return;
@@ -250,5 +265,5 @@ void loop() {
     return;
   }
   // If none of the OnHoldOffEvents returned true, then wait for the next minute.
-  delaySeconds(55);
+  delaySeconds(57);
 }
