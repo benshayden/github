@@ -7,9 +7,6 @@
 
 #define ARRAYSIZE(a) ((sizeof(a) == 0) ? 0 : (sizeof(a) / sizeof(a[0])))
 
-// Local time when the sketch was compiled.
-DateTime dt;
-
 int16_t hm2m(uint8_t h, uint8_t m) {
   return (h * 60) + m;
 }
@@ -28,7 +25,7 @@ class OnHoldOffEvent {
     maxDuty_ = maxDuty;
     exceptSleepin_ = exceptSleepin;
   }
-  
+
   boolean process(int16_t nowMin, boolean sleepin) const;
 
  private:
@@ -202,6 +199,8 @@ boolean OnHoldOffEvent::process(int16_t nowMin, boolean sleepin) const {
   }
   return false;
 }
+
+DateTime dt;
 
 void setup() {
   pinMode(LIGHT, OUTPUT);
