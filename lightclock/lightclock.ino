@@ -1,11 +1,6 @@
-// Search for SETTINGS
-
 #include <avr/pgmspace.h>
 #include <TinyWireM.h>
 #include <TinyRTClib.h>
-// ATTINYs require pull-up resistors on SDA and SCL
-
-#define ARRAYSIZE(a) ((sizeof(a) == 0) ? 0 : (sizeof(a) / sizeof(a[0])))
 
 // SETTINGS:
 
@@ -64,6 +59,8 @@ uint16_t test_start = 0;
 #define BED_LAST_START (BED_END - BED_ON_MIN - BED_OFF_MIN)
 #define BED_ON_SEC (60 * BED_ON_MIN)
 #define BED_OFF_SEC (60 * BED_OFF_MIN)
+
+#define ARRAYSIZE(a) ((sizeof(a) == 0) ? 0 : (sizeof(a) / sizeof(a[0])))
 
 uint16_t holidays[] PROGMEM = {HOLIDAYS};
 boolean isHoliday(uint16_t day) {
