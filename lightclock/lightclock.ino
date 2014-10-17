@@ -42,21 +42,22 @@
 
 // END SETTINGS
 
+// Convert (hour, minute) to minute of day.
+#define HM2M(h, m) ((((uint16_t) (h)) * 60) + ((uint16_t) (m)))
+
 uint16_t test_start = 0;
 #define TEST_MAX_DUTY 255
-#define TEST_ON_SEC 30
-#define TEST_HOLD_SEC 10
-#define TEST_OFF_SEC 30
+#define TEST_ON_SEC 10
+#define TEST_HOLD_SEC 3
+#define TEST_OFF_SEC 10
 
-#define WAKE_START ((60 * WAKE_START_HOUR) + WAKE_START_MIN)
-#define WAKE_END ((60 * WAKE_END_HOUR) + WAKE_END_MIN)
-#define WAKE_LAST_START (WAKE_END - WAKE_ON_MIN - WAKE_OFF_MIN)
+#define WAKE_START HM2M(WAKE_START_HOUR, WAKE_START_MIN)
+#define WAKE_END (HM2M(WAKE_END_HOUR, WAKE_END_MIN) - WAKE_OFF_MIN)
 #define WAKE_ON_SEC (60 * WAKE_ON_MIN)
 #define WAKE_OFF_SEC (60 * WAKE_OFF_MIN)
 
-#define BED_START ((60 * BED_START_HOUR) + BED_START_MIN)
-#define BED_END ((60 * BED_END_HOUR) + BED_END_MIN)
-#define BED_LAST_START (BED_END - BED_ON_MIN - BED_OFF_MIN)
+#define BED_START HM2M(BED_START_HOUR, BED_START_MIN)
+#define BED_END (HM2M(BED_END_HOUR, BED_END_MIN) - BED_OFF_MIN)
 #define BED_ON_SEC (60 * BED_ON_MIN)
 #define BED_OFF_SEC (60 * BED_OFF_MIN)
 
@@ -185,20 +186,20 @@ void delaySweep(uint16_t i, uint16_t s, uint16_t m) {
   }
 }
 
-void onholdoff(uint16_t ons, uint8_t max_duty, uint16_t holds, uint16_t offs) {
+boolean isOn = false;
+
+void fade(uint16_t totals, uint8_t max_duty) {
   // We'll spend some time at each of the max_duty steps. More at lower
   // steps, less at higher steps, but non-linear so that it looks linear.
-  uint8_t i = 1;
-  for (; i < max_duty; ++i) {
+  uint8_t i = isOn ? max_duty : 1;
+  while (isOn ? (i > 0) : (i < max_duty)) {
     analogWrite(LIGHT, i);
-    delaySweep(i, ons, max_duty);
+    delaySweep(i, totals, max_duty);
+    if (isOn) --i;
+    else ++i;
   }
-  delaySeconds(holds);
-  for (; i > 0; --i) {
-    analogWrite(LIGHT, i);
-    delaySweep(i, offs, max_duty);
-  }
-  analogWrite(LIGHT, 0);
+  analogWrite(LIGHT, i);
+  isOn = !isOn;
 }
 
 DateTime dt;
@@ -207,14 +208,13 @@ void setup() {
   pinMode(LIGHT, OUTPUT);
   analogWrite(LIGHT, 0);
   TinyWireM.begin();
-#if defined(TEST) || defined(START_CLOCK)
+#if defined(START_CLOCK)
   dt = DateTime(__DATE__, __TIME__);
+  RTC_DS1307::adjust(dt);
 #endif
 #if defined(TEST)
-  test_start = (60 * ((uint16_t) dt.hour())) + dt.minute() + 1;
-#endif
-#if defined(START_CLOCK)
-  RTC_DS1307::adjust(dt);
+  dt = RTC_DS1307::now();
+  test_start = HM2M(dt.hour(), dt.minute() + 1);
 #endif
 }
 
@@ -243,24 +243,30 @@ void loop() {
       ++h;
     }
   }
-  uint16_t nowMin = (60 * h) + dt.minute();
+  uint16_t nowMin = HM2M(h, dt.minute());
 
 #ifdef TEST
-  if (test_start && (test_start <= nowMin)) {
-    onholdoff(TEST_ON_SEC, TEST_MAX_DUTY, TEST_HOLD_SEC, TEST_OFF_SEC);
+  if (!isOn && test_start && (test_start <= nowMin)) {
+    fade(TEST_ON_SEC, TEST_MAX_DUTY);
+    delaySeconds(TEST_HOLD_SEC);
+    return;
+  }
+  if (isOn && test_start && (test_start < nowMin)) {
+    fade(TEST_OFF_SEC, TEST_MAX_DUTY);
     test_start = 0;
     return;
   }
 #endif
-  if (isWeekDay((d + 6) % 7) && !isHoliday(d) &&
-      (WAKE_START <= nowMin) && (nowMin <= WAKE_LAST_START)) {
-    onholdoff(WAKE_ON_SEC, WAKE_MAX_DUTY, (WAKE_LAST_START - nowMin) * 60, WAKE_OFF_SEC);
-    return;
+  if (!isOn && isWeekDay((d + 6) % 7) && !isHoliday(d) &&
+      (WAKE_START <= nowMin) && (nowMin < WAKE_END)) {
+    fade(WAKE_ON_SEC, WAKE_MAX_DUTY);
+  } else if (isOn && (WAKE_END <= nowMin)) {
+    fade(WAKE_OFF_SEC, WAKE_MAX_DUTY);
+  } else if (!isOn && (BED_START <= nowMin) && (nowMin < BED_END)) {
+    fade(BED_ON_SEC, BED_MAX_DUTY);
+  } else if (isOn && (BED_END <= nowMin)) {
+    fade(BED_OFF_SEC, BED_MAX_DUTY);
+  } else {
+    delaySeconds(57);
   }
-  if ((BED_START <= nowMin) && (nowMin <= BED_LAST_START)) {
-    onholdoff(BED_ON_SEC, BED_MAX_DUTY, (BED_LAST_START - nowMin) * 60, BED_OFF_SEC);
-    return;
-  }
-  // If none of the OnHoldOffEvents returned true, then wait for the next minute.
-  delaySeconds(57);
 }
