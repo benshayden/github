@@ -1,0 +1,6 @@
+Trinket 5V: http://www.adafruit.com/products/1501
+chronodot:  http://www.adafruit.com/products/255
+12V supply: http://www.adafruit.com/products/352
+jack:       http://www.adafruit.com/products/373
+N-MOSFET:   http://www.adafruit.com/products/355
+LED strip:  http://www.adafruit.com/products/357
