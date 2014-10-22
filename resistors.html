@@ -1,20 +1,42 @@
-<table style="border-collapse:collapse;margin:auto;text-align:center;font-size:30px;font-weight:bold;"></table>
-<input style="font-size:30px;text-align:center;" size=3>
+<style>
+body {
+  text-align: center;
+  font-size: 30px;
+}
+table {
+  border-collapse: collapse;
+  margin: auto;
+  font-weight: bold;
+}
+td {
+  border: 3px solid black;
+  min-width: 30px;
+  text-align: center;
+  font-size: 30px;
+}
+input {
+  text-align: center;
+  font-size: 30px;
+}
+</style>
+<table></table>
+<input size=3 value="4.7k">
 <script>
-document.body.style.textAlign='center';
 var t=document.body.childNodes[0];
 var x=document.body.childNodes[2];
 var c=['black','brown','red','orange','yellow','green','blue','violet','grey','white'];
 var sp=String.fromCharCode(160);
+
 function inv(o){
-  return 'rgb('+o.substr(4,o.length-2).split(',').map(function(i){return 255-parseInt(i)}).join(', ')+')';
+  return 'rgb('+o.substr(4,o.length-2).split(',').map(function(i){
+    return 255-parseInt(i);
+  }).join(', ')+')';
 }
+
 function td(r,i,o){
   var d=document.createElement('td');
   r.appendChild(d);
   d.innerText=sp;
-  d.style.border='3px solid black';
-  d.style.minWidth=30;
   d.style.background=o;
   d.style.color=(o=='grey')?'white':inv(getComputedStyle(d).backgroundColor);
   d.onclick=function(evt){
@@ -28,6 +50,7 @@ function td(r,i,o){
   };
   return d;
 }
+
 c.forEach(function(o){
   var r=document.createElement('tr');
   t.appendChild(r);
@@ -35,9 +58,11 @@ c.forEach(function(o){
     td(r,i,o);
   }
 });
+
 x.onkeyup=function(){
   numToColors(shortToNum(x.value));
 };
+
 function colorsToNum(){
   var code=[0,0,0];
   for(var i=0;i<10;++i){
@@ -50,6 +75,7 @@ function colorsToNum(){
   code=((10*code[0])+code[1])*Math.pow(10,code[2]);
   return code;
 }
+
 function numToShort(n){
   if (n>=1e9){
     return (n/1e9)+'G';
@@ -61,23 +87,25 @@ function numToShort(n){
     return ''+n
   }
 }
+
 function shortToNum(s){
-  var v=parseFloat(x.value),m=x.value?x.value[x.value.length-1].toLowerCase():'';
+  var v=parseFloat(s),m=s?s[s.length-1].toLowerCase():'';
   if(m==='k'){v*=1e3}else if (m==='m'){v*=1e6}else if(m==='g'){v*=1e9}
   return v;
 }
+
 function numToColors(n){
   var code=[0,0,Math.floor(Math.log10(n))];
   n/=Math.pow(10,code[2]);
   code[0]=Math.floor(n);
-  n%=1;
-  n*=10;
-  code[1]=Math.round(n);
+  code[1]=Math.round((n%1)*10);
   code[2]-=1;
   code.forEach(function(o,i){
     if (t.childNodes[o]&&t.childNodes[o].childNodes[i]){
       t.childNodes[o].childNodes[i].onclick();
     }
   });
-};
+}
+
+x.onkeyup();
 </script>
