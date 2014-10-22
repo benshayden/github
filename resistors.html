@@ -1,0 +1,83 @@
+<table style="border-collapse:collapse;margin:auto;text-align:center;font-size:30px;font-weight:bold;"></table>
+<input style="font-size:30px;text-align:center;" size=3>
+<script>
+document.body.style.textAlign='center';
+var t=document.body.childNodes[0];
+var x=document.body.childNodes[2];
+var c=['black','brown','red','orange','yellow','green','blue','violet','grey','white'];
+var sp=String.fromCharCode(160);
+function inv(o){
+  return 'rgb('+o.substr(4,o.length-2).split(',').map(function(i){return 255-parseInt(i)}).join(', ')+')';
+}
+function td(r,i,o){
+  var d=document.createElement('td');
+  r.appendChild(d);
+  d.innerText=sp;
+  d.style.border='3px solid black';
+  d.style.minWidth=30;
+  d.style.background=o;
+  d.style.color=(o=='grey')?'white':inv(getComputedStyle(d).backgroundColor);
+  d.onclick=function(evt){
+    for(var j=0;j<10;++j){
+      t.childNodes[j].childNodes[i].innerText=sp;
+    }
+    d.innerText=String.fromCharCode(0x2022);
+    if(evt){
+      x.value=numToShort(colorsToNum());
+    }
+  };
+  return d;
+}
+c.forEach(function(o){
+  var r=document.createElement('tr');
+  t.appendChild(r);
+  for(var i=0;i<3;++i){
+    td(r,i,o);
+  }
+});
+x.onkeyup=function(){
+  numToColors(shortToNum(x.value));
+};
+function colorsToNum(){
+  var code=[0,0,0];
+  for(var i=0;i<10;++i){
+    for(var j=0;j<3;++j){
+      if(t.childNodes[i].childNodes[j].innerText!==sp){
+        code[j]=i;
+      }
+    }
+  }
+  code=((10*code[0])+code[1])*Math.pow(10,code[2]);
+  return code;
+}
+function numToShort(n){
+  if (n>=1e9){
+    return (n/1e9)+'G';
+  }else if (n>=1e6){
+    return (n/1e6)+'M';
+  }else if (n>=1e3){
+    return (n/1e3)+'k'
+  }else{
+    return ''+n
+  }
+}
+function shortToNum(s){
+  var v=parseFloat(x.value),m=x.value?x.value[x.value.length-1].toLowerCase():'';
+  if(m==='k'){v*=1e3}else if (m==='m'){v*=1e6}else if(m==='g'){v*=1e9}
+  return v;
+}
+function numToColors(n){
+  var code=[0,0,Math.floor(Math.log10(n))];
+  n/=Math.pow(10,code[2]);
+  code[0]=Math.floor(n);
+  n%=1;
+  n*=10;
+  code[1]=Math.round(n);
+  code[2]-=1;
+  code.forEach(function(o,i){
+    if (t.childNodes[o]&&t.childNodes[o].childNodes[i]){
+      t.childNodes[o].childNodes[i].onclick();
+    }
+  });
+};
+</script>
