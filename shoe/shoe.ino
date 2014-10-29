@@ -10,13 +10,11 @@
 #define LED_PINS 8, 9, 10
 
 #define SHIFT_LED 0
-#define CTRL_LED 1
+#define CONTROL_LED 1
 #define ALT_LED 2
 #define GUI_LED 3
 #define MODE0_LED 4
 #define MODE1_LED 5
-
-#define BUTTON_DELAY_US 10
 
 // END SETTINGS
 
@@ -29,12 +27,15 @@ typedef struct { unsigned long* longs; const uint16_t size; } arrayL_t;
 
 const uint8_t button_pin_bytes[] = {BUTTON_PINS};
 const array8_t button_pins = {(uint8_t*)button_pin_bytes, ARRAYSIZE(button_pin_bytes)};
-const uint16_t num_buttons = button_pins.size * (button_pins.size - 1);
+const uint16_t num_buttons = ARRAYSIZE(button_pin_bytes) * (ARRAYSIZE(button_pin_bytes) - 1);
+uint16_t button_shorts[(num_buttons + 15) / 16];
+const array16_t buttons = {button_shorts, ARRAYSIZE(button_shorts)};
 const uint8_t led_pin_bytes[] = {LED_PINS};
 const array8_t led_pins = {(uint8_t*)led_pin_bytes, ARRAYSIZE(led_pin_bytes)};
 const uint16_t num_leds = ARRAYSIZE(led_pin_bytes) * (ARRAYSIZE(led_pin_bytes) - 1);
 uint16_t led_shorts[(num_leds + 15) / 16];
 const array16_t leds = {led_shorts, ARRAYSIZE(led_shorts)};
+#include "keycodes.h"
 const uint16_t keymap_keys[] PROGMEM = {
 #include "keymap"
 };
@@ -95,7 +96,7 @@ bool read_button(uint8_t button) {
   uint8_pair_t charlie = get_pin_pair(button, button_pins);
   mode_write(charlie.x, INPUT, LOW);
   mode_write(charlie.y, OUTPUT, HIGH);
-  delayMicroseconds(BUTTON_DELAY_US);
+  delayMicroseconds(1);
   return digitalRead(charlie.x);
 }
 
@@ -120,27 +121,70 @@ void setup() {
   mode_write_all(led_pins, INPUT, LOW);
 }
 
-bool is_pressed(uint8_t k) {
-  for (uint8_t ri = 0; ri < 6; ++ri) {
-    if (keyboard_report_data[2 + ri] == k) {
-      return true;
-    }
+void press(uint16_t k) {
+  if ((k & MOD_CONTROL) == MOD_CONTROL) {
+    press(KEY_LEFT_CONTROL);
   }
-  return false;
-}
-
-void press(uint8_t k) {
+  if ((k & MOD_SHIFT) == MOD_SHIFT) {
+    press(KEY_LEFT_SHIFT);
+  }
+  if ((k & MOD_ALT) == MOD_ALT) {
+    press(KEY_LEFT_ALT);
+  }
+  if ((k & MOD_GUI) == MOD_GUI) {
+    press(KEY_LEFT_GUI);
+  }
+  k &= 0xff;
+  if (k == KEY_LEFT_CONTROL) {
+    keyboard_report_data[0] ^= MODIFIERKEY_LEFT_CTRL;
+  }
+  if (k == KEY_LEFT_SHIFT) {
+    keyboard_report_data[0] ^= MODIFIERKEY_LEFT_SHIFT;
+  }
+  if (k == KEY_LEFT_ALT) {
+    keyboard_report_data[0] ^= MODIFIERKEY_LEFT_ALT;
+  }
+  if (k == KEY_LEFT_GUI) {
+    keyboard_report_data[0] ^= MODIFIERKEY_LEFT_GUI;
+  }
   for (uint8_t ri = 0; ri < 6; ++ri) {
     if (keyboard_report_data[2 + ri] == 0) {
       keyboard_report_data[2 + ri] = k;
+      break;
     }
   }
 }
 
-void release(uint8_t k) {
+void release(uint16_t k) {
+  if ((k & MOD_CONTROL) == MOD_CONTROL) {
+    release(KEY_LEFT_CONTROL);
+  }
+  if ((k & MOD_SHIFT) == MOD_SHIFT) {
+    release(KEY_LEFT_SHIFT);
+  }
+  if ((k & MOD_ALT) == MOD_ALT) {
+    release(KEY_LEFT_ALT);
+  }
+  if ((k & MOD_GUI) == MOD_GUI) {
+    release(KEY_LEFT_GUI);
+  }
+  k &= 0xff;
+  if (k == KEY_LEFT_CONTROL) {
+    keyboard_report_data[0] ^= MODIFIERKEY_LEFT_CTRL;
+  }
+  if (k == KEY_LEFT_SHIFT) {
+    keyboard_report_data[0] ^= MODIFIERKEY_LEFT_SHIFT;
+  }
+  if (k == KEY_LEFT_ALT) {
+    keyboard_report_data[0] ^= MODIFIERKEY_LEFT_ALT;
+  }
+  if (k == KEY_LEFT_GUI) {
+    keyboard_report_data[0] ^= MODIFIERKEY_LEFT_GUI;
+  }
   for (uint8_t ri = 0; ri < 6; ++ri) {
     if (keyboard_report_data[2 + ri] == k) {
       keyboard_report_data[2 + ri] = 0;
+      break;
     }
   }
 }
@@ -152,12 +196,13 @@ void loop() {
     Keyboard.send_now();
   }
   bool state = read_button(current_button);
-  write_bit(current_button, state, leds);
+  //write_bit(current_button, state, leds);
   uint16_t k = pgm_read_word(keymap_keys + current_button);
-  bool pressed = is_pressed(k);
+  bool pressed = read_bit(current_button, buttons);
   if (state && !pressed) {
     press(k);
   } else if (pressed && !state) {
     release(k);
   }
+  write_bit(current_button, state, buttons);
 }
