@@ -40,7 +40,6 @@
 typedef struct { uint8_t x; uint8_t y; } uint8_pair_t;
 typedef struct { uint8_t* bytes; const uint16_t size; } array8_t;
 typedef struct { uint16_t* shorts; const uint16_t size; } array16_t;
-typedef struct { unsigned long* longs; const uint16_t size; } arrayL_t;
 
 const uint8_t button_pin_bytes[] = {BUTTON_PINS};
 const array8_t button_pins = {(uint8_t*)button_pin_bytes, ARRAYSIZE(button_pin_bytes)};
@@ -53,13 +52,16 @@ const uint16_t num_leds = ARRAYSIZE(led_pin_bytes) * (ARRAYSIZE(led_pin_bytes) -
 uint16_t led_shorts[(num_leds + 15) / 16];
 const array16_t leds = {led_shorts, ARRAYSIZE(led_shorts)};
 #include "keycodes.h"
-#define NEITHER_MODE 0
-#define MODE_0 1
-#define MODE_1 2
-#define BOTH_MODES 3
-const uint16_t keymap_keys[4][] PROGMEM = {
 #include "keymap"
-};
+const uint16_t mode_0_keys[] PROGMEM = {MODE_NEITHER_KEYS};
+const uint16_t mode_1_keys[] PROGMEM = {MODE_0_KEYS};
+const uint16_t mode_2_keys[] PROGMEM = {MODE_1_KEYS};
+const uint16_t mode_3_keys[] PROGMEM = {MODE_BOTH_KEYS};
+const array16_t keymaps[] = {
+  {(uint16_t*) mode_0_keys, ARRAYSIZE(mode_0_keys)},
+  {(uint16_t*) mode_1_keys, ARRAYSIZE(mode_1_keys)},
+  {(uint16_t*) mode_2_keys, ARRAYSIZE(mode_2_keys)},
+  {(uint16_t*) mode_3_keys, ARRAYSIZE(mode_3_keys)}};
 
 uint16_t macro_keys[NUM_MACROS][MAX_MACRO_LEN];
 
@@ -139,27 +141,25 @@ void paint_led_row() {
 }
 
 bool is_reserved(uint8_t k) {
-  // TODO
-  return ((165 <= k) && (k <= 175));
+  return (((165 <= k) && (k <= 175)) ||
+          (k == 222) ||
+          (k == 223) ||
+          ((232 <= k) && (k <= 255)));
 }
 
-bool toggle_modifier(uint8_t k) {
+void toggle_modifier(uint8_t k) {
   switch (k) {
     case KEY_LEFT_CONTROL:
       keyboard_report_data[0] ^= MODIFIERKEY_LEFT_CTRL;
-      set_led(CONTROL_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_CTRL);
       break;
     case KEY_LEFT_SHIFT:
       keyboard_report_data[0] ^= MODIFIERKEY_LEFT_SHIFT;
-      set_led(SHIFT_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_SHIFT);
       break;
     case KEY_LEFT_ALT:
       keyboard_report_data[0] ^= MODIFIERKEY_LEFT_ALT;
-      set_led(ALT_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_ALT);
       break;
     case KEY_LEFT_GUI:
       keyboard_report_data[0] ^= MODIFIERKEY_LEFT_GUI;
-      set_led(GUI_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_GUI);
       break;
     case KEY_VOLUME_UP:
       keyboard_report_data[1] ^= MEDIA_VOLUME_UP;
@@ -175,29 +175,23 @@ bool toggle_modifier(uint8_t k) {
       break;
     case KEY_NEXT:
       keyboard_report_data[1] ^= MEDIA_NEXT;
-      // This keycode is reserved.
-      return true;
+      break;
     case KEY_PREV:
       keyboard_report_data[1] ^= MEDIA_PREV;
-      // This keycode is reserved.
-      return true;
+      break;
     case KEY_STOP:
       keyboard_report_data[1] ^= MEDIA_STOP;
       break;
     case KEY_EJECT:
       keyboard_report_data[1] ^= MEDIA_EJECT;
-      // This keycode is reserved.
-      return true;
+      break;
     case KEY_MODE0:
       mode ^= 1;
-      // This keycode is reserved.
-      return true;
+      break;
     case KEY_MODE1:
       mode ^= 2;
-      // This keycode is reserved.
-      return true;
+      break;
   }
-  return false;
 }
 
 bool is_pressed(uint8_t k) {
@@ -230,7 +224,6 @@ void press(uint16_t k) {
   k &= 0xff;
   if (k == KEY_LOCK_NEXT) {
     lock_next = !lock_next;
-    set_led(LOCK_NEXT_LED, lock_next);
     return;
   }
   if ((KEY_MACRO0 <= k) && (k < (KEY_MACRO0 + NUM_MACROS))) {
@@ -246,47 +239,40 @@ void press(uint16_t k) {
     if (lock_next) {
       k = KEY_MODE0_LOCK;
       lock_next = false;
-      set_led(LOCK_NEXT_LED, lock_next);
     } else {
       mode ^= 1;
       once_mode |= 1;
-      set_led(MODE0_LED, mode & 1);
       return;
     }
   }
   if (k == KEY_MODE0_LOCK) {
     mode ^= 1;
-    set_led(MODE0_LED, mode & 1);
     return;
   }
   if (k == KEY_MODE1_1) {
     if (lock_next) {
       k = KEY_MODE1_LOCK;
       lock_next = false;
-      set_led(LOCK_NEXT_LED, lock_next);
     } else {
       mode ^= 2;
       once_mode |= 2;
-      set_led(MODE1_LED, mode & 2);
       return;
     }
   }
   if (k == KEY_MODE1_LOCK) {
     mode ^= 2;
-    set_led(MODE1_LED, mode & 2);
     return;
   }
   if (k == KEY_CONTROL1) {
     if (lock_next) {
       k = KEY_LEFT_CONTROL_LOCK;
       lock_next = false;
-      set_led(LOCK_NEXT_LED, lock_next);
     } else {
+      once_modifier ^= MODIFIERKEY_LEFT_CTRL;
       if (is_pressed(KEY_LEFT_CONTROL)) {
         release(KEY_LEFT_CONTROL);
       } else {
         press(KEY_LEFT_CONTROL);
-        once_modifier |= MODIFIERKEY_LEFT_CTRL;
       }
       return;
     }
@@ -298,13 +284,12 @@ void press(uint16_t k) {
     if (lock_next) {
       k = KEY_LEFT_SHIFT_LOCK;
       lock_next = false;
-      set_led(LOCK_NEXT_LED, lock_next);
     } else {
+      once_modifier ^= MODIFIERKEY_LEFT_SHIFT;
       if (is_pressed(KEY_LEFT_SHIFT)) {
         release(KEY_LEFT_SHIFT);
       } else {
         press(KEY_LEFT_SHIFT);
-        once_modifier |= MODIFIERKEY_LEFT_SHIFT;
       }
       return;
     }
@@ -316,13 +301,12 @@ void press(uint16_t k) {
     if (lock_next) {
       k = KEY_LEFT_ALT_LOCK;
       lock_next = false;
-      set_led(LOCK_NEXT_LED, lock_next);
     } else {
+      once_modifier ^= MODIFIERKEY_LEFT_ALT;
       if (is_pressed(KEY_LEFT_ALT)) {
         release(KEY_LEFT_ALT);
       } else {
         press(KEY_LEFT_ALT);
-        once_modifier |= MODIFIERKEY_LEFT_ALT;
       }
       return;
     }
@@ -334,13 +318,12 @@ void press(uint16_t k) {
     if (lock_next) {
       k = KEY_LEFT_ALT_LOCK;
       lock_next = false;
-      set_led(LOCK_NEXT_LED, lock_next);
     } else {
+      once_modifier ^= MODIFIERKEY_LEFT_GUI;
       if (is_pressed(KEY_LEFT_GUI)) {
         release(KEY_LEFT_GUI);
       } else {
         press(KEY_LEFT_GUI);
-        once_modifier |= MODIFIERKEY_LEFT_GUI;
       }
       return;
     }
@@ -348,8 +331,8 @@ void press(uint16_t k) {
   if (k == KEY_LEFT_GUI_LOCK) {
     // TODO
   }
-  if (toggle_modifier(k)) {
-    // k is reserved.
+  toggle_modifier(k);
+  if (is_reserved(k)) {
     return;
   }
   for (uint8_t ri = 0; ri < 6; ++ri) {
@@ -402,8 +385,8 @@ void release(uint16_t k) {
     return;
   }
   k &= 0xff;
-  if (toggle_modifier(k)) {
-    // k is reserved.
+  toggle_modifier(k);
+  if (is_reserved(k)) {
     return;
   }
   for (uint8_t ri = 0; ri < 6; ++ri) {
@@ -434,6 +417,7 @@ void setup() {
 
 void loop() {
   paint_led_row();
+
   bool state = digitalRead(current_button_pin);
   current_button = (current_button + 1) % num_buttons;
   mode_write_all(button_pins, OUTPUT, LOW);
@@ -441,20 +425,34 @@ void loop() {
   mode_write(charlie.x, INPUT, LOW);
   mode_write(charlie.y, OUTPUT, HIGH);
   current_button_pin = charlie.x;
+
   if (current_button == 0) {
     Keyboard.send_now();
   }
-  uint16_t k = current_button + (mode * num_buttons);
-  if (k < ARRAYSIZE(keymap_keys)) {
-    k = pgm_read_word(keymap_keys + k);
-  } else {
-    k = 0;
+
+  uint16_t k = 0;
+  const array16_t& keymap = keymaps[mode];
+  if (current_button < keymap.size) {
+    k = pgm_read_word(keymap.shorts + current_button);
   }
+
   bool pressed = read_bit(current_button, buttons);
-  if (k && state && !pressed) {
-    press(k);
-  } else if (k && pressed && !state) {
-    release(k);
+  if (state != pressed) {
+    write_bit(current_button, state, buttons);
+    if (k && state) {
+      press(k);
+    } else if (k && !state) {
+      release(k);
+    }
   }
-  write_bit(current_button, state, buttons);
+
+  set_led(LOCK_NEXT_LED, lock_next);
+  set_led(MODE0_LED, mode & 1);
+  set_led(MODE1_LED, mode & 2);
+  set_led(CONTROL_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_CTRL);
+  set_led(SHIFT_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_SHIFT);
+  set_led(ALT_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_ALT);
+  set_led(GUI_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_GUI);
+
+  delayMicroseconds(1);
 }
