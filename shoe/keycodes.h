@@ -1,16 +1,8 @@
+// Add these to KEY_*.
 #define MOD_CONTROL 0x0100
 #define MOD_SHIFT 0x0200
 #define MOD_ALT 0x0400
 #define MOD_GUI 0x0800
-
-#define MEDIA_VOLUME_UP 0x01
-#define MEDIA_VOLUME_DOWN 0x02
-#define MEDIA_MUTE 0x04
-#define MEDIA_PAUSE 0x08
-#define MEDIA_NEXT 0x10
-#define MEDIA_PREV 0x20
-#define MEDIA_STOP 0x40
-#define MEDIA_EJECT 0x80
 
 // http://www.freebsddiary.org/APC/usb_hid_usages.php
 #define KEY_A                   4
@@ -177,14 +169,27 @@
 #define KEY_NEXT                165
 #define KEY_PREV                166
 #define KEY_EJECT               167
-#define KEY_MODE0               168
-#define KEY_MODE1               169
-#define KEY_RESERVED5           170
-#define KEY_RESERVED6           171
-#define KEY_RESERVED7           172
-#define KEY_RESERVED8           173
-#define KEY_RESERVED9           174
-#define KEY_RESERVED10          175
+
+// These are in effect from when the button is pressed until the release of the
+// next button that is pressed, unless KEY_LOCK_NEXT was pressed before this key.
+// Pressing these keys twice in a row will do nothing.
+#define KEY_MODE0_1             168
+#define KEY_MODE1_1             169
+#define KEY_CONTROL1            170
+#define KEY_SHIFT1              171
+#define KEY_ALT1                172
+#define KEY_GUI1                173
+
+// TODO test
+// Pressing KEY_LOCK_NEXT before KEY_{CONTROL,SHIFT,ALT,GUI,MODE{0,1}_}1 or
+// KEY_{LEFT,RIGHT}_{CONTROL,SHIFT,ALT,GUI} turns it into the locking version.
+// Pressing KEY_LOCK_NEXT before KEY_MACRO* will record that macro until that
+// macro key is pressed again. Pressing this key twice in a row will do nothing.
+// Do not add this to MOD_*.
+#define KEY_LOCK_NEXT           174
+
+#define KEY_RESERVED            175
+
 #define KEYPAD_00               176
 #define KEYPAD_000              177
 #define KEY_THOUSANDS           178
@@ -231,49 +236,48 @@
 #define KEYPAD_OCTAL            219
 #define KEYPAD_DECIMAL          220
 #define KEYPAD_HEX              221
-#define KEY_RESERVED11          222
-#define KEY_RESERVED12          223
-#define KEY_LEFT_CTRL_KEY       224
-#define KEY_LEFT_SHIFT_KEY      225
-#define KEY_LEFT_ALT_KEY        226
-#define KEY_LEFT_GUI_KEY        227
-#define KEY_RIGHT_CTRL_KEY      228
-#define KEY_RIGHT_SHIFT_KEY     229
-#define KEY_RIGHT_ALT_KEY       230
-#define KEY_RIGHT_GUI_KEY       231
-#define KEY_MACRO0              232
-#define KEY_MACRO1              233
-#define KEY_MACRO2              234
-#define KEY_MACRO3              235
-#define KEY_MACRO4              236
-#define KEY_MACRO5              237
-#define KEY_MACRO6              238
-#define KEY_MACRO7              239
-#define KEY_MACRO8              240
-#define KEY_MACRO9              241
-#define KEY_MACRO10             242
-#define KEY_MACRO11             243
-#define KEY_MACRO12             244
-#define KEY_MACRO13             245
-#define KEY_MACRO14             246
-#define KEY_MACRO15             247
-#define KEY_MACRO16             248
-#define KEY_MACRO17             249
-#define KEY_MACRO18             250
-#define KEY_MACRO19             251
-#define KEY_MACRO20             252
-#define KEY_MACRO21             253
-#define KEY_MACRO22             254
-#define KEY_MACRO23             255
 
-#define KEY_LEFT_CONTROL 0xE0
-#define KEY_LEFT_SHIFT 0xE1
-#define KEY_LEFT_ALT 0xE2
-#define KEY_LEFT_GUI 0xE3
+// These are in effect from when the button is pressed until it is pressed
+// again.
+#define KEY_MODE0_LOCK          222
+#define KEY_MODE1_LOCK          223
 
-// TODO
-// Add this to a keycode to make it stay pressed when you release it until
-// the next time you press it.
-// Add it to 0 to make the next keycode you press, whatever it is, stick, unless
-// it's a macro, in which case it will be recorded instead of replayed.
-#define STICKEY 0x8000
+// These are in effect only while the button is still pressed.
+#define KEY_LEFT_CONTROL        224
+#define KEY_LEFT_SHIFT          225
+#define KEY_LEFT_ALT            226
+#define KEY_LEFT_GUI            227
+#define KEY_RIGHT_CTRL_KEY      228/*TODO*/
+#define KEY_RIGHT_SHIFT_KEY     229/*TODO*/
+#define KEY_RIGHT_ALT_KEY       230/*TODO*/
+#define KEY_RIGHT_GUI_KEY       231/*TODO*/
+#define KEY_MODE0               232
+#define KEY_MODE1               233
+
+// Record and replay key sequences. See SETTINGS in shoe.ino for the number and
+// length of macros.
+#define KEY_MACRO0              234
+#define KEY_MACRO1              235
+#define KEY_MACRO2              236
+#define KEY_MACRO3              237
+#define KEY_MACRO4              238
+#define KEY_MACRO5              239
+#define KEY_MACRO6              240
+#define KEY_MACRO7              241
+#define KEY_MACRO8              242
+#define KEY_MACRO9              243
+#define KEY_MACRO10             244
+#define KEY_MACRO11             245
+#define KEY_MACRO12             246
+#define KEY_MACRO13             247
+#define KEY_MACRO14             248
+#define KEY_MACRO15             249
+#define KEY_MACRO16             250
+#define KEY_MACRO17             251
+
+// TODO These are in effect from when the button is pressed until it is pressed
+// again.
+#define KEY_LEFT_CONTROL_LOCK   252
+#define KEY_LEFT_SHIFT_LOCK     253
+#define KEY_LEFT_ALT_LOCK       254
+#define KEY_LEFT_GUI_LOCK       255
