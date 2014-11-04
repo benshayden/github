@@ -9,22 +9,27 @@ function circle(center, radius, start, end, maxedge) {
   return p;
 }
 function main() {
-  var hf = 5;
-  var hb = 7;
-  var wf = 9;
-  var wb = 10;
+  var hf = 4;
+  var hb = 5;
+  var wf = 6;
+  var wb = 7;
   var bs = 8;
   var lead = cube({size: [0.5, bs, 2]}).expand(0.5, 8);
   var p = [
-    [0, 0], [bs + hf + bs, 0], [bs + hf + bs, bs + wf + bs + wb + bs], [hb - hf, bs + wf + bs + wb + bs],
-    [hb - hf, bs + wf + bs + wb], [hf + bs, bs + wf + bs + wb], [hf + bs, bs], [0, bs]
+    [0, 0],
+    [bs + hf + bs, 0],
+    [bs + hf + bs, bs + wf + bs + wb + bs],
+    [hf - hb, bs + wf + bs + wb + bs],
+    [hf - hb, bs + wf + bs + wb],
+    [hf + bs, bs + wf + bs + wb],
+    [hf + bs, bs], [0, bs]
   ];
   return difference(
     linear_extrude({height: bs}, polygon(p)),
     lead.translate([bs / 2, 0, bs - 2]),
     lead.translate([bs / 2, 0, 0]),
-    lead.translate([bs / 2 + hb - hf, bs + wf + bs + wb, bs - 2]),
-    lead.translate([bs / 2 + hb - hf, bs + wf + bs + wb, 0]),
-    lead.rotateZ(90).translate([bs + hf + bs, bs + hf + bs, 0]),
-    lead.rotateZ(90).translate([bs + hf + bs, bs + hf + bs, bs - 2]));
+    lead.translate([bs / 2 + hf - hb, bs + wf + bs + wb, bs - 2]),
+    lead.translate([bs / 2 + hf - hb, bs + wf + bs + wb, 0]),
+    lead.rotateZ(90).translate([bs + hf + bs, bs + wf + (bs / 2), 0]),
+    lead.rotateZ(90).translate([bs + hf + bs, bs + wf + (bs / 2), bs - 2]));
 }
