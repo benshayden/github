@@ -19,7 +19,7 @@ function main() {
   var bs = 8;
   var cush = [3, 1, 1.5];
   var chr = 2;
-  var lead = cube({size: [0.5, bs, 2]}).expand(0.5, 8);
+  var lead = linear_extrude({height: bs}, polygon([[0.5, 0], [0, 0.5], [0, 2.5], [0.5, 3], [1, 2.5], [1, 0.5]])).rotateX(90).translate([0, bs, -0.5]);
   lead = union(lead, lead.translate([0, 0, bs - 2]));
   var cushion = cube({size: cush});
   cushion = union(cushion, cushion.translate([0, 0, bs - cush[2]]));
