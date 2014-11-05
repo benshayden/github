@@ -141,7 +141,8 @@ void paint_led_row() {
 }
 
 bool is_reserved(uint8_t k) {
-  return (((165 <= k) && (k <= 175)) ||
+  return ((k < KEY_A) ||
+          ((165 <= k) && (k <= 175)) ||
           (k == 222) ||
           (k == 223) ||
           ((232 <= k) && (k <= 255)));

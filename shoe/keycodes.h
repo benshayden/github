@@ -253,32 +253,33 @@
 #define KEY_MODE0               232
 #define KEY_MODE1               233
 
-// TODO record
-// Record and replay key sequences. See SETTINGS in shoe.ino for the number and
-// length of macros.
-#define KEY_MACRO0              234
-#define KEY_MACRO1              235
-#define KEY_MACRO2              236
-#define KEY_MACRO3              237
-#define KEY_MACRO4              238
-#define KEY_MACRO5              239
-#define KEY_MACRO6              240
-#define KEY_MACRO7              241
-#define KEY_MACRO8              242
-#define KEY_MACRO9              243
-#define KEY_MACRO10             244
-#define KEY_MACRO11             245
-#define KEY_MACRO12             246
-#define KEY_MACRO13             247
-#define KEY_MACRO14             248
-#define KEY_MACRO15             249
-#define KEY_MACRO16             250
-#define KEY_MACRO17             251
-
 // These are in effect from when the button is pressed until it is pressed
 // again. Pressing KEY_*_1 will toggle it off for one key press, and similarly
 // for the while-held modifier keys.
-#define KEY_LEFT_CONTROL_LOCK   252
-#define KEY_LEFT_SHIFT_LOCK     253
-#define KEY_LEFT_ALT_LOCK       254
-#define KEY_LEFT_GUI_LOCK       255
+#define KEY_LEFT_CONTROL_LOCK   234
+#define KEY_LEFT_SHIFT_LOCK     235
+#define KEY_LEFT_ALT_LOCK       236
+#define KEY_LEFT_GUI_LOCK       237
+
+// TODO record
+// Record and replay key sequences. See SETTINGS in shoe.ino for the number and
+// length of macros.
+#define KEY_MACRO0              238
+#define KEY_MACRO1              239
+#define KEY_MACRO2              240
+#define KEY_MACRO3              241
+#define KEY_MACRO4              242
+#define KEY_MACRO5              243
+#define KEY_MACRO6              244
+#define KEY_MACRO7              245
+#define KEY_MACRO8              246
+#define KEY_MACRO9              247
+#define KEY_MACRO10             248
+#define KEY_MACRO11             249
+#define KEY_MACRO12             250
+#define KEY_MACRO13             251
+#define KEY_MACRO14             252
+#define KEY_MACRO15             253
+#define KEY_MACRO16             254
+#define KEY_MACRO17             255
+
