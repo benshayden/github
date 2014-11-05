@@ -18,7 +18,7 @@ function main() {
   var wb = 7;
   var bs = 8;
   var cush = [3, 1, 1.5];
-  var chr = 2.5;
+  var chr = 2;
   var lead = cube({size: [0.5, bs, 2]}).expand(0.5, 8);
   lead = union(lead, lead.translate([0, 0, bs - 2]));
   var cushion = cube({size: cush});
@@ -30,6 +30,10 @@ function main() {
     [hf - hb, bs + wf + bs + wb + bs]
   ];
   var pl = p[p.length - 1];
+  if (chr > 3.15) {
+    echo('Coat-hanger radius cannot be larger than 3.15mm');
+    chr = 3.15;
+  }
   p = p.concat(curve([pl[0], pl[1] + chr], chr, TAU / 4, 2.95 * TAU / 4, 0.5).reverse(),
                curve([pl[0], pl[1] + chr + (bs / 2)], (bs - (2 * chr)) / 2, 3.1 * TAU / 4, 5 * TAU / 4, 0.5),
                curve(pl, bs, 1.1 * TAU / 4, 2.95 * TAU / 4, 1));
