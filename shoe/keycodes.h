@@ -175,13 +175,12 @@
 // Pressing these keys twice in a row will do nothing.
 #define KEY_MODE0_1             168
 #define KEY_MODE1_1             169
-#define KEY_CONTROL1            170
-#define KEY_SHIFT1              171
-#define KEY_ALT1                172
-#define KEY_GUI1                173
+#define KEY_CONTROL_1           170
+#define KEY_SHIFT_1             171
+#define KEY_ALT_1               172
+#define KEY_GUI_1               173
 
-// TODO test
-// Pressing KEY_LOCK_NEXT before KEY_{CONTROL,SHIFT,ALT,GUI,MODE{0,1}_}1 or
+// Pressing KEY_LOCK_NEXT before KEY_{CONTROL,SHIFT,ALT,GUI,MODE{0,1}}_1 or
 // KEY_{LEFT,RIGHT}_{CONTROL,SHIFT,ALT,GUI} turns it into the locking version.
 // Pressing KEY_LOCK_NEXT before KEY_MACRO* will record that macro until that
 // macro key is pressed again. Pressing this key twice in a row will do nothing.
@@ -254,6 +253,7 @@
 #define KEY_MODE0               232
 #define KEY_MODE1               233
 
+// TODO record
 // Record and replay key sequences. See SETTINGS in shoe.ino for the number and
 // length of macros.
 #define KEY_MACRO0              234
@@ -275,8 +275,9 @@
 #define KEY_MACRO16             250
 #define KEY_MACRO17             251
 
-// TODO These are in effect from when the button is pressed until it is pressed
-// again.
+// These are in effect from when the button is pressed until it is pressed
+// again. Pressing KEY_*_1 will toggle it off for one key press, and similarly
+// for the while-held modifier keys.
 #define KEY_LEFT_CONTROL_LOCK   252
 #define KEY_LEFT_SHIFT_LOCK     253
 #define KEY_LEFT_ALT_LOCK       254

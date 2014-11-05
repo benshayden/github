@@ -206,6 +206,7 @@ void release(uint16_t k);
 
 void press(uint16_t k) {
   if (record_macro < NUM_MACROS) {
+    // TODO
   }
   // handle the MSB
   if ((k & MOD_CONTROL) == MOD_CONTROL) {
@@ -263,7 +264,7 @@ void press(uint16_t k) {
     mode ^= 2;
     return;
   }
-  if (k == KEY_CONTROL1) {
+  if (k == KEY_CONTROL_1) {
     if (lock_next) {
       k = KEY_LEFT_CONTROL_LOCK;
       lock_next = false;
@@ -278,9 +279,9 @@ void press(uint16_t k) {
     }
   }
   if (k == KEY_LEFT_CONTROL_LOCK) {
-    // TODO
+    k = KEY_LEFT_CONTROL;
   }
-  if (k == KEY_SHIFT1) {
+  if (k == KEY_SHIFT_1) {
     if (lock_next) {
       k = KEY_LEFT_SHIFT_LOCK;
       lock_next = false;
@@ -295,9 +296,9 @@ void press(uint16_t k) {
     }
   }
   if (k == KEY_LEFT_SHIFT_LOCK) {
-    // TODO
+    k = KEY_LEFT_SHIFT;
   }
-  if (k == KEY_ALT1) {
+  if (k == KEY_ALT_1) {
     if (lock_next) {
       k = KEY_LEFT_ALT_LOCK;
       lock_next = false;
@@ -312,9 +313,9 @@ void press(uint16_t k) {
     }
   }
   if (k == KEY_LEFT_ALT_LOCK) {
-    // TODO
+    k = KEY_LEFT_ALT;
   }
-  if (k == KEY_GUI1) {
+  if (k == KEY_GUI_1) {
     if (lock_next) {
       k = KEY_LEFT_ALT_LOCK;
       lock_next = false;
@@ -329,7 +330,7 @@ void press(uint16_t k) {
     }
   }
   if (k == KEY_LEFT_GUI_LOCK) {
-    // TODO
+    k = KEY_LEFT_GUI;
   }
   toggle_modifier(k);
   if (is_reserved(k)) {
@@ -345,28 +346,28 @@ void press(uint16_t k) {
 
 void release(uint16_t k) {
   if (((k & MOD_CONTROL) == MOD_CONTROL) ||
-      ((k != KEY_CONTROL1) &&
+      ((k != KEY_CONTROL_1) &&
        (k != KEY_LEFT_CONTROL) &&
        ((once_modifier & MODIFIERKEY_LEFT_CTRL) != 0))) {
     release(KEY_LEFT_CONTROL);
     once_modifier &= ~MODIFIERKEY_LEFT_CTRL;
   }
   if (((k & MOD_SHIFT) == MOD_SHIFT) ||
-      ((k != KEY_SHIFT1) &&
+      ((k != KEY_SHIFT_1) &&
        (k != KEY_LEFT_SHIFT) &&
        ((once_modifier & MODIFIERKEY_LEFT_SHIFT) != 0))) {
     release(KEY_LEFT_SHIFT);
     once_modifier &= ~MODIFIERKEY_LEFT_SHIFT;
   }
   if (((k & MOD_ALT) == MOD_ALT) ||
-      ((k != KEY_ALT1) &&
+      ((k != KEY_ALT_1) &&
        (k != KEY_LEFT_ALT) &&
        ((once_modifier & MODIFIERKEY_LEFT_ALT) != 0))) {
     release(KEY_LEFT_ALT);
     once_modifier &= ~MODIFIERKEY_LEFT_ALT;
   }
   if (((k & MOD_GUI) == MOD_GUI) ||
-      ((k != KEY_GUI1) &&
+      ((k != KEY_GUI_1) &&
        (k != KEY_LEFT_GUI) &&
        ((once_modifier & MODIFIERKEY_LEFT_GUI) != 0))) {
     release(KEY_LEFT_GUI);
