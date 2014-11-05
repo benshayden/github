@@ -15,6 +15,7 @@ function main() {
   var wb = 7;
   var bs = 8;
   var lead = cube({size: [0.5, bs, 2]}).expand(0.5, 8);
+  lead = union(lead, lead.translate([0, 0, bs - 2]));
   var p = [
     [0, 0],
     [bs + hf + bs, 0],
@@ -26,10 +27,7 @@ function main() {
   ];
   return difference(
     linear_extrude({height: bs}, polygon(p)),
-    lead.translate([bs / 2, 0, bs - 2]),
     lead.translate([bs / 2, 0, 0]),
-    lead.translate([bs / 2 + hf - hb, bs + wf + bs + wb, bs - 2]),
     lead.translate([bs / 2 + hf - hb, bs + wf + bs + wb, 0]),
-    lead.rotateZ(90).translate([bs + hf + bs, bs + wf + (bs / 2), 0]),
-    lead.rotateZ(90).translate([bs + hf + bs, bs + wf + (bs / 2), bs - 2]));
+    lead.rotateZ(90).translate([bs + hf + bs, bs + wf + (bs / 2), 0]));
 }
