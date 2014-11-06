@@ -6,7 +6,7 @@ function getParameterDefinitions() {
     {name: 'wf', caption: 'Front width mm:', type: 'float', initial: 8},
     {name: 'wb', caption: 'Back width mm:', type: 'float', initial: 10},
     {name: 'chr', caption: 'Coat hanger radius mm:', type: 'float', initial: 1.5875},
-    {name: 'cht', caption: 'Coat hanger angle rad:', type: 'float', initial: Math.PI * 1.2}];
+    {name: 'cht', caption: 'Coat hanger angle rad:', type: 'float', initial: 4}];
 }
 function curve(center, radius, start, end, maxedge) {
   var d = 2 * Math.asin(maxedge / (2 * radius)) * Math.sign(end - start);
@@ -50,8 +50,8 @@ function main(params) {
   ];
   var pl = p[p.length - 1];
   p = p.concat(
-    curve([pl[0] - chc[0], pl[1] + chc[1]], params.chr, Math.PI + (params.cht / 2.1), Math.PI - (params.cht / 2.1), 0.5),
-    curve([pl[0] + ohc[0], pl[1] + (2 * chc[1]) + ohc[1]], or, params.cht, 5 * TAU / 4, 0.5),
+    curve([pl[0] - chc[0], pl[1] + chc[1]], params.chr, 3 * TAU / 4, TAU / 4, 0.5),
+    curve([pl[0] + ohc[0], pl[1] + (2 * chc[1]) + ohc[1]], or, 3 * TAU / 4, 5 * TAU / 4, 0.5),
     curve([pl[0], pl[1] - bs + ar], ar, 1.1 * TAU / 4, 2.95 * TAU / 4, 1));
   p = p.concat([
     [params.hf - params.hb, bs + params.wf + bs + params.wb],
@@ -60,9 +60,9 @@ function main(params) {
     [0, bs]
   ]);
   p = p.concat(
-    curve([0, bs - ar], ar, 1.1 * TAU / 4, 2.9 * TAU / 4, 1),
-    curve([ohc[0], (-2 * chc[1]) - ohc[1]], or, 3 * TAU / 4, TAU + (params.cht / 2), 0.5),
-    curve([-chc[0], -chc[1]], params.chr, Math.PI + (params.cht / 2.1), Math.PI - (params.cht / 2.1), 0.5));
+    curve([0, bs - ar], ar, 1.1 * TAU / 4, 3 * TAU / 4, 1),
+    curve([ohc[0], (-2 * chc[1]) - ohc[1]], or, 3 * TAU / 4, 5 * TAU / 4, 0.5),
+    curve([-chc[0], -chc[1]], params.chr, 3 * TAU / 4, TAU / 4, 0.5));
   p = linear_extrude({height: bs}, polygon(p));
   //p = union(p, cushions);
   p = difference(p, leads);
