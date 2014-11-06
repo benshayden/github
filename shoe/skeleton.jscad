@@ -56,8 +56,9 @@ function main(params) {
     lead.translate([bs / 2 + params.hf - params.hb, bs + params.wf + bs + params.wb, 0]),
     lead.rotateZ(90).translate([bs + params.hf + bs, bs + params.wf + (bs / 2), 0]));
   p = difference(p, leads);
+  p = p.setColor([1, 1, 1]);
   var button = cube({size: [bs, 3, bs]}).setColor([0, 0, 0]);
-  button = union(button, cylinder({r: 2, h: 3, center: true}).setColor([0.5, 0.5, 0.5]).rotateX(90).translate([bs / 2, 4.5, (bs / 2)]));
+  button = union(button, cylinder({r: 2, h: 2, center: true}).setColor([0.5, 0.5, 0.5]).rotateX(90).translate([bs / 2, 4.5, (bs / 2)]));
   var buttons = union(
     button.translate([0, bs, 0]),
     button.rotateX(180).translate([params.hf - params.hb, bs + params.wf + bs + params.wb, bs]),
