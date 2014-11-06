@@ -10,10 +10,10 @@ function curve(center, radius, start, end, maxedge) {
 }
 var TAU = 2 * Math.PI;
 function main() {
-  var hf = 4;
-  var hb = 7;
-  var wf = 6;
-  var wb = 7;
+  var hf = 7;
+  var hb = 9;
+  var wf = 8;
+  var wb = 10;
   var bs = 8;
   var cush = [3, 1, 1.5];
   var chr = 1.5875;
@@ -29,7 +29,7 @@ function main() {
     [hf - hb, bs + wf + bs + wb + bs]
   ];
   var pl = p[p.length - 1];
-  p = p.concat(curve([pl[0] - 0.5, pl[1] + chr], chr, 2.95 * TAU / 4, 0.7 * TAU / 4, 0.5),
+  p = p.concat(curve([pl[0] - 0.5, pl[1] + chr], chr, 2.95 * TAU / 4, 0.6 * TAU / 4, 0.5),
                curve([pl[0] + 0.8, pl[1] + (2 * chr) + 1], or, 3.1 * TAU / 4, 5 * TAU / 4, 0.5),
                curve([pl[0], pl[1] - ((chr + 1) / 2)], (bs / 2) + chr + 1, 1.1 * TAU / 4, 2.95 * TAU / 4, 1));
   p = p.concat([
@@ -53,5 +53,11 @@ function main() {
     lead.translate([bs / 2, 0, 0]),
     lead.translate([bs / 2 + hf - hb, bs + wf + bs + wb, 0]),
     lead.rotateZ(90).translate([bs + hf + bs, bs + wf + (bs / 2), 0]));
+  var button = cube({size: [bs, 3, bs]}).setColor([0, 0, 0]);
+  button = union(button, cylinder({r: 2, h: 3, center: true}).setColor([0.5, 0.5, 0.5]).rotateX(90).translate([bs / 2, 4.5, (bs / 2)]));
+  var buttons = union(button.translate([0, bs, 0]),
+                      button.rotateX(180).translate([hf - hb, bs + wf + bs + wb, bs]),
+                      button.rotateZ(90).translate([bs + hf, bs + wf, 0]));
+  p = union(p, buttons);
   return p;
 }
