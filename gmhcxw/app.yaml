@@ -15,3 +15,8 @@ handlers:
   static_files: index.html
   secure: always
   upload: index\.html
+
+- url: /gmhcxw.appcache
+  static_files: gmhcxw.appcache
+  secure: always
+  upload: gmhcxw\.appcache
