@@ -1,0 +1,186 @@
+<title>Encrypted Photos</title>
+<style>
+body { margin: 0; }
+#pw, { display: block; }
+#cap, #view, #f, #nv, #v, #cam, #c, #dl { display: none; }
+#pw, #cap, #view, #cam { width: 100%; font-size: 80px;}
+</style>
+<form id=pwf>
+<input id=pw type=password placeholder=password autofocus size=10>
+</form>
+<div id=nv>No cameras found</div>
+<button id=cam>camera</button>
+<button id=cap>capture</button>
+<button id=view>view</button>
+<video id=v muted autoplay></video>
+<div id=viewer></div>
+<input id=f type=file multiple accept='.ei'>
+<canvas id=c></canvas>
+<a id=dl></a>
+
+<script>
+var $ = function(i) { return document.getElementById(i); };
+function str_bytes(s) {
+  return s.split('').map(function(c){return c.charCodeAt(0)});
+}
+function bytes_str(b) {
+  return Array.prototype.slice.apply(new Uint8Array(b)).map(function(c){return String.fromCharCode(c)}).join('');
+}
+function zpad(n, w) {
+  n += '';
+  return (new Array(w - n.length + 1).join('0')) + n;
+}
+function timestamp() {
+  var now = new Date();
+  return now.getFullYear() + '-' + zpad(now.getMonth(), 2) + '-' + zpad(now.getDate(), 2) + '-' + zpad(now.getHours(), 2) + '-' + zpad(now.getMinutes(), 2) + '-' + zpad(now.getSeconds(), 2);
+}
+var videoSrcs = [];
+navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
+
+function start() {
+  if (!!$('v').stream) {
+    $('v').stream.stop();
+  }
+  if (videoSrcs.length === 0) {
+    return;
+  }
+  $('viewer').style.display = 'none';
+  $('cap').style.display = 'none';
+  $('view').style.display = 'block';
+  if (videoSrcs.length > 1) {
+    $('cam').style.display = 'inline';
+    $('view').style.display = 'inline';
+    $('cam').style.width = '49%';
+    $('view').style.width = '49%';
+  }
+  var srcs = {};
+  srcs.video = {optional: [{sourceId: videoSrcs[0]}]};
+  srcs.video.mandatory = {minWidth: 1280, minHeight: 720};
+  $('v').style.display = 'block';
+  navigator.getUserMedia(srcs, function(stream) {
+    $('v').stream = stream;
+    $('v').src = URL.createObjectURL(stream);
+    $('v').play();
+  }, function(err) {
+    console.log('getUserMedia error', err);
+  });
+}
+
+if (MediaStreamTrack) {
+  MediaStreamTrack.getSources(function(sources) {
+    console.log('getSources', JSON.stringify(sources));
+    for (var i = 0; i < sources.length; ++i) {
+      var source = sources[i];
+      if (source.kind === 'video') {
+        videoSrcs.push(source.id);
+      }
+    };
+    if (videoSrcs.length === 0) {
+      $('nv').style.display = 'block';
+    }
+  });
+} else {
+  console.log('no MediaStreamTrack');
+}
+
+$('cam').addEventListener('click', function() {
+  if (videoSrcs.length <= 1) return;
+  videoSrcs.push(videoSrcs.shift());
+  start();
+}, false);
+
+window.addEventListener('click', function() {
+  var pw = $('pw');
+  if (pw) {
+    pw.focus();
+  }
+}, false);
+
+$('cap').addEventListener('click', function() {
+  start();
+}, false);
+$('view').addEventListener('click', function() {
+  if (!!$('v').stream) {
+    $('v').stream.stop();
+  }
+  $('cam').style.display = 'none';
+  $('v').style.display = 'none';
+  $('cap').style.display = 'block';
+  $('view').style.display = 'none';
+  $('viewer').style.display = 'block';
+  $('f').click();
+}, false);
+
+$('pwf').addEventListener('submit', function(evt) {
+  evt.preventDefault();
+  start();
+  var digestOp = crypto.subtle.digest({name: 'SHA-256'}, new Uint8Array(str_bytes($('pw').value)));
+  $('pw').value = '';
+  $('pwf').parentNode.removeChild($('pwf'));
+  digestOp.catch(function(err) {
+    console.log('digest error', err);
+  });
+  digestOp.then(function(h) {
+    var extractable = false;
+    var importOp = crypto.subtle.importKey('raw', h, {name: 'AES-CBC', length: 256}, extractable, ['encrypt', 'decrypt']);
+    importOp.catch(function(err) {
+      console.log('import error', err);
+    });
+    importOp.then(function(k) {
+      $('f').addEventListener('change', function(e) {
+        for (var i = 0; e.target.files[i]; ++i) {
+          console.log(e.target.files[i]);
+          var r = new FileReader();
+          r.onload = function(re) {
+            console.log('re', re);
+            var ct = Array.prototype.slice.apply(new Uint8Array(re.target.result));
+            console.log('ct.length', ct.length);
+            var iv = ct.slice(0, 16);
+            var ct = ct.slice(16);
+            var decryptOp = crypto.subtle.decrypt({name: 'AES-CBC', iv: new
+              Uint8Array(iv)}, k, new Uint8Array(ct));
+            decryptOp.catch(function(err) {
+              console.log('decrypt error', err);
+            });
+            decryptOp.then(function(pt) {
+              pt = Array.prototype.slice.apply(new Uint8Array(pt));
+              console.log('pt.length', pt.length);
+              pt = pt.map(function(c) { return String.fromCharCode(c); });
+              pt = pt.join('');
+              pt = btoa(pt);
+              var img = document.createElement('img');
+              img.src = 'data:image/webp;base64,' + pt;
+              $('viewer').appendChild(img);
+            });
+          };
+          r.readAsArrayBuffer(e.target.files[i]);
+        }
+      });
+      $('v').addEventListener('click', function() {
+        console.log('v click');
+        $('c').width = parseInt(getComputedStyle($('v')).width);
+        $('c').height = parseInt(getComputedStyle($('v')).height);
+        var x = $('c').getContext('2d');
+        x.drawImage($('v'), 0, 0);
+        var pt = $('c').toDataURL('image/webp');
+        pt = pt.substr(1 + pt.indexOf(','));
+        console.log('pt.length', pt.length);
+        var iv = crypto.getRandomValues(new Uint8Array(16));
+        pt = str_bytes(atob(pt));
+        console.log('pt.length', pt.length);
+        var encOp = crypto.subtle.encrypt({name: 'AES-CBC', iv: iv}, k, new Uint8Array(pt));
+        encOp.catch(function(err) {
+          console.log('encrypt error', err);
+        });
+        encOp.then(function(ct) {
+          ct = btoa(bytes_str(iv) + bytes_str(ct));
+          console.log('ct.length', ct.length);
+          $('dl').href = 'data:application/octet-stream;base64,' + ct;
+          $('dl').download = timestamp() + '.ei';
+          $('dl').click();
+        });
+      }, false);
+    });
+  });
+}, false);
+</script>
