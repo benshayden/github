@@ -19,9 +19,9 @@ function curve(center, radius, start, end, maxedge) {
   return p;
 }
 function main(params) {
-  var bs = 8;
-  var cush = [3, 1, 1.5];
-  var or = 1;  // overhang radius
+  var bs = 8;  // button length and width mm
+  var cush = [3, 1, 1.5];  // cushion dimensions mm
+  var or = 1;  // overhang radius mm
   var icht = (TAU - params.cht) / 2;
   var chc = [params.chr * Math.cos(icht), params.chr * Math.sin(icht)];
   var ohc = [or * Math.cos(icht), or * Math.sin(icht)];
