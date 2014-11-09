@@ -20,3 +20,13 @@ handlers:
   static_files: gmhcxw.appcache
   secure: always
   upload: gmhcxw\.appcache
+
+- url: /t
+  static_files: text.html
+  secure: always
+  upload: text\.html
+
+- url: /t.appcache
+  static_files: t.appcache
+  secure: always
+  upload: t\.appcache
