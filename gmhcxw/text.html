@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html manifest=text.appcache>
+<title>Encrypted Local Text</title>
+<style>
+#t { display: none; width: 100%; height: 100%; }
+</style>
+<form id=pwf>
+<input id=pw type=password placeholder=password autofocus size=10>
+</form>
+<textarea id=t></textarea>
+<script>
+var $ = function(i) { return document.getElementById(i); };
+function str_bytes(s) {
+  return s.split('').map(function(c){return c.charCodeAt(0)});
+}
+function bytes_str(b) {
+  return Array.prototype.slice.apply(new Uint8Array(b)).map(function(c){return String.fromCharCode(c)}).join('');
+}
+$('pwf').addEventListener('submit', function(evt) {
+  evt.preventDefault();
+  var digestOp = crypto.subtle.digest({name: 'SHA-256'}, new Uint8Array(str_bytes($('pw').value)));
+  $('pw').value = '';
+  $('pwf').parentNode.removeChild($('pwf'));
+  digestOp.catch(function(err) {
+    console.log('digest error', err);
+  });
+  digestOp.then(function(h) {
+    var extractable = false;
+    var importOp = crypto.subtle.importKey('raw', h, {name: 'AES-CBC', length: 256}, extractable, ['encrypt', 'decrypt']);
+    importOp.catch(function(err) {
+      console.log('import error', err);
+    });
+    importOp.then(function(k) {
+      $('t').style.display = 'block';
+      var ct = localStorage[location.search.substr(1)];
+      if (ct) {
+        ct = str_bytes(ct);
+        console.log('ct.length', ct.length);
+        var iv = ct.slice(0, 16);
+        var ct = ct.slice(16);
+        var decryptOp = crypto.subtle.decrypt({name: 'AES-CBC', iv: new Uint8Array(iv)}, k, new Uint8Array(ct));
+        decryptOp.catch(function(err) {
+          console.log('decrypt error', err);
+        });
+        decryptOp.then(function(pt) {
+          $('t').value = pt;
+        });
+      }
+      $('t').addEventListener('keyup', function() {
+        var pt = str_bytes($('t').value);
+        var iv = crypto.getRandomValues(new Uint8Array(16));
+        console.log('pt.length', pt.length);
+        var encOp = crypto.subtle.encrypt({name: 'AES-CBC', iv: iv}, k, new Uint8Array(pt));
+        encOp.catch(function(err) {
+          console.log('encrypt error', err);
+        });
+        encOp.then(function(ct) {
+          ct = bytes_str(ct);
+          console.log('ct.length', ct.length);
+          localStorage[location.search.substr(1)] = ct;
+        });
+      });
+    });
+  });
+});
+</script>
