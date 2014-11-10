@@ -4,8 +4,9 @@
 <style>
 body { margin: 0; }
 #pw, { display: block; }
-#cap, #view, #f, #nv, #v, #cam, #c, #dl { display: none; }
-#pw, #cap, #view, #cam { width: 100%; font-size: 80px;}
+#write, #t, #cap, #view, #f, #nv, #v, #cam, #c, #dl { display: none; }
+#write, #pw, #cap, #view, #cam { width: 100%; font-size: 80px;}
+#t { width: 100%; height: 100%; }
 </style>
 <form id=pwf>
 <input id=pw type=password placeholder=password autofocus size=10>
@@ -14,8 +15,11 @@ body { margin: 0; }
 <button id=cam>camera</button>
 <button id=cap>capture</button>
 <button id=view>view</button>
+<button id=write>write</button>
 <video id=v muted autoplay></video>
 <div id=viewer></div>
+<textarea id=t></textarea>
+
 <input id=f type=file multiple accept='.ei'>
 <canvas id=c></canvas>
 <a id=dl></a>
@@ -43,17 +47,23 @@ function start() {
   if (!!$('v').stream) {
     $('v').stream.stop();
   }
-  if (videoSrcs.length === 0) {
-    return;
-  }
   $('viewer').style.display = 'none';
   $('cap').style.display = 'none';
-  $('view').style.display = 'block';
+  $('view').style.display = 'inline';
+  $('write').style.display = 'inline';
+  $('t').style.display = 'none';
   if (videoSrcs.length > 1) {
     $('cam').style.display = 'inline';
     $('view').style.display = 'inline';
-    $('cam').style.width = '49%';
+    $('cam').style.width = '33%';
+    $('view').style.width = '33%';
+    $('write').style.width = '33%';
+  } else {
     $('view').style.width = '49%';
+    $('write').style.width = '49%';
+  }
+  if (videoSrcs.length === 0) {
+    return;
   }
   var srcs = {};
   srcs.video = {optional: [{sourceId: videoSrcs[0]}]};
@@ -107,10 +117,28 @@ $('view').addEventListener('click', function() {
   }
   $('cam').style.display = 'none';
   $('v').style.display = 'none';
-  $('cap').style.display = 'block';
+  $('cap').style.display = 'inline';
   $('view').style.display = 'none';
+  $('write').style.display = 'inline';
+  $('cap').style.width = '49%';
+  $('write').style.width = '49%';
   $('viewer').style.display = 'block';
   $('f').click();
+}, false);
+$('write').addEventListener('click', function() {
+  if (!!$('v').stream) {
+    $('v').stream.stop();
+  }
+  $('cam').style.display = 'none';
+  $('v').style.display = 'none';
+  $('cap').style.display = 'inline';
+  $('view').style.display = 'inline';
+  $('viewer').style.display = 'none';
+  $('write').style.display = 'none';
+  $('cap').style.width = '49%';
+  $('view').style.width = '49%';
+  $('t').style.display = 'block';
+  $('t').focus();
 }, false);
 
 $('pwf').addEventListener('submit', function(evt) {
@@ -129,6 +157,37 @@ $('pwf').addEventListener('submit', function(evt) {
       console.log('import error', err);
     });
     importOp.then(function(k) {
+
+      var ct = localStorage[location.search.substr(1)];
+      if (ct) {
+        ct = str_bytes(ct);
+        console.log('ct.length', ct.length);
+        var iv = ct.slice(0, 16);
+        var ct = ct.slice(16);
+        var decryptOp = crypto.subtle.decrypt({name: 'AES-CBC', iv: new Uint8Array(iv)}, k, new Uint8Array(ct));
+        decryptOp.catch(function(err) {
+          console.log('decrypt error', err);
+        });
+        decryptOp.then(function(pt) {
+          $('t').value = bytes_str(pt);
+        });
+      }
+
+      $('t').addEventListener('keyup', function() {
+        var pt = str_bytes($('t').value);
+        var iv = crypto.getRandomValues(new Uint8Array(16));
+        console.log('pt.length', pt.length);
+        var encOp = crypto.subtle.encrypt({name: 'AES-CBC', iv: iv}, k, new Uint8Array(pt));
+        encOp.catch(function(err) {
+          console.log('encrypt error', err);
+        });
+        encOp.then(function(ct) {
+          ct = bytes_str(iv) + bytes_str(ct);
+          console.log('ct.length', ct.length);
+          localStorage[location.search.substr(1)] = ct;
+        });
+      });
+
       $('f').addEventListener('change', function(e) {
         for (var i = 0; e.target.files[i]; ++i) {
           console.log(e.target.files[i]);
@@ -158,6 +217,7 @@ $('pwf').addEventListener('submit', function(evt) {
           r.readAsArrayBuffer(e.target.files[i]);
         }
       });
+
       $('v').addEventListener('click', function() {
         console.log('v click');
         $('c').width = parseInt(getComputedStyle($('v')).width);
