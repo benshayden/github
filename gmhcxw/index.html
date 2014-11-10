@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html manifest=gmhcxw.appcache>
-<title>Encrypted Photos</title>
+<title>Privacy</title>
 <style>
-body { margin: 0; }
+body { margin: 0; background: black; }
 #pw, { display: block; }
 #write, #t, #cap, #view, #f, #nv, #v, #cam, #c, #dl { display: none; }
 #write, #pw, #cap, #view, #cam { width: 100%; font-size: 80px;}
-#t { width: 100%; height: 100%; }
+#t { width: 100%; height: 100%; background: black; color: white; }
+#v { margin: auto; }
 </style>
 <form id=pwf>
 <input id=pw type=password placeholder=password autofocus size=10>
@@ -138,7 +139,13 @@ $('write').addEventListener('click', function() {
   $('cap').style.width = '49%';
   $('view').style.width = '49%';
   $('t').style.display = 'block';
+  $('t').style.height = (window.innerHeight - parseInt(getComputedStyle($('cap')).height)) + 'px';
   $('t').focus();
+}, false);
+window.addEventListener('resize', function() {
+  if ($('t').style.display === 'block') {
+    $('t').style.height = (window.innerHeight - parseInt(getComputedStyle($('cap')).height)) + 'px';
+  }
 }, false);
 
 $('pwf').addEventListener('submit', function(evt) {
