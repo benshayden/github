@@ -1,3 +1,8 @@
+// ATTINYs have very limited memory. Calculating whether a date is in DST from first principles (e.g. the Timezone library) can consume a lot of memory.
+// TinyDST calculates whether a date is in DST using as little memory as possible using a pre-computed table.
+
+// The pre-computed table will last until 2030. If you expect to still be using this library after that, then you'll need to re-compute the table.
+
 // Example usage:
 // https://github.com/benshayden/github/blob/master/lightclock/lightclock.ino
 
