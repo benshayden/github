@@ -99,6 +99,7 @@ function thumb(h, wf, wb, chr, chc, ohc, ar) {
   p.push([-bs, -bs]);
   p.push([-bs, h]);
   p = p.concat(curve([ar - bs, h + bs - chr], ar, 0.5, 0.25, 1));
+  p = p.concat(curve([1, h + bs + (2 * chr) + 0.7], or, 0.25, -0.25, 0.5));
   p = p.concat(curve([0, h + bs + chr], chr, 0.25, 0.75, 0.5));
   p = linear_extrude({height: bs}, polygon(p));
   p = difference(p, hollow);
