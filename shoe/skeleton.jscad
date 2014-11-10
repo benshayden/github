@@ -92,14 +92,14 @@ function thumb(h, wf, wb, chr, chc, ohc, ar) {
   hollow = linear_extrude({height: bs}, polygon(hollow));
   var l = lead();
   var leads = union(l);
-  var p = [[0, h + bs]];
+  var p = [];
   p.push([wf + bs + wb + 1, h + bs]);
   p.push([wf + bs + wb + 1, -bs]);
   p.push([0, -bs]);
   p.push([-bs, -bs]);
   p.push([-bs, h]);
-  //p.push([-bs, h + bs]);
-  p = p.concat(curve([ar - bs, h + bs], ar, 0.5, 0.25, 1));
+  p = p.concat(curve([ar - bs, h + bs - chr], ar, 0.5, 0.25, 1));
+  p = p.concat(curve([0, h + bs + chr], chr, 0.25, 0.75, 0.5));
   p = linear_extrude({height: bs}, polygon(p));
   p = difference(p, hollow);
   //p = difference(p, leads);
