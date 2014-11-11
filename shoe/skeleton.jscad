@@ -1,4 +1,4 @@
-var TAU = 2 * Math.PI;
+var show_buttons = false;
 function getParameterDefinitions() {
   return [
     {name: 'chr', caption: 'Coat hanger radius mm:', type: 'float', initial: 1.5875},
@@ -8,9 +8,10 @@ function getParameterDefinitions() {
     {name: 'wb0', caption: 'Index Back width mm:', type: 'float', initial: 10},
     {name: 'h1', caption: 'Thumb height mm:', type:'float', initial: 40},
     {name: 'wf1', caption: 'Thumb front width mm:', type:'float', initial: 9},
-    {name: 'wb1', caption: 'Thumb back width mm:', type:'float', initial: 15},
-  ];
+    {name: 'wb1', caption: 'Thumb back width mm:', type:'float', initial: 15}];
 }
+
+var TAU = 2 * Math.PI;
 
 function curve(center, radius, start, end, maxedge) {
   start *= TAU;
@@ -83,11 +84,12 @@ function finger(hf, hb, wf, wb, chr, chc, ohc, ar) {
   //p = union(p, cushions);
   p = difference(p, leads);
   p = p.setColor([1, 1, 1]);
-  //p = union(p, buttons);
+  if (show_buttons) p = union(p, buttons);
   return p;
 }
 
 var thin = 2;
+
 function thumb(h, wf, wb, chr, chc, ohc, ar) {
   var hollow = [[0, 0], [wf + bs + wb, 0], [wf + bs + wb, h], [0, h]];
   hollow = linear_extrude({height: bs}, polygon(hollow));
@@ -97,6 +99,12 @@ function thumb(h, wf, wb, chr, chc, ohc, ar) {
     l.translate([wf + (bs / 2), h]),
     l.rotateZ(90).translate([0, h / 2]),
     l.rotateZ(90).translate([wf + bs + wb + bs, h / 2]));
+  var b = button();
+  var buttons = union(
+    b.translate([wf, 0]),
+    b.rotateZ(180).translate([wf + bs, h]),
+    b.rotateZ(-90).translate([0, (h / 2) + (bs / 2)]),
+    b.rotateZ(90).translate([wf + bs + wb, (h / 2) - (bs / 2)]));
   var p = [];
   p = p.concat(curve([wf + bs + wb + thin - ar, h + bs + chr], chr, 0.75, 1.25, 0.5));
   p = p.concat(curve([wf + bs + wb +thin - ar - 1, h + bs + (2 * chr) + 0.7], or, 0.75, 0.25, 0.5));
@@ -117,7 +125,7 @@ function thumb(h, wf, wb, chr, chc, ohc, ar) {
   p = difference(p, hollow);
   p = difference(p, leads);
   p = p.setColor([1, 1, 1]);
-  //p = union(p, buttons);
+  if (show_buttons) p = union(p, buttons);
   return p;
 }
 
