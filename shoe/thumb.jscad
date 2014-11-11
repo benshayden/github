@@ -41,7 +41,6 @@ function lead() {
 var thin = 2;
 
 function main(params) {
-//h, wf, wb, chr) {
   var icha = (TAU - cha) / 2;
   var chc = [params.chr * Math.cos(icha), params.chr * Math.sin(icha)];
   var ohc = [or * Math.cos(icha), or * Math.sin(icha)];
