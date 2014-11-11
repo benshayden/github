@@ -91,7 +91,11 @@ function thumb(h, wf, wb, chr, chc, ohc, ar) {
   var hollow = [[0, 0], [wf + bs + wb, 0], [wf + bs + wb, h], [0, h]];
   hollow = linear_extrude({height: bs}, polygon(hollow));
   var l = lead();
-  var leads = union(l);
+  var leads = union(
+    l.translate([wf + (bs / 2), -bs]),
+    l.translate([wf + (bs / 2), h]),
+    l.rotateZ(90).translate([0, h / 2]),
+    l.rotateZ(90).translate([wf + bs + wb + bs, h / 2]));
   var p = [];
   p = p.concat(curve([wf + bs + wb + 1 - ar, h + bs + chr], chr, 0.75, 1.25, 0.5));
   p = p.concat(curve([wf + bs + wb - ar, h + bs + (2 * chr) + 0.7], or, 0.75, 0.25, 0.5));
@@ -108,7 +112,7 @@ function thumb(h, wf, wb, chr, chc, ohc, ar) {
   p = p.concat(curve([0, h + bs + chr], chr, 0.25, 0.75, 0.5));
   p = linear_extrude({height: bs}, polygon(p));
   p = difference(p, hollow);
-  //p = difference(p, leads);
+  p = difference(p, leads);
   p = p.setColor([1, 1, 1]);
   //p = union(p, buttons);
   return p;
