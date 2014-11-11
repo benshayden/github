@@ -1,8 +1,0 @@
-{"name": "OpenJSCAD IDE",
-"version": "0.0",
-"description": "github <-> openjscad.org",
-"background": {"scripts": "bg.js", "persistent": false},
-"page_action": {"default_icon": "128.png", "default_title": "jscad ide"},
-"permissions": ["tabs"],
-"icons": {"128": "128.png"}}
-
