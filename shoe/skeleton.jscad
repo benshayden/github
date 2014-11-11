@@ -2,13 +2,17 @@ var show_buttons = false;
 function getParameterDefinitions() {
   return [
     {name: 'chr', caption: 'Coat hanger radius mm:', type: 'float', initial: 1.5875},
-    {name: 'hf0', caption: 'Index Front height mm:', type: 'float', initial: 7},
-    {name: 'hb0', caption: 'Index Back height mm:', type: 'float', initial: 9},
-    {name: 'wf0', caption: 'Index Front width mm:', type: 'float', initial: 8},
-    {name: 'wb0', caption: 'Index Back width mm:', type: 'float', initial: 10},
-    {name: 'h1', caption: 'Thumb height mm:', type:'float', initial: 40},
-    {name: 'wf1', caption: 'Thumb front width mm:', type:'float', initial: 9},
-    {name: 'wb1', caption: 'Thumb back width mm:', type:'float', initial: 15}];
+    {name: 'hf0', caption: 'right index front height mm:', type: 'float', initial: 7},
+    {name: 'hb0', caption: 'right index back height mm:', type: 'float', initial: 9},
+    {name: 'wf0', caption: 'right index front width mm:', type: 'float', initial: 8},
+    {name: 'wb0', caption: 'right index back width mm:', type: 'float', initial: 10},
+    {name: 'h1', caption: 'right thumb height mm:', type: 'float', initial: 40},
+    {name: 'wf1', caption: 'right Thumb front width mm:', type: 'float', initial: 9},
+    {name: 'wb1', caption: 'right Thumb back width mm:', type: 'float', initial: 15},
+    {name: 'hf2', caption: 'right middle front height mm:', type: 'float', initial: 7},
+    {name: 'hb2', caption: 'right middle back height mm:', type: 'float', initial: 9},
+    {name: 'wf2', caption: 'right middle front width mm:', type: 'float', initial: 8},
+    {name: 'wb2', caption: 'right middle back width mm:', type: 'float', initial: 10}];
 }
 
 var TAU = 2 * Math.PI;
@@ -135,6 +139,7 @@ function main(params) {
   var ohc = [or * Math.cos(icha), or * Math.sin(icha)];
   var ar = (bs / 2) + chc[1] + ohc[1]; // arch radius
   return union(
-    finger(params.hf0, params.hb0, params.wf0, params.wb0, params.chr, chc, ohc, ar).translate([-35, -bs]),
+    finger(params.hf0, params.hb0, params.wf0, params.wb0, params.chr, chc, ohc, ar).translate([-32, -bs]),
+    finger(params.hf2, params.hb2, params.wf2, params.wb2, params.chr, chc, ohc, ar).rotateZ(180).translate([-25, 9]),
     thumb(params.h1, params.wf1, params.wb1, params.chr, chc, ohc, ar));
 }
