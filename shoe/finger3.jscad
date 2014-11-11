@@ -5,7 +5,7 @@ function getParameterDefinitions() {
     {name: 'hf', caption: 'front height mm:', type: 'float', initial: 7},
     {name: 'hb', caption: 'back height mm:', type: 'float', initial: 9},
     {name: 'wf', caption: 'front width mm:', type: 'float', initial: 8},
-    {name: 'wb', caption: 'back width mm:', type: 'float', initial: 10},
+    {name: 'wb', caption: 'back width mm:', type: 'float', initial: 10}];
 }
 
 var TAU = 2 * Math.PI;
