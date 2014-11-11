@@ -87,6 +87,7 @@ function finger(hf, hb, wf, wb, chr, chc, ohc, ar) {
   return p;
 }
 
+var thin = 2;
 function thumb(h, wf, wb, chr, chc, ohc, ar) {
   var hollow = [[0, 0], [wf + bs + wb, 0], [wf + bs + wb, h], [0, h]];
   hollow = linear_extrude({height: bs}, polygon(hollow));
@@ -97,11 +98,13 @@ function thumb(h, wf, wb, chr, chc, ohc, ar) {
     l.rotateZ(90).translate([0, h / 2]),
     l.rotateZ(90).translate([wf + bs + wb + bs, h / 2]));
   var p = [];
-  p = p.concat(curve([wf + bs + wb + 1 - ar, h + bs + chr], chr, 0.75, 1.25, 0.5));
-  p = p.concat(curve([wf + bs + wb - ar, h + bs + (2 * chr) + 0.7], or, 0.75, 0.25, 0.5));
-  p = p.concat(curve([wf + bs + wb + 1 - ar, h + bs - chr], ar, 0.25, 0, 1));
+  p = p.concat(curve([wf + bs + wb + thin - ar, h + bs + chr], chr, 0.75, 1.25, 0.5));
+  p = p.concat(curve([wf + bs + wb +thin - ar - 1, h + bs + (2 * chr) + 0.7], or, 0.75, 0.25, 0.5));
+  p = p.concat(curve([wf + bs + wb + thin - ar, h + bs - chr], ar, 0.25, 0, 1));
   
-  p.push([wf + bs + wb + 1, -bs]);
+  p = p.concat(curve([wf + bs + wb + thin - ar, chr - bs], ar, 0, -0.25, 1));
+  p = p.concat(curve([wf + bs + wb +thin - ar - 1, -bs - (2 * chr) - 0.7], or, 0.75, 0.25, 0.5));
+  p = p.concat(curve([wf + bs + wb + thin - ar, -chr - bs], chr, 0.75, 1.25, 0.5));
 
   p = p.concat(curve([0, -bs - chr], chr, 0.25, 0.75, 0.5));
   p = p.concat(curve([1, -bs - (2 * chr) - 0.7], or, 0.25, -0.25, 0.5));
@@ -124,6 +127,6 @@ function main(params) {
   var ohc = [or * Math.cos(icha), or * Math.sin(icha)];
   var ar = (bs / 2) + chc[1] + ohc[1]; // arch radius
   return union(
-    //finger(params.hf0, params.hb0, params.wf0, params.wb0, params.chr, chc, ohc, ar),
+    finger(params.hf0, params.hb0, params.wf0, params.wb0, params.chr, chc, ohc, ar).translate([-35, -bs]),
     thumb(params.h1, params.wf1, params.wb1, params.chr, chc, ohc, ar));
 }
