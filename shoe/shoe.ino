@@ -8,20 +8,26 @@
 
 // See circuit.svg for how to charlie-plex the buttons in a way that is
 // compatible with this firmware.
+// Charlieplexing LEDs is similar, except you don't need the pull-down
+// resistors, and the current-limiting resistors will depend on your LEDs.
+// This firmware cannot support more than 16 button pins (240 buttons). In order
+// to support >240 buttons, `current_button` would need to be changed to
+// uint16_t.
 #define BUTTON_PINS 5, 6, 7
 #define LED_PINS 8, 9, 10
 
-#define NUM_MACROS 5
-#define MAX_MACRO_LEN 20
+#define NUM_MACROS 10
+#define MAX_MACRO_LEN 80
 
-#define SHIFT_LED 0
-#define CONTROL_LED 1
-#define ALT_LED 2
-#define GUI_LED 3
-#define MODE0_LED 4
-#define MODE1_LED 5
-#define LOCK_NEXT_LED 6
+#define SHIFT_LED           0
+#define CONTROL_LED         1
+#define ALT_LED             2
+#define GUI_LED             3
+#define MODE0_LED           4
+#define MODE1_LED           5
+#define LOCK_NEXT_LED       6
 #define RECORDING_MACRO_LED 7
+#define CAPS_LOCK_LED       8
 
 // END SETTINGS
 
@@ -36,6 +42,8 @@
 #define MEDIA_PREV        0x20
 #define MEDIA_STOP        0x40
 #define MEDIA_EJECT       0x80
+
+#define MACRO_PRESS 0x8000
 
 typedef struct { uint8_t x; uint8_t y; } uint8_pair_t;
 typedef struct { uint8_t* bytes; const uint16_t size; } array8_t;
@@ -74,6 +82,7 @@ uint8_t current_button_pin = 0;
 uint8_t current_led_row = 0;
 uint8_t record_macro = 0xff;
 uint8_t record_macro_keyi = 0;
+bool caps_lock = false;
 
 void mode_write(uint8_t pin, uint8_t mode, uint8_t state) {
   pinMode(pin, mode);
@@ -206,9 +215,6 @@ void play_macro(uint8_t mi);
 void release(uint16_t k);
 
 void press(uint16_t k) {
-  if (record_macro < NUM_MACROS) {
-    // TODO
-  }
   // handle the MSB
   if ((k & MOD_CONTROL) == MOD_CONTROL) {
     press(KEY_LEFT_CONTROL);
@@ -230,10 +236,24 @@ void press(uint16_t k) {
   }
   if ((KEY_MACRO0 <= k) && (k < (KEY_MACRO0 + NUM_MACROS))) {
     if (lock_next) {
-      record_macro = k - KEY_MACRO0;
-      set_led(RECORDING_MACRO_LED, 1);
+      lock_next = false;
+      if (record_macro < NUM_MACROS) {
+        // Don't actually record the key that, when replayed, would start
+        // recording the macro again.
+        macro_keys[record_macro][record_macro_keyi - 1] = 0;
+        record_macro = 0xff;
+        record_macro_keyi = 0;
+      } else {
+        record_macro = k - KEY_MACRO0;
+        record_macro_keyi = 0;
+        for (uint16_t ki = 0; ki < MAX_MACRO_LEN; ++ki) {
+          macro_keys[record_macro][ki] = 0;
+        }
+      }
     } else {
       play_macro(k - KEY_MACRO0);
+      // Not sure why playing macros sometimes leaves lock_next true.
+      lock_next = false;
     }
     return;
   }
@@ -333,6 +353,9 @@ void press(uint16_t k) {
   if (k == KEY_LEFT_GUI_LOCK) {
     k = KEY_LEFT_GUI;
   }
+  if (k == KEY_CAPS_LOCK) {
+    caps_lock = !caps_lock;
+  }
   toggle_modifier(k);
   if (is_reserved(k)) {
     return;
@@ -346,45 +369,50 @@ void press(uint16_t k) {
 }
 
 void release(uint16_t k) {
+  bool isnt_once = ((k != KEY_CONTROL_1) &&
+                    (k != KEY_SHIFT_1) &&
+                    (k != KEY_ALT_1) &&
+                    (k != KEY_GUI_1) &&
+                    (k != KEY_MODE0_1) &&
+                    (k != KEY_MODE1_1));
+  // don't release any once-modifier when any once-modifier is released
   if (((k & MOD_CONTROL) == MOD_CONTROL) ||
-      ((k != KEY_CONTROL_1) &&
+      (isnt_once &&
        (k != KEY_LEFT_CONTROL) &&
        ((once_modifier & MODIFIERKEY_LEFT_CTRL) != 0))) {
     release(KEY_LEFT_CONTROL);
     once_modifier &= ~MODIFIERKEY_LEFT_CTRL;
   }
   if (((k & MOD_SHIFT) == MOD_SHIFT) ||
-      ((k != KEY_SHIFT_1) &&
+      (isnt_once &&
        (k != KEY_LEFT_SHIFT) &&
        ((once_modifier & MODIFIERKEY_LEFT_SHIFT) != 0))) {
     release(KEY_LEFT_SHIFT);
     once_modifier &= ~MODIFIERKEY_LEFT_SHIFT;
   }
   if (((k & MOD_ALT) == MOD_ALT) ||
-      ((k != KEY_ALT_1) &&
+      (isnt_once &&
        (k != KEY_LEFT_ALT) &&
        ((once_modifier & MODIFIERKEY_LEFT_ALT) != 0))) {
     release(KEY_LEFT_ALT);
     once_modifier &= ~MODIFIERKEY_LEFT_ALT;
   }
   if (((k & MOD_GUI) == MOD_GUI) ||
-      ((k != KEY_GUI_1) &&
+      (isnt_once &&
        (k != KEY_LEFT_GUI) &&
        ((once_modifier & MODIFIERKEY_LEFT_GUI) != 0))) {
     release(KEY_LEFT_GUI);
     once_modifier &= ~MODIFIERKEY_LEFT_GUI;
   }
-  if ((k != KEY_MODE0_1) &&
+  if (isnt_once &&
       ((once_mode & 1) != 0)) {
     mode &= ~1;
     once_mode &= ~1;
-    return;
   }
-  if ((k != KEY_MODE1_1) &&
+  if (isnt_once &&
       ((once_mode & 2) != 0)) {
     mode &= ~2;
     once_mode &= ~2;
-    return;
   }
   k &= 0xff;
   toggle_modifier(k);
@@ -401,13 +429,22 @@ void release(uint16_t k) {
 
 void play_macro(uint8_t mi) {
   if (mi >= NUM_MACROS) return;
+  release(0);  // release all once modifiers
+  uint16_t k = 0;
+  bool is_press = false;
   for (uint8_t ki = 0; (ki < MAX_MACRO_LEN) && macro_keys[mi][ki]; ++ki) {
-    press(macro_keys[mi][ki]);
-    Keyboard.send_now();
-    delay(3);
-    release(macro_keys[mi][ki]);
-    Keyboard.send_now();
-    delay(3);
+    k = macro_keys[mi][ki];
+    is_press = (k & MACRO_PRESS) == MACRO_PRESS;
+    k &= ~MACRO_PRESS;
+    if (k) {
+      if (is_press) {
+        press(k);
+      } else {
+        release(k);
+      }
+      Keyboard.send_now();
+      delay(5);
+    }
   }
 }
 
@@ -441,20 +478,30 @@ void loop() {
   bool pressed = read_bit(current_button, buttons);
   if (state != pressed) {
     write_bit(current_button, state, buttons);
-    if (k && state) {
-      press(k);
-    } else if (k && !state) {
-      release(k);
+    if (k) {
+      if (record_macro < NUM_MACROS) {
+        macro_keys[record_macro][record_macro_keyi] = k + (state ? MACRO_PRESS : 0);
+        ++record_macro_keyi;
+        if (record_macro_keyi >= MAX_MACRO_LEN) {
+          record_macro = 0xff;
+          record_macro_keyi = 0;
+        }
+      }
+      if (state) {
+        press(k);
+      } else {
+        release(k);
+      }
     }
+
+    set_led(CONTROL_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_CTRL);
+    set_led(SHIFT_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_SHIFT);
+    set_led(ALT_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_ALT);
+    set_led(GUI_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_GUI);
+    set_led(MODE0_LED, mode & 1);
+    set_led(MODE1_LED, mode & 2);
+    set_led(LOCK_NEXT_LED, lock_next);
+    set_led(RECORDING_MACRO_LED, record_macro < NUM_MACROS);
+    set_led(CAPS_LOCK_LED, caps_lock);
   }
-
-  set_led(LOCK_NEXT_LED, lock_next);
-  set_led(MODE0_LED, mode & 1);
-  set_led(MODE1_LED, mode & 2);
-  set_led(CONTROL_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_CTRL);
-  set_led(SHIFT_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_SHIFT);
-  set_led(ALT_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_ALT);
-  set_led(GUI_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_GUI);
-
-  delayMicroseconds(1);
 }

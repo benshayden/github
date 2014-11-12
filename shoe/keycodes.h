@@ -261,7 +261,6 @@
 #define KEY_LEFT_ALT_LOCK       236
 #define KEY_LEFT_GUI_LOCK       237
 
-// TODO record
 // Record and replay key sequences. See SETTINGS in shoe.ino for the number and
 // length of macros.
 #define KEY_MACRO0              238
