@@ -13,11 +13,29 @@
 // This firmware cannot support more than 16 button pins (240 buttons). In order
 // to support >240 buttons, `current_button` would need to be changed to
 // uint16_t.
+//#define LED_PINS 4, 5, 6, 7, 8
+//#define BUTTON_PINS 12, 13, 14, 15, 16, 17, 18, 19, 20
 #define BUTTON_PINS 5, 6, 7
 #define LED_PINS 8, 9, 10
 
+// pins buttons/LEDs
+// 3    6
+// 4    12
+// 5    20
+// 6    30
+// 7    42
+// 8    56
+// 9    72
+// 10   90
+// 11   110
+// 12   132
+// 13   156
+// 14   182
+// 15   210
+// 16   240
+
 #define NUM_MACROS 10
-#define MAX_MACRO_LEN 80
+#define MAX_MACRO_LEN 100
 
 #define SHIFT_LED           0
 #define CONTROL_LED         1
@@ -27,7 +45,11 @@
 #define MODE1_LED           5
 #define LOCK_NEXT_LED       6
 #define RECORDING_MACRO_LED 7
-#define CAPS_LOCK_LED       8
+#define NUM_LOCK_LED        8
+#define CAPS_LOCK_LED       9
+#define SCROLL_LOCK_LED     10
+#define COMPOSE_LED         11
+#define KANA_LED            12
 
 // END SETTINGS
 
@@ -82,7 +104,6 @@ uint8_t current_button_pin = 0;
 uint8_t current_led_row = 0;
 uint8_t record_macro = 0xff;
 uint8_t record_macro_keyi = 0;
-bool caps_lock = false;
 
 void mode_write(uint8_t pin, uint8_t mode, uint8_t state) {
   pinMode(pin, mode);
@@ -368,9 +389,6 @@ void press(uint16_t k) {
   if (k == KEY_LEFT_GUI_LOCK) {
     k = KEY_LEFT_GUI;
   }
-  if (k == KEY_CAPS_LOCK) {
-    caps_lock = !caps_lock;
-  }
   toggle_modifier(k);
   if (is_reserved(k)) {
     return;
@@ -470,6 +488,13 @@ void setup() {
 }
 
 void loop() {
+  // keyboard_leds is sent from the host asynchronously from button presses.
+  set_led(NUM_LOCK_LED, (keyboard_leds & 1) != 0);
+  set_led(CAPS_LOCK_LED, (keyboard_leds & 2) != 0);
+  set_led(SCROLL_LOCK_LED, (keyboard_leds & 4) != 0);
+  set_led(COMPOSE_LED, (keyboard_leds & 8) != 0);
+  set_led(KANA_LED, (keyboard_leds & 0x10) != 0);
+
   paint_led_row();
 
   bool state = digitalRead(current_button_pin);
@@ -484,43 +509,47 @@ void loop() {
     Keyboard.send_now();
   }
 
+  bool pressed = read_bit(current_button, buttons);
+  if (state == pressed) {
+    return;
+  }
+  write_bit(current_button, state, buttons);
   uint16_t k = 0;
   const array16_t& keymap = keymaps[mode];
   if (current_button < keymap.size) {
     k = pgm_read_word(keymap.shorts + current_button);
   }
-
-  bool pressed = read_bit(current_button, buttons);
-  if (state != pressed) {
-    write_bit(current_button, state, buttons);
-    if (k) {
-      if (record_macro < NUM_MACROS) {
-        macro_keys[record_macro][record_macro_keyi] = k + (state ? MACRO_PRESS : 0);
-        ++record_macro_keyi;
-        if (record_macro_keyi >= MAX_MACRO_LEN) {
-          record_macro = 0xff;
-          record_macro_keyi = 0;
-        }
-      }
-      if (state) {
-        press(k);
-      } else {
-        release(k);
-      }
-    }
-
-    set_led(CONTROL_LED, ((keyboard_report_data[0] & MODIFIERKEY_LEFT_CTRL) != 0) ||
-                         ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_CTRL) != 0));
-    set_led(SHIFT_LED, ((keyboard_report_data[0] & MODIFIERKEY_LEFT_SHIFT) != 0) ||
-                       ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_SHIFT) != 0));
-    set_led(ALT_LED, ((keyboard_report_data[0] & MODIFIERKEY_LEFT_ALT) != 0) ||
-                     ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_ALT) != 0));
-    set_led(GUI_LED, ((keyboard_report_data[0] & MODIFIERKEY_LEFT_GUI) != 0) ||
-                     ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_GUI) != 0));
-    set_led(MODE0_LED, mode & 1);
-    set_led(MODE1_LED, mode & 2);
-    set_led(LOCK_NEXT_LED, lock_next);
-    set_led(RECORDING_MACRO_LED, record_macro < NUM_MACROS);
-    set_led(CAPS_LOCK_LED, caps_lock);
+  if (k == 0) {
+    return;
   }
+  if (record_macro < NUM_MACROS) {
+    macro_keys[record_macro][record_macro_keyi] = k + (state ? MACRO_PRESS : 0);
+    ++record_macro_keyi;
+    if (record_macro_keyi >= MAX_MACRO_LEN) {
+      record_macro = 0xff;
+      record_macro_keyi = 0;
+    }
+  }
+  if (state) {
+    press(k);
+  } else {
+    release(k);
+  }
+
+  set_led(CONTROL_LED,
+      ((keyboard_report_data[0] & MODIFIERKEY_LEFT_CTRL) != 0) ||
+      ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_CTRL) != 0));
+  set_led(SHIFT_LED,
+      ((keyboard_report_data[0] & MODIFIERKEY_LEFT_SHIFT) != 0) ||
+      ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_SHIFT) != 0));
+  set_led(ALT_LED,
+      ((keyboard_report_data[0] & MODIFIERKEY_LEFT_ALT) != 0) ||
+      ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_ALT) != 0));
+  set_led(GUI_LED,
+      ((keyboard_report_data[0] & MODIFIERKEY_LEFT_GUI) != 0) ||
+      ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_GUI) != 0));
+  set_led(MODE0_LED, (mode & 1) != 0);
+  set_led(MODE1_LED, (mode & 2) != 0);
+  set_led(LOCK_NEXT_LED, lock_next);
+  set_led(RECORDING_MACRO_LED, record_macro < NUM_MACROS);
 }
