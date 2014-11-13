@@ -171,6 +171,18 @@ void toggle_modifier(uint8_t k) {
     case KEY_LEFT_GUI:
       keyboard_report_data[0] ^= MODIFIERKEY_LEFT_GUI;
       break;
+    case KEY_RIGHT_CONTROL:
+      keyboard_report_data[0] ^= MODIFIERKEY_RIGHT_CTRL;
+      break;
+    case KEY_RIGHT_SHIFT:
+      keyboard_report_data[0] ^= MODIFIERKEY_RIGHT_SHIFT;
+      break;
+    case KEY_RIGHT_ALT:
+      keyboard_report_data[0] ^= MODIFIERKEY_RIGHT_ALT;
+      break;
+    case KEY_RIGHT_GUI:
+      keyboard_report_data[0] ^= MODIFIERKEY_RIGHT_GUI;
+      break;
     case KEY_VOLUME_UP:
       keyboard_report_data[1] ^= MEDIA_VOLUME_UP;
       break;
@@ -184,12 +196,15 @@ void toggle_modifier(uint8_t k) {
       keyboard_report_data[1] ^= MEDIA_PAUSE;
       break;
     case KEY_NEXT:
+      // Ubuntu doesn't recognize this.
       keyboard_report_data[1] ^= MEDIA_NEXT;
       break;
     case KEY_PREV:
+      // Ubuntu doesn't recognize this.
       keyboard_report_data[1] ^= MEDIA_PREV;
       break;
     case KEY_STOP:
+      // Ubuntu recognizes this as keycode 136 keysym 0xff69 "Cancel".
       keyboard_report_data[1] ^= MEDIA_STOP;
       break;
     case KEY_EJECT:
@@ -494,10 +509,14 @@ void loop() {
       }
     }
 
-    set_led(CONTROL_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_CTRL);
-    set_led(SHIFT_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_SHIFT);
-    set_led(ALT_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_ALT);
-    set_led(GUI_LED, keyboard_report_data[0] & MODIFIERKEY_LEFT_GUI);
+    set_led(CONTROL_LED, ((keyboard_report_data[0] & MODIFIERKEY_LEFT_CTRL) != 0) ||
+                         ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_CTRL) != 0));
+    set_led(SHIFT_LED, ((keyboard_report_data[0] & MODIFIERKEY_LEFT_SHIFT) != 0) ||
+                       ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_SHIFT) != 0));
+    set_led(ALT_LED, ((keyboard_report_data[0] & MODIFIERKEY_LEFT_ALT) != 0) ||
+                     ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_ALT) != 0));
+    set_led(GUI_LED, ((keyboard_report_data[0] & MODIFIERKEY_LEFT_GUI) != 0) ||
+                     ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_GUI) != 0));
     set_led(MODE0_LED, mode & 1);
     set_led(MODE1_LED, mode & 2);
     set_led(LOCK_NEXT_LED, lock_next);

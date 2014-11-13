@@ -171,8 +171,9 @@
 #define KEY_EJECT               167
 
 // These are in effect from when the button is pressed until the release of the
-// next button that is pressed, unless KEY_LOCK_NEXT was pressed before this key.
-// Pressing these keys twice in a row will do nothing.
+// next button that is pressed, unless KEY_LOCK_NEXT was pressed before this
+// key.  Pressing these keys twice in a row will do nothing. If you want RIGHT
+// hand equivalents, you can probably figure out how to implement them yourself.
 #define KEY_MODE0_1             168
 #define KEY_MODE1_1             169
 #define KEY_CONTROL_1           170
@@ -246,23 +247,23 @@
 #define KEY_LEFT_SHIFT          225
 #define KEY_LEFT_ALT            226
 #define KEY_LEFT_GUI            227
-#define KEY_RIGHT_CTRL_KEY      228/*TODO*/
-#define KEY_RIGHT_SHIFT_KEY     229/*TODO*/
-#define KEY_RIGHT_ALT_KEY       230/*TODO*/
-#define KEY_RIGHT_GUI_KEY       231/*TODO*/
+#define KEY_RIGHT_CONTROL       228
+#define KEY_RIGHT_SHIFT         229
+#define KEY_RIGHT_ALT           230
+#define KEY_RIGHT_GUI           231
 #define KEY_MODE0               232
 #define KEY_MODE1               233
 
 // These are in effect from when the button is pressed until it is pressed
 // again. Pressing KEY_*_1 will toggle it off for one key press, and similarly
-// for the while-held modifier keys.
+// for the while-held modifier keys. If you want RIGHT hand equivalents, you can
+// probably figure out how to implement them yourself.
 #define KEY_LEFT_CONTROL_LOCK   234
 #define KEY_LEFT_SHIFT_LOCK     235
 #define KEY_LEFT_ALT_LOCK       236
 #define KEY_LEFT_GUI_LOCK       237
 
-// Record and replay key sequences. See SETTINGS in shoe.ino for the number and
-// length of macros.
+// Record and replay key sequences. See NUM_MACROS and MAX_MACRO_LEN in shoe.ino
 #define KEY_MACRO0              238
 #define KEY_MACRO1              239
 #define KEY_MACRO2              240
