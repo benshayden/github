@@ -188,7 +188,8 @@
 // Do not add this to MOD_*.
 #define KEY_LOCK_NEXT           174
 
-#define KEY_RESERVED            175
+// Clear all locked modifiers. Useful for macros.
+#define KEY_CLEAR_MODIFIERS     175
 
 #define KEYPAD_00               176
 #define KEYPAD_000              177

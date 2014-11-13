@@ -389,6 +389,11 @@ void press(uint16_t k) {
   if (k == KEY_LEFT_GUI_LOCK) {
     k = KEY_LEFT_GUI;
   }
+  if (k == KEY_CLEAR_MODIFIERS) {
+    mode = 0;
+    lock_next = false;
+    keyboard_report_data[0] = 0;
+  }
   toggle_modifier(k);
   if (is_reserved(k)) {
     return;
