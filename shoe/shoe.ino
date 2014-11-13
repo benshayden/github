@@ -171,6 +171,8 @@ void paint_led_row() {
 }
 
 bool is_reserved(uint8_t k) {
+  // These keycodes are never sent to the host though they may be used
+  // internally.
   return ((k < KEY_A) ||
           ((165 <= k) && (k <= 175)) ||
           (k == 222) ||
