@@ -40,10 +40,10 @@
 #define SHIFT_LED           0
 #define CONTROL_LED         1
 #define ALT_LED             2
-#define GUI_LED             3
+#define GUI_LED             6
 #define MODE0_LED           4
 #define MODE1_LED           5
-#define LOCK_NEXT_LED       6
+#define LOCK_NEXT_LED       3
 #define RECORDING_MACRO_LED 7
 #define NUM_LOCK_LED        8
 #define CAPS_LOCK_LED       9
@@ -419,6 +419,7 @@ void release(uint16_t k) {
   if (((k & MOD_CONTROL) == MOD_CONTROL) ||
       (isnt_once &&
        (k != KEY_LEFT_CONTROL) &&
+       (k != KEY_RIGHT_CONTROL) &&
        ((once_modifier & MODIFIERKEY_LEFT_CTRL) != 0))) {
     release(KEY_LEFT_CONTROL);
     once_modifier &= ~MODIFIERKEY_LEFT_CTRL;
@@ -426,6 +427,7 @@ void release(uint16_t k) {
   if (((k & MOD_SHIFT) == MOD_SHIFT) ||
       (isnt_once &&
        (k != KEY_LEFT_SHIFT) &&
+       (k != KEY_RIGHT_SHIFT) &&
        ((once_modifier & MODIFIERKEY_LEFT_SHIFT) != 0))) {
     release(KEY_LEFT_SHIFT);
     once_modifier &= ~MODIFIERKEY_LEFT_SHIFT;
@@ -433,6 +435,7 @@ void release(uint16_t k) {
   if (((k & MOD_ALT) == MOD_ALT) ||
       (isnt_once &&
        (k != KEY_LEFT_ALT) &&
+       (k != KEY_RIGHT_ALT) &&
        ((once_modifier & MODIFIERKEY_LEFT_ALT) != 0))) {
     release(KEY_LEFT_ALT);
     once_modifier &= ~MODIFIERKEY_LEFT_ALT;
@@ -440,6 +443,7 @@ void release(uint16_t k) {
   if (((k & MOD_GUI) == MOD_GUI) ||
       (isnt_once &&
        (k != KEY_LEFT_GUI) &&
+       (k != KEY_RIGHT_GUI) &&
        ((once_modifier & MODIFIERKEY_LEFT_GUI) != 0))) {
     release(KEY_LEFT_GUI);
     once_modifier &= ~MODIFIERKEY_LEFT_GUI;
