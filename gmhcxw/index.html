@@ -99,6 +99,7 @@ if (MediaStreamTrack) {
 }
 
 $('cam').addEventListener('click', function() {
+  $('cam').blur();
   if (videoSrcs.length <= 1) return;
   videoSrcs.push(videoSrcs.shift());
   start();
@@ -112,9 +113,12 @@ window.addEventListener('click', function() {
 }, false);
 
 $('cap').addEventListener('click', function() {
+  $('cap').blur();
   start();
 }, false);
+
 $('view').addEventListener('click', function() {
+  $('view').blur();
   if (!!$('v').stream) {
     $('v').stream.stop();
   }
@@ -123,11 +127,13 @@ $('view').addEventListener('click', function() {
   $('cap').style.display = 'inline';
   $('view').style.display = 'none';
   $('write').style.display = 'inline';
+  $('t').style.display = 'none';
   $('cap').style.width = '49%';
   $('write').style.width = '49%';
   $('viewer').style.display = 'block';
   $('f').click();
 }, false);
+
 $('write').addEventListener('click', function() {
   if (!!$('v').stream) {
     $('v').stream.stop();
@@ -144,16 +150,133 @@ $('write').addEventListener('click', function() {
   $('t').style.height = (window.innerHeight - parseInt(getComputedStyle($('cap')).height)) + 'px';
   $('t').focus();
 }, false);
+
 window.addEventListener('resize', function() {
   if ($('t').style.display === 'block') {
     $('t').style.height = (window.innerHeight - parseInt(getComputedStyle($('cap')).height)) + 'px';
   }
 }, false);
 
+function viewB64png(i) {
+  var img = document.createElement('img');
+  img.src = 'data:image/png;base64,' + btoa(i);
+  $('viewer').appendChild(img);
+}
+
+function bindKey(k) {
+  $('v').addEventListener('click', function() {
+    console.log('v click');
+    $('c').width = parseInt(getComputedStyle($('v')).width);
+    $('c').height = parseInt(getComputedStyle($('v')).height);
+    var x = $('c').getContext('2d');
+    x.drawImage($('v'), 0, 0);
+    var pt = $('c').toDataURL('image/png');
+    if (!k) {
+      $('dl').href = pt;
+      $('dl').download = timestamp() + '.png';
+      $('dl').click();
+      return;
+    }
+    pt = pt.substr(1 + pt.indexOf(','));
+    console.log('pt.length', pt.length);
+    var iv = crypto.getRandomValues(new Uint8Array(16));
+    pt = str_bytes(atob(pt));
+    console.log('pt.length', pt.length);
+    var encOp = crypto.subtle.encrypt({name: 'AES-CBC',
+      iv: iv}, k, new Uint8Array(pt));
+    encOp.catch(function(err) {
+      console.log('encrypt error', err);
+    });
+    encOp.then(function(ct) {
+      ct = btoa(bytes_str(iv) + bytes_str(ct));
+      console.log('ct.length', ct.length);
+      $('dl').href = 'data:application/octet-stream;base64,' + ct;
+      $('dl').download = timestamp() + '.ei';
+      $('dl').click();
+    });
+  }, false);
+
+  $('f').addEventListener('change', function(e) {
+    for (var i = 0; e.target.files[i]; ++i) {
+      console.log(e.target.files[i]);
+      var r = new FileReader();
+      r.onload = function(re) {
+        console.log('re', re);
+        var ct = Array.prototype.slice.apply(new Uint8Array(re.target.result));
+        console.log('ct.length', ct.length);
+        if (!k) {
+          viewB64png(bytes_str(ct));
+          return;
+        }
+        var iv = ct.slice(0, 16);
+        var ct = ct.slice(16);
+        var decryptOp = crypto.subtle.decrypt({name: 'AES-CBC', iv: new
+          Uint8Array(iv)}, k, new Uint8Array(ct));
+        decryptOp.catch(function(err) {
+          console.log('decrypt error', err);
+        });
+        decryptOp.then(function(pt) {
+          pt = Array.prototype.slice.apply(new Uint8Array(pt));
+          console.log('pt.length', pt.length);
+          viewB64png(bytes_str(pt));
+        });
+      };
+      r.readAsArrayBuffer(e.target.files[i]);
+    }
+  });
+
+  $('t').addEventListener('keyup', function() {
+    if (!k) {
+      localStorage[location.search.substr(1)] = $('t').value;
+      return;
+    }
+    var pt = str_bytes($('t').value);
+    var iv = crypto.getRandomValues(new Uint8Array(16));
+    console.log('pt.length', pt.length);
+    var encOp = crypto.subtle.encrypt({name: 'AES-CBC',
+      iv: iv}, k, new Uint8Array(pt));
+    encOp.catch(function(err) {
+      console.log('encrypt error', err);
+    });
+    encOp.then(function(ct) {
+      ct = bytes_str(iv) + bytes_str(ct);
+      console.log('ct.length', ct.length);
+      localStorage[location.search.substr(1)] = ct;
+    });
+  });
+
+  var ct = localStorage[location.search.substr(1)];
+  if (!ct) {
+    return;
+  }
+  if (!k) {
+    $('t').value = ct;
+    return;
+  }
+  ct = str_bytes(ct);
+  console.log('ct.length', ct.length);
+  var iv = ct.slice(0, 16);
+  var ct = ct.slice(16);
+  var decryptOp = crypto.subtle.decrypt({name: 'AES-CBC',
+    iv: new Uint8Array(iv)}, k, new Uint8Array(ct));
+  decryptOp.catch(function(err) {
+    console.log('decrypt error', err);
+  });
+  decryptOp.then(function(pt) {
+    $('t').value = bytes_str(pt);
+  });
+}
+
 $('pwf').addEventListener('submit', function(evt) {
   evt.preventDefault();
   start();
-  var digestOp = crypto.subtle.digest({name: 'SHA-256'}, new Uint8Array(str_bytes($('pw').value)));
+  if (!$('pw').value) {
+    $('pwf').parentNode.removeChild($('pwf'));
+    bindKey();
+    return;
+  }
+  var digestOp = crypto.subtle.digest({name: 'SHA-256'
+    }, new Uint8Array(str_bytes($('pw').value)));
   $('pw').value = '';
   $('pwf').parentNode.removeChild($('pwf'));
   digestOp.catch(function(err) {
@@ -161,96 +284,14 @@ $('pwf').addEventListener('submit', function(evt) {
   });
   digestOp.then(function(h) {
     var extractable = false;
-    var importOp = crypto.subtle.importKey('raw', h, {name: 'AES-CBC', length: 256}, extractable, ['encrypt', 'decrypt']);
+    var importOp = crypto.subtle.importKey('raw', h, {name: 'AES-CBC',
+      length: 256}, extractable, ['encrypt', 'decrypt'
+      ]);
     importOp.catch(function(err) {
       console.log('import error', err);
     });
     importOp.then(function(k) {
-
-      var ct = localStorage[location.search.substr(1)];
-      if (ct) {
-        ct = str_bytes(ct);
-        console.log('ct.length', ct.length);
-        var iv = ct.slice(0, 16);
-        var ct = ct.slice(16);
-        var decryptOp = crypto.subtle.decrypt({name: 'AES-CBC', iv: new Uint8Array(iv)}, k, new Uint8Array(ct));
-        decryptOp.catch(function(err) {
-          console.log('decrypt error', err);
-        });
-        decryptOp.then(function(pt) {
-          $('t').value = bytes_str(pt);
-        });
-      }
-
-      $('t').addEventListener('keyup', function() {
-        var pt = str_bytes($('t').value);
-        var iv = crypto.getRandomValues(new Uint8Array(16));
-        console.log('pt.length', pt.length);
-        var encOp = crypto.subtle.encrypt({name: 'AES-CBC', iv: iv}, k, new Uint8Array(pt));
-        encOp.catch(function(err) {
-          console.log('encrypt error', err);
-        });
-        encOp.then(function(ct) {
-          ct = bytes_str(iv) + bytes_str(ct);
-          console.log('ct.length', ct.length);
-          localStorage[location.search.substr(1)] = ct;
-        });
-      });
-
-      $('f').addEventListener('change', function(e) {
-        for (var i = 0; e.target.files[i]; ++i) {
-          console.log(e.target.files[i]);
-          var r = new FileReader();
-          r.onload = function(re) {
-            console.log('re', re);
-            var ct = Array.prototype.slice.apply(new Uint8Array(re.target.result));
-            console.log('ct.length', ct.length);
-            var iv = ct.slice(0, 16);
-            var ct = ct.slice(16);
-            var decryptOp = crypto.subtle.decrypt({name: 'AES-CBC', iv: new
-              Uint8Array(iv)}, k, new Uint8Array(ct));
-            decryptOp.catch(function(err) {
-              console.log('decrypt error', err);
-            });
-            decryptOp.then(function(pt) {
-              pt = Array.prototype.slice.apply(new Uint8Array(pt));
-              console.log('pt.length', pt.length);
-              pt = pt.map(function(c) { return String.fromCharCode(c); });
-              pt = pt.join('');
-              pt = btoa(pt);
-              var img = document.createElement('img');
-              img.src = 'data:image/webp;base64,' + pt;
-              $('viewer').appendChild(img);
-            });
-          };
-          r.readAsArrayBuffer(e.target.files[i]);
-        }
-      });
-
-      $('v').addEventListener('click', function() {
-        console.log('v click');
-        $('c').width = parseInt(getComputedStyle($('v')).width);
-        $('c').height = parseInt(getComputedStyle($('v')).height);
-        var x = $('c').getContext('2d');
-        x.drawImage($('v'), 0, 0);
-        var pt = $('c').toDataURL('image/webp');
-        pt = pt.substr(1 + pt.indexOf(','));
-        console.log('pt.length', pt.length);
-        var iv = crypto.getRandomValues(new Uint8Array(16));
-        pt = str_bytes(atob(pt));
-        console.log('pt.length', pt.length);
-        var encOp = crypto.subtle.encrypt({name: 'AES-CBC', iv: iv}, k, new Uint8Array(pt));
-        encOp.catch(function(err) {
-          console.log('encrypt error', err);
-        });
-        encOp.then(function(ct) {
-          ct = btoa(bytes_str(iv) + bytes_str(ct));
-          console.log('ct.length', ct.length);
-          $('dl').href = 'data:application/octet-stream;base64,' + ct;
-          $('dl').download = timestamp() + '.ei';
-          $('dl').click();
-        });
-      }, false);
+      bindKey(k);
     });
   });
 }, false);
