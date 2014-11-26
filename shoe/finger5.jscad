@@ -1,7 +1,6 @@
 var show_buttons = false;
 function getParameterDefinitions() {
   return [
-    {name: 'chr', caption: 'Coat hanger radius mm:', type: 'float', initial: 1.5875},
     {name: 'hf', caption: 'front height mm:', type: 'float', initial: 7},
     {name: 'hb', caption: 'back height mm:', type: 'float', initial: 9},
     {name: 'wf', caption: 'front width mm:', type: 'float', initial: 8},
@@ -23,6 +22,7 @@ function curve(center, radius, start, end, maxedge) {
   return p;
 }
 
+var chr = 1.4;  // coat hanger radius
 var cha = 4;  // coat hanger angle rad
 var bs = 8;  // button length and width mm
 var cush = [3, 1, 1.5];  // cushion dimensions mm
@@ -40,8 +40,9 @@ function lead() {
 }
 
 function main(params) {
+  // TODO add button heights to params so users can just measure fingers
   var icha = (TAU - cha) / 2;
-  var chc = [params.chr * Math.cos(icha), params.chr * Math.sin(icha)];
+  var chc = [chr * Math.cos(icha), chr * Math.sin(icha)];
   var ohc = [or * Math.cos(icha), or * Math.sin(icha)];
   var ar = (bs / 2) + chc[1] + ohc[1]; // arch radius
   var l = lead();
@@ -68,7 +69,7 @@ function main(params) {
   ];
   var pl = p[p.length - 1];
   p = p.concat(
-    curve([pl[0] - chc[0], pl[1] + chc[1]], params.chr, 0.75, 0.25, 0.5),
+    curve([pl[0] - chc[0], pl[1] + chc[1]], chr, 0.75, 0.25, 0.5),
     curve([pl[0] + ohc[0], pl[1] + (2 * chc[1]) + ohc[1]], or, 0.75, 1.25, 0.5),
     curve([pl[0], pl[1] - bs + ar], ar, 0.275, 0.7375, 1));
   p = p.concat([
@@ -80,7 +81,7 @@ function main(params) {
   p = p.concat(
     curve([0, bs - ar], ar, 0.275, 0.75, 1),
     curve([ohc[0], (-2 * chc[1]) - ohc[1]], or, 0.75, 1.25, 0.5),
-    curve([-chc[0], -chc[1]], params.chr, 0.75, 0.25, 0.5));
+    curve([-chc[0], -chc[1]], chr, 0.75, 0.25, 0.5));
   p = linear_extrude({height: bs}, polygon(p));
   //p = union(p, cushions);
   p = difference(p, leads);
