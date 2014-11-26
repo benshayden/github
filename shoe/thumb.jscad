@@ -1,7 +1,7 @@
 var show_buttons = false;
 function getParameterDefinitions() {
   return [
-    {name: 'chr', caption: 'Coat hanger radius mm:', type: 'float', initial: 1.5875},
+    {name: 'chr', caption: 'Coat hanger radius mm:', type: 'float', initial: 1.4},
     {name: 'h', caption: 'height mm:', type: 'float', initial: 40},
     {name: 'wf', caption: 'front width mm:', type: 'float', initial: 9},
     {name: 'wb', caption: 'back width mm:', type: 'float', initial: 15}];
