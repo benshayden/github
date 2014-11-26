@@ -1,7 +1,7 @@
 var show_buttons = false;
+
 function getParameterDefinitions() {
   return [
-    {name: 'chr', caption: 'Coat hanger radius mm:', type: 'float', initial: 1.4},
     {name: 'h', caption: 'height mm:', type: 'float', initial: 40},
     {name: 'wf', caption: 'front width mm:', type: 'float', initial: 9},
     {name: 'wb', caption: 'back width mm:', type: 'float', initial: 15}];
@@ -22,6 +22,7 @@ function curve(center, radius, start, end, maxedge) {
   return p;
 }
 
+var chr = 1.4;  // coat hanger radius mm
 var cha = 4;  // coat hanger angle rad
 var bs = 8;  // button length and width mm
 var cush = [3, 1, 1.5];  // cushion dimensions mm
@@ -41,8 +42,9 @@ function lead() {
 var thin = 2;
 
 function main(params) {
+  // TODO add button heights to params
   var icha = (TAU - cha) / 2;
-  var chc = [params.chr * Math.cos(icha), params.chr * Math.sin(icha)];
+  var chc = [chr * Math.cos(icha), chr * Math.sin(icha)];
   var ohc = [or * Math.cos(icha), or * Math.sin(icha)];
   var ar = (bs / 2) + chc[1] + ohc[1]; // arch radius
   var hollow = [[0, 0], [params.wf + bs + params.wb, 0], [params.wf + bs + params.wb, params.h], [0, params.h]];
@@ -60,21 +62,21 @@ function main(params) {
     b.rotateZ(-90).translate([0, (params.h / 2) + (bs / 2)]),
     b.rotateZ(90).translate([params.wf + bs + params.wb, (params.h / 2) - (bs / 2)]));
   var p = [];
-  p = p.concat(curve([params.wf + bs + params.wb + thin - ar, params.h + bs + params.chr], params.chr, 0.75, 1.25, 0.5));
-  p = p.concat(curve([params.wf + bs + params.wb + thin - ar - 1, params.h + bs + (2 * params.chr) + 0.7], or, 0.75, 0.25, 0.5));
-  p = p.concat(curve([params.wf + bs + params.wb + thin - ar, params.h + bs - params.chr], ar, 0.25, 0, 1));
+  p = p.concat(curve([params.wf + bs + params.wb + thin - ar, params.h + bs + chr], chr, 0.75, 1.25, 0.5));
+  p = p.concat(curve([params.wf + bs + params.wb + thin - ar - 1, params.h + bs + (2 * chr) + 0.7], or, 0.75, 0.25, 0.5));
+  p = p.concat(curve([params.wf + bs + params.wb + thin - ar, params.h + bs - chr], ar, 0.25, 0, 1));
   
-  p = p.concat(curve([params.wf + bs + params.wb + thin - ar, params.chr - bs], ar, 0, -0.25, 1));
-  p = p.concat(curve([params.wf + bs + params.wb + thin - ar - 1, -bs - (2 * params.chr) - 0.7], or, 0.75, 0.25, 0.5));
-  p = p.concat(curve([params.wf + bs + params.wb + thin - ar, -params.chr - bs], params.chr, 0.75, 1.25, 0.5));
+  p = p.concat(curve([params.wf + bs + params.wb + thin - ar, chr - bs], ar, 0, -0.25, 1));
+  p = p.concat(curve([params.wf + bs + params.wb + thin - ar - 1, -bs - (2 * chr) - 0.7], or, 0.75, 0.25, 0.5));
+  p = p.concat(curve([params.wf + bs + params.wb + thin - ar, -chr - bs], chr, 0.75, 1.25, 0.5));
 
-  p = p.concat(curve([0, -bs - params.chr], params.chr, 0.25, 0.75, 0.5));
-  p = p.concat(curve([1, -bs - (2 * params.chr) - 0.7], or, 0.25, -0.25, 0.5));
-  p = p.concat(curve([ar - bs, -bs + params.chr], ar, 0.75, 0.5, 1));
+  p = p.concat(curve([0, -bs - chr], chr, 0.25, 0.75, 0.5));
+  p = p.concat(curve([1, -bs - (2 * chr) - 0.7], or, 0.25, -0.25, 0.5));
+  p = p.concat(curve([ar - bs, -bs + chr], ar, 0.75, 0.5, 1));
 
-  p = p.concat(curve([ar - bs, params.h + bs - params.chr], ar, 0.5, 0.25, 1));
-  p = p.concat(curve([1, params.h + bs + (2 * params.chr) + 0.7], or, 0.25, -0.25, 0.5));
-  p = p.concat(curve([0, params.h + bs + params.chr], params.chr, 0.25, 0.75, 0.5));
+  p = p.concat(curve([ar - bs, params.h + bs - chr], ar, 0.5, 0.25, 1));
+  p = p.concat(curve([1, params.h + bs + (2 * chr) + 0.7], or, 0.25, -0.25, 0.5));
+  p = p.concat(curve([0, params.h + bs + chr], chr, 0.25, 0.75, 0.5));
   p = linear_extrude({height: bs}, polygon(p));
   p = difference(p, hollow);
   p = difference(p, leads);
