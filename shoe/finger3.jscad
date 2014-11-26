@@ -40,11 +40,14 @@ function lead() {
 }
 
 function main(params) {
+  echo(JSON.stringify(params));
   var icha = (TAU - cha) / 2;
   var chc = [params.chr * Math.cos(icha), params.chr * Math.sin(icha)];
   var ohc = [or * Math.cos(icha), or * Math.sin(icha)];
   var ar = (bs / 2) + chc[1] + ohc[1]; // arch radius
   var l = lead();
+  echo(JSON.stringify([bs / 2 + params.hf - params.hb, bs + params.wf + bs + params.wb, 0]));
+  echo(JSON.stringify([bs + params.hf + bs, bs + params.wf + (bs / 2), 0]));
   var leads = union(
     l.translate([bs / 2, 0, 0]),
     l.translate([bs / 2 + params.hf - params.hb, bs + params.wf + bs + params.wb, 0]),
