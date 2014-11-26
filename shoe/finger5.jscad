@@ -1,10 +1,11 @@
 var show_buttons = false;
+
 function getParameterDefinitions() {
   return [
-    {name: 'hf', caption: 'front height mm:', type: 'float', initial: 7},
-    {name: 'hb', caption: 'back height mm:', type: 'float', initial: 9},
-    {name: 'wf', caption: 'front width mm:', type: 'float', initial: 8},
-    {name: 'wb', caption: 'back width mm:', type: 'float', initial: 10}];
+    {name: 'hf', caption: 'front height mm:', type: 'float', initial: 2},
+    {name: 'hb', caption: 'back height mm:', type: 'float', initial: 4},
+    {name: 'wf', caption: 'front width mm:', type: 'float', initial: 3},
+    {name: 'wb', caption: 'back width mm:', type: 'float', initial: 5}];
 }
 
 var TAU = 2 * Math.PI;
@@ -22,15 +23,17 @@ function curve(center, radius, start, end, maxedge) {
   return p;
 }
 
-var chr = 1.4;  // coat hanger radius
+var chr = 1.4;  // coat hanger radius mm
 var cha = 4;  // coat hanger angle rad
 var bs = 8;  // button length and width mm
 var cush = [3, 1, 1.5];  // cushion dimensions mm
 var or = 1;  // overhang radius mm
+var bbh = 3;  // button base height mm
+var bh = 2;  // button height mm
 
 function button() {
-  var b = cube({size: [bs, 3, bs]}).setColor([0, 0, 0]);
-  b = union(b, cylinder({r: 2, h: 2, center: true}).setColor([0.5, 0.5, 0.5]).rotateX(90).translate([bs / 2, 4, (bs / 2)]));
+  var b = cube({size: [bs, bbh, bs]}).setColor([0, 0, 0]);
+  b = union(b, cylinder({r: 2, h: bh, center: true}).setColor([0.5, 0.5, 0.5]).rotateX(90).translate([bs / 2, 4, (bs / 2)]));
   return b;
 }
 function lead() {
@@ -40,7 +43,10 @@ function lead() {
 }
 
 function main(params) {
-  // TODO add button heights to params so users can just measure fingers
+  params.hf += bbh + bh;
+  params.hb += bbh + bh;
+  params.wf += bbh + bh;
+  params.wb += bbh + bh;
   var icha = (TAU - cha) / 2;
   var chc = [chr * Math.cos(icha), chr * Math.sin(icha)];
   var ohc = [or * Math.cos(icha), or * Math.sin(icha)];
@@ -48,7 +54,9 @@ function main(params) {
   var l = lead();
   var leads = union(
     l.translate([bs / 2, 0, 0]),
+    l.translate([-0.5 - (bs / 2), -3, 0]),
     l.translate([bs / 2 + params.hf - params.hb, bs + params.wf + bs + params.wb, 0]),
+    l.translate([bs / 2 + params.hf - params.hb - bs, bs + 3 + params.wf + bs + params.wb, 0]),
     l.rotateZ(90).translate([bs + params.hf + bs, bs + params.wf + (bs / 2), 0]));
   var cushion = cube({size: cush});
   cushion = union(cushion, cushion.translate([0, 0, bs - cush[2]]));
@@ -59,29 +67,37 @@ function main(params) {
   var b = button();
   var buttons = union(
     b.translate([0, bs, 0]),
+    b.translate([-bs, bs - 3, 0]),
     b.rotateX(180).translate([params.hf - params.hb, bs + params.wf + bs + params.wb, bs]),
+    b.rotateX(180).translate([params.hf - params.hb - bs, bs + 3 + params.wf + bs + params.wb, bs]),
     b.rotateZ(90).translate([bs + params.hf, bs + params.wf, 0]));
   var p = [
-    [0, 0],
+    [-bs, -3],
+    [4, -3],
+    [4, 0],
     [bs + params.hf + bs, 0],
     [bs + params.hf + bs, bs + params.wf + bs + params.wb + bs],
-    [params.hf - params.hb, bs + params.wf + bs + params.wb + bs]
-  ];
+    [params.hf - params.hb + 4, bs + params.wf + bs + params.wb + bs],
+    [params.hf - params.hb + 4, bs + params.wf + bs + params.wb + bs + 3],
+    [params.hf - params.hb - bs, bs + params.wf + bs + params.wb + bs + 3]];
   var pl = p[p.length - 1];
   p = p.concat(
     curve([pl[0] - chc[0], pl[1] + chc[1]], chr, 0.75, 0.25, 0.5),
     curve([pl[0] + ohc[0], pl[1] + (2 * chc[1]) + ohc[1]], or, 0.75, 1.25, 0.5),
     curve([pl[0], pl[1] - bs + ar], ar, 0.275, 0.7375, 1));
   p = p.concat([
+    [params.hf - params.hb - bs, bs + params.wf + bs + params.wb + 3],
+    [params.hf - params.hb, bs + params.wf + bs + params.wb + 3],
     [params.hf - params.hb, bs + params.wf + bs + params.wb],
     [params.hf + bs, bs + params.wf + bs + params.wb],
     [params.hf + bs, bs],
-    [0, bs]
-  ]);
+    [0, bs],
+    [0, 5],
+    [-bs, 5]]);
   p = p.concat(
-    curve([0, bs - ar], ar, 0.275, 0.75, 1),
-    curve([ohc[0], (-2 * chc[1]) - ohc[1]], or, 0.75, 1.25, 0.5),
-    curve([-chc[0], -chc[1]], chr, 0.75, 0.25, 0.5));
+    curve([-bs, bs - ar - 3], ar, 0.275, 0.75, 1),
+    curve([ohc[0] - bs, (-2 * chc[1]) - ohc[1] - 3], or, 0.75, 1.25, 0.5),
+    curve([-chc[0] - bs, -chc[1] - 3], chr, 0.75, 0.25, 0.5));
   p = linear_extrude({height: bs}, polygon(p));
   //p = union(p, cushions);
   p = difference(p, leads);
