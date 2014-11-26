@@ -2,9 +2,9 @@ var show_buttons = false;
 
 function getParameterDefinitions() {
   return [
-    {name: 'h', caption: 'height mm:', type: 'float', initial: 40},
-    {name: 'wf', caption: 'front width mm:', type: 'float', initial: 9},
-    {name: 'wb', caption: 'back width mm:', type: 'float', initial: 15}];
+    {name: 'h', caption: 'height mm:', type: 'float', initial: 30},
+    {name: 'wf', caption: 'front width mm:', type: 'float', initial: 4},
+    {name: 'wb', caption: 'back width mm:', type: 'float', initial: 10}];
 }
 
 var TAU = 2 * Math.PI;
@@ -27,10 +27,12 @@ var cha = 4;  // coat hanger angle rad
 var bs = 8;  // button length and width mm
 var cush = [3, 1, 1.5];  // cushion dimensions mm
 var or = 1;  // overhang radius mm
+var bbh = 3;  // button base height mm
+var bh = 2;  // button height mm
 
 function button() {
-  var b = cube({size: [bs, 3, bs]}).setColor([0, 0, 0]);
-  b = union(b, cylinder({r: 2, h: 2, center: true}).setColor([0.5, 0.5, 0.5]).rotateX(90).translate([bs / 2, 4, (bs / 2)]));
+  var b = cube({size: [bs, bbh, bs]}).setColor([0, 0, 0]);
+  b = union(b, cylinder({r: 2, h: bh, center: true}).setColor([0.5, 0.5, 0.5]).rotateX(90).translate([bs / 2, 4, (bs / 2)]));
   return b;
 }
 function lead() {
@@ -42,7 +44,9 @@ function lead() {
 var thin = 2;
 
 function main(params) {
-  // TODO add button heights to params
+  params.h += (bbh + bh) * 2;
+  params.wf += bbh + bh;
+  params.wb += bbh + bh;
   var icha = (TAU - cha) / 2;
   var chc = [chr * Math.cos(icha), chr * Math.sin(icha)];
   var ohc = [or * Math.cos(icha), or * Math.sin(icha)];
