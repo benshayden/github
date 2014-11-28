@@ -7,6 +7,7 @@ var or = 1;  // overhang radius mm
 var bbh = 3;  // button base height mm
 var bh = 2;  // button height mm
 var lh = 1.5;  // lead height mm
+var extra_level = false;
 var the_color = [1, 1, 1];
 
 function getParameterDefinitions() {
@@ -58,29 +59,55 @@ function main(params) {
     l.translate([(bs / 2), 0, 0]),
     l.translate([bs / 2 + params.hf - params.hb, bs + params.wf + bs + params.wb, 0]),
     l.rotateZ(90).translate([bs + params.hf + bs, bs + params.wf + (bs / 2), 0]));
+  if (extra_level) {
+    leads = union(leads, 
+      l.translate([-0.5 - (bs / 2), -3, 0]),
+      l.translate([bs / 2 + params.hf - params.hb - bs, bs + 3 + params.wf + bs + params.wb, 0]));
+  }
   var cushion = cube({size: cush});
   cushion = union(cushion, cushion.translate([0, 0, bs - cush[2]]));
   var cushions = union(
     cushion.translate([0, bs, 0]),
     cushion.translate([params.hf - params.hb, bs - cush[1] + params.wf + bs + params.wb, 0]),
     cushion.rotateZ(90).translate([bs + params.hf, bs + params.wf, 0]));
+  if (extra_level) {
+    cushions = union(cushions,
+      cushion.translate([0, 0, 0]),
+      cushion.translate([0, 0, 0]));
+  }
   var b = button();
   var buttons = union(
     b.translate([0, bs, 0]),
     b.rotateX(180).translate([params.hf - params.hb, bs + params.wf + bs + params.wb, bs]),
     b.rotateZ(90).translate([bs + params.hf, bs + params.wf, 0]));
+  if (extra_level) {
+    buttons = union(buttons,
+      b.translate([-bs, bs - 3, 0]),
+      b.rotateX(180).translate([params.hf - params.hb - bs, bs + 3 + params.wf + bs + params.wb, bs]));
+  }
   var pl = [params.hf - params.hb, bs + params.wf + bs + params.wb + bs];
-  var p = [[0, 0]].concat(
+  if (extra_level) {
+    pl[0] -= bs;
+    pl[1] += 3;
+  }
+  var pf0 = extra_level ? -bs : 0;
+  var pf1 = extra_level ? -3 : 0;
+  var p = (extra_level ? [[-bs, -3], [4, -3], [4, 0]] : [[0, 0]]).concat(
     curve([bs + params.hf, bs], bs, 0.75, 1, 1),
     curve([bs + params.hf, bs + params.wf + bs + params.wb], bs, 0, 0.25, 1),
+    extra_level ? [[pl[0] + bs + 4, pl[1] - 3], [pl[0] + bs + 4, pl[1]]] : [],
     [pl],
     curve([pl[0] - chc[0], pl[1] + chc[1]], chr, 0.75, 0.25, 0.5),
     curve([pl[0] + ohc[0], pl[1] + (2 * chc[1]) + ohc[1]], or, 0.75, 1.25, 0.5),
-    curve([pl[0], pl[1] - bs + ar], ar, 0.275, 0.7375, 1), [
+    curve([pl[0], pl[1] - bs + ar], ar, 0.275, 0.7375, 1), 
+    extra_level ? [
+      [params.hf - params.hb - bs, bs + params.wf + bs + params.wb + 3],
+      [params.hf - params.hb, bs + params.wf + bs + params.wb + 3]] : [], [
     [params.hf - params.hb, bs + params.wf + bs + params.wb],
     [params.hf + bs, bs + params.wf + bs + params.wb],
     [params.hf + bs, bs],
     [0, bs]],
+    extra_level ? [[0, 5], [-bs, 5]] : [],
     curve([0, bs - ar], ar, 0.275, 0.75, 1),
     curve([ohc[0], (-2 * chc[1]) - ohc[1]], or, 0.75, 1.25, 0.5),
     curve([-chc[0], -chc[1]], chr, 0.75, 0.25, 0.5));
