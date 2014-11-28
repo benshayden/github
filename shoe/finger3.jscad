@@ -31,12 +31,12 @@ function curve(center, radius, start, end, maxedge) {
   return p;
 }
 
-
 function button() {
   var b = cube({size: [bs, bbh, bs]}).setColor([0, 0, 0, 0.7]);
   b = union(b, cylinder({r: 2, h: bh, center: true}).setColor([0.5, 0.5, 0.5, 0.7]).rotateX(90).translate([bs / 2, 4, (bs / 2)]));
   return b;
 }
+
 function lead() {
   var h = 1.5;
   var l = linear_extrude({height: bs}, polygon([[0.5, 0], [0, 0.5], [0, h + 0.5], [0.5, h + 1], [1, h + 0.5], [1, 0.5]])).rotateX(90).translate([0, bs, -0.5]);
