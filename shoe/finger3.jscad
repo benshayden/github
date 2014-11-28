@@ -69,22 +69,18 @@ function main(params) {
     b.translate([0, bs, 0]),
     b.rotateX(180).translate([params.hf - params.hb, bs + params.wf + bs + params.wb, bs]),
     b.rotateZ(90).translate([bs + params.hf, bs + params.wf, 0]));
-  var p = [[0, 0]];
-  p = p.concat(curve([bs + params.hf, bs], bs, 0.75, 1, 1));
-  p = p.concat(curve([bs + params.hf, bs + params.wf + bs + params.wb], bs, 0, 0.25, 1));
   var pl = [params.hf - params.hb, bs + params.wf + bs + params.wb + bs];
-  p = p.concat([pl]);
-  p = p.concat(
+  var p = [[0, 0]].concat(
+    curve([bs + params.hf, bs], bs, 0.75, 1, 1),
+    curve([bs + params.hf, bs + params.wf + bs + params.wb], bs, 0, 0.25, 1),
+    [pl],
     curve([pl[0] - chc[0], pl[1] + chc[1]], chr, 0.75, 0.25, 0.5),
     curve([pl[0] + ohc[0], pl[1] + (2 * chc[1]) + ohc[1]], or, 0.75, 1.25, 0.5),
-    curve([pl[0], pl[1] - bs + ar], ar, 0.275, 0.7375, 1));
-  p = p.concat([
+    curve([pl[0], pl[1] - bs + ar], ar, 0.275, 0.7375, 1),
     [params.hf - params.hb, bs + params.wf + bs + params.wb],
     [params.hf + bs, bs + params.wf + bs + params.wb],
     [params.hf + bs, bs],
-    [0, bs]
-  ]);
-  p = p.concat(
+    [0, bs],
     curve([0, bs - ar], ar, 0.275, 0.75, 1),
     curve([ohc[0], (-2 * chc[1]) - ohc[1]], or, 0.75, 1.25, 0.5),
     curve([-chc[0], -chc[1]], chr, 0.75, 0.25, 0.5));
