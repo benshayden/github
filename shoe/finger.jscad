@@ -1,4 +1,5 @@
-var show_buttons = true;
+// You shouldn't need to change these, but you can if you want.
+var show_buttons = false;
 var chr = 1.4;  // coat hanger radius mm
 var cha = 4;  // coat hanger angle rad
 var bs = 8;  // button length and width mm
@@ -72,6 +73,7 @@ function main(params) {
     cushion.translate([params.hf - params.hb, bs - cush[1] + params.wf + bs + params.wb, 0]),
     cushion.rotateZ(90).translate([bs + params.hf, bs + params.wf, 0]));
   if (params.lv) {
+    // TODO
     cushions = union(cushions,
       cushion.translate([0, 0, 0]),
       cushion.translate([0, 0, 0]));
