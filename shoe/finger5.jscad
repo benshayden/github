@@ -6,6 +6,7 @@ var cush = [3, 1, 1.5];  // cushion dimensions mm
 var or = 1;  // overhang radius mm
 var bbh = 3;  // button base height mm
 var bh = 2;  // button height mm
+var lh = 1.5;  // lead height mm
 var the_color = [1, 1, 1];
 
 function getParameterDefinitions() {
@@ -39,9 +40,8 @@ function button() {
 }
 
 function lead() {
-  var h = 1.5;
-  var l = linear_extrude({height: bs}, polygon([[0.5, 0], [0, 0.5], [0, h + 0.5], [0.5, h + 1], [1, h + 0.5], [1, 0.5]])).rotateX(90).translate([0, bs, -0.5]);
-  l = union(l, l.translate([0, 0, bs - h]));
+  var l = linear_extrude({height: bs}, polygon([[0.5, 0], [0, 0.5], [0, lh + 0.5], [0.5, lh + 1], [1, lh + 0.5], [1, 0.5]])).rotateX(90).translate([0, bs, -0.5]);
+  l = union(l, l.translate([0, 0, bs - lh]));
   return l;
 }
 
@@ -74,21 +74,20 @@ function main(params) {
     b.rotateX(180).translate([params.hf - params.hb, bs + params.wf + bs + params.wb, bs]),
     b.rotateX(180).translate([params.hf - params.hb - bs, bs + 3 + params.wf + bs + params.wb, bs]),
     b.rotateZ(90).translate([bs + params.hf, bs + params.wf, 0]));
+  var pl = [params.hf - params.hb - bs, bs + params.wf + bs + params.wb + bs + 3];
   var p = [
     [-bs, -3],
     [4, -3],
-    [4, 0],
-    [bs + params.hf + bs, 0],
-    [bs + params.hf + bs, bs + params.wf + bs + params.wb + bs],
+    [4, 0]].concat(
+    curve([bs + params.hf, bs], bs, 0.75, 1, 1), 
+    curve([bs + params.hf, bs + params.wf + bs + params.wb], bs, 0, 0.25, 1), [
     [params.hf - params.hb + 4, bs + params.wf + bs + params.wb + bs],
     [params.hf - params.hb + 4, bs + params.wf + bs + params.wb + bs + 3],
-    [params.hf - params.hb - bs, bs + params.wf + bs + params.wb + bs + 3]];
-  var pl = p[p.length - 1];
-  p = p.concat(
+    pl]).concat(
     curve([pl[0] - chc[0], pl[1] + chc[1]], chr, 0.75, 0.25, 0.5),
     curve([pl[0] + ohc[0], pl[1] + (2 * chc[1]) + ohc[1]], or, 0.75, 1.25, 0.5),
-    curve([pl[0], pl[1] - bs + ar], ar, 0.275, 0.7375, 1));
-  p = p.concat([
+    curve([pl[0], pl[1] - bs + ar], ar, 0.275, 0.7375, 1),
+    [
     [params.hf - params.hb - bs, bs + params.wf + bs + params.wb + 3],
     [params.hf - params.hb, bs + params.wf + bs + params.wb + 3],
     [params.hf - params.hb, bs + params.wf + bs + params.wb],
@@ -96,8 +95,7 @@ function main(params) {
     [params.hf + bs, bs],
     [0, bs],
     [0, 5],
-    [-bs, 5]]);
-  p = p.concat(
+    [-bs, 5]],
     curve([-bs, bs - ar - 3], ar, 0.275, 0.75, 1),
     curve([ohc[0] - bs, (-2 * chc[1]) - ohc[1] - 3], or, 0.75, 1.25, 0.5),
     curve([-chc[0] - bs, -chc[1] - 3], chr, 0.75, 0.25, 0.5));
