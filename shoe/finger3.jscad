@@ -76,11 +76,11 @@ function main(params) {
     [pl],
     curve([pl[0] - chc[0], pl[1] + chc[1]], chr, 0.75, 0.25, 0.5),
     curve([pl[0] + ohc[0], pl[1] + (2 * chc[1]) + ohc[1]], or, 0.75, 1.25, 0.5),
-    curve([pl[0], pl[1] - bs + ar], ar, 0.275, 0.7375, 1),
+    curve([pl[0], pl[1] - bs + ar], ar, 0.275, 0.7375, 1), [
     [params.hf - params.hb, bs + params.wf + bs + params.wb],
     [params.hf + bs, bs + params.wf + bs + params.wb],
     [params.hf + bs, bs],
-    [0, bs],
+    [0, bs]],
     curve([0, bs - ar], ar, 0.275, 0.75, 1),
     curve([ohc[0], (-2 * chc[1]) - ohc[1]], or, 0.75, 1.25, 0.5),
     curve([-chc[0], -chc[1]], chr, 0.75, 0.25, 0.5));
