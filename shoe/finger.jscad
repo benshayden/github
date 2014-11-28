@@ -108,9 +108,9 @@ function main(params) {
     [params.hf + bs, bs],
     [0, bs]],
     extra_level ? [[0, 5], [-bs, 5]] : [],
-    curve([0, bs - ar], ar, 0.275, 0.75, 1),
-    curve([ohc[0], (-2 * chc[1]) - ohc[1]], or, 0.75, 1.25, 0.5),
-    curve([-chc[0], -chc[1]], chr, 0.75, 0.25, 0.5));
+    curve([pf0, bs - ar + pf1], ar, 0.275, 0.75, 1),
+    curve([ohc[0] + pf0, (-2 * chc[1]) - ohc[1] + pf1], or, 0.75, 1.25, 0.5),
+    curve([-chc[0] + pf0, -chc[1] + pf1], chr, 0.75, 0.25, 0.5));
   p = linear_extrude({height: bs}, polygon(p));
   //p = union(p, cushions);
   p = difference(p, leads);
