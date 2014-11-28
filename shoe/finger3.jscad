@@ -6,6 +6,7 @@ var cush = [3, 1, 1.5];  // cushion dimensions mm
 var or = 1;  // overhang radius mm
 var bbh = 3;  // button base height mm
 var bh = 2;  // button height mm
+var lh = 1.5;  // lead height mm
 var the_color = [1, 1, 1];
 
 function getParameterDefinitions() {
@@ -38,9 +39,8 @@ function button() {
 }
 
 function lead() {
-  var h = 1.5;
-  var l = linear_extrude({height: bs}, polygon([[0.5, 0], [0, 0.5], [0, h + 0.5], [0.5, h + 1], [1, h + 0.5], [1, 0.5]])).rotateX(90).translate([0, bs, -0.5]);
-  l = union(l, l.translate([0, 0, bs - h]));
+  var l = linear_extrude({height: bs}, polygon([[0.5, 0], [0, 0.5], [0, lh + 0.5], [0.5, lh + 1], [1, lh + 0.5], [1, 0.5]])).rotateX(90).translate([0, bs, -0.5]);
+  l = union(l, l.translate([0, 0, bs - lh]));
   return l;
 }
 
