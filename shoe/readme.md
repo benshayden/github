@@ -1,4 +1,4 @@
-Shoe is a **custom tailored** 3d-printed arduino USB keyboard _as comfortable as an old shoe_. By positioning buttons precisely in 3d space around your individual fingers, the travel distance from your finger to each button is reduced to zero.
+Shoe is a **custom-tailored** 3d-printed Arduino USB keyboard _as comfortable as an old shoe_. By positioning buttons precisely in 3d space around your individual fingers, the travel distance from your finger to each button is reduced to zero.
 
 1. Measure the relevant aspects of your fingers. Configure however many [thumb button mounts](http://openjscad.org#https://raw.githubusercontent.com/benshayden/github/master/shoe/thumb.jscad) and [finger button mounts](http://openjscad.org#https://raw.githubusercontent.com/benshayden/github/master/shoe/finger.jscad) you need or design your own. Don't forget to leave room for the buttons themselves.
 2. Acquire the parts:
