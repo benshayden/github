@@ -1,0 +1,21 @@
+// MOCK ButtonPlex
+
+TEST(mock) {
+  EXPECT(&ButtonPlexClass::setup, pins, ARRAYSIZE(pins));
+  EXPECT[0](&ButtonPlexClass::read);
+  EXPECT(delay, 1);
+
+  EXPECT[1](&ButtonPlexClass::read);
+  EXPECT(Serial_print_int_base, 1);
+  EXPECT(Serial_print_char_array, " ");
+  EXPECT[false](&ButtonPlexClass::is_rebounce);
+  EXPECT(Serial_println_int_base, 0);
+  EXPECT(delay, 1);
+
+  EXPECT[1](&ButtonPlexClass::read);
+  EXPECT(Serial_print_int_base, 1);
+  EXPECT(Serial_print_char_array, " ");
+  EXPECT[true](&ButtonPlexClass::is_rebounce);
+  EXPECT(Serial_println_int_base, 1);
+  EXPECT(delay, 1);
+}

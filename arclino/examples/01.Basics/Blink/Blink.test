@@ -1,0 +1,9 @@
+TEST(Blink) {
+  EXPECT(pinMode, led, OUTPUT);
+  for (int i = 0; i < 9; ++i) {
+    EXPECT(digitalWrite, led, HIGH);
+    EXPECT(delay, 1000);
+    EXPECT(digitalWrite, led, LOW);
+    EXPECT(delay, 1000);
+  }
+}

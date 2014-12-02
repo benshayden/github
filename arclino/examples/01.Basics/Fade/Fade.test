@@ -1,0 +1,18 @@
+TEST(Fade) {
+  EXPECT(pinMode, led, OUTPUT);
+  for (int i = 0; i < 9; ++i) {
+    for (int expected_brightness = 0; expected_brightness < 255; expected_brightness += 5) {
+      EXPECT(analogWrite, led, expected_brightness);
+      EXPECT(delay, 30);
+    }
+    for (int expected_brightness = 255; expected_brightness > 0; expected_brightness -= 5) {
+      EXPECT(analogWrite, led, expected_brightness);
+      EXPECT(delay, 30);
+    }
+  }
+}
+
+/* vim: set filetype=cpp : */
+// emacs: Local Variables:
+// emacs: mode:c++
+// emacs: End:

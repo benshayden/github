@@ -1,0 +1,129 @@
+// REAL ButtonPlex
+
+TEST(ButtonPlex) {
+  unsigned long clock = 0;
+  uint8_t scanning_pin = 0;
+  EXPECT[clock](millis);
+  for (uint8_t i = 0; i < sizeof(pins); ++i) {
+    EXPECT(pinMode, pins[i], INPUT_PULLUP);
+  }
+  EXPECT(pinMode, pins[scanning_pin], OUTPUT);
+  EXPECT(digitalWrite, pins[scanning_pin], LOW);
+
+  bool testing_scan = true;
+  while (testing_scan) {
+    EXPECT[clock](millis);
+    for (uint8_t i = 0; i < sizeof(pins); ++i) {
+      if (i != scanning_pin) {
+        EXPECT[HIGH](digitalRead, pins[i]);
+      }
+    }
+    if ((clock != 0) && ((clock % ButtonPlex.scan_ms) == 0)) {
+      EXPECT(pinMode, pins[scanning_pin], INPUT_PULLUP);
+      ++scanning_pin;
+      if (scanning_pin >= sizeof(pins)) {
+        scanning_pin = 0;
+        testing_scan = false;
+      }
+      EXPECT(pinMode, pins[scanning_pin], OUTPUT);
+      EXPECT(digitalWrite, pins[scanning_pin], LOW);
+    }
+    EXPECT(delay, 1);
+    ++clock;
+  }
+
+  // Test "Too many buttons pressed."
+  for (uint8_t scanning_pin = 0; scanning_pin < sizeof(pins); ++scanning_pin) {
+    for (unsigned long scan_ms = 0; scan_ms < ButtonPlex.scan_ms; ++scan_ms) {
+      EXPECT[clock](millis);
+      uint8_t only_two = 0;
+      for (uint8_t i = 0; ((i < sizeof(pins)) && (only_two < 2)); ++i) {
+        if (i != scanning_pin) {
+          EXPECT[LOW](digitalRead, pins[i]);
+          ++only_two;
+        }
+      }
+      if (clock && ((clock % ButtonPlex.scan_ms) == 0)) {
+        EXPECT(pinMode, pins[scanning_pin], INPUT_PULLUP);
+        EXPECT(pinMode, pins[(scanning_pin + 1) % sizeof(pins)], OUTPUT);
+        EXPECT(digitalWrite, pins[(scanning_pin + 1) % sizeof(pins)], LOW);
+      }
+      EXPECT(delay, 1);
+      ++clock;
+    }
+  }
+
+  for (uint8_t bounce = 0; bounce < 10; ++bounce) {
+    EXPECT[clock](millis);
+    EXPECT[bounce % 2](digitalRead, pins[1]);
+    for (uint8_t i = 2; i < sizeof(pins); ++i) {
+      EXPECT[HIGH](digitalRead, pins[i]);
+    }
+    EXPECT(delay, 1);
+    ++clock;
+  }
+
+  unsigned long edge = clock;
+  while (clock < (edge + ButtonPlex.debounce_ms)) {
+    EXPECT[clock](millis);
+    EXPECT[LOW](digitalRead, pins[1]);
+    for (uint8_t i = 2; i < sizeof(pins); ++i) {
+      EXPECT[HIGH](digitalRead, pins[i]);
+    }
+    EXPECT(delay, 1);
+    ++clock;
+  }
+  EXPECT[clock](millis);
+  EXPECT[LOW](digitalRead, pins[1]);
+  for (uint8_t i = 2; i < sizeof(pins); ++i) {
+    EXPECT[HIGH](digitalRead, pins[i]);
+  }
+  EXPECT(Serial_print_int_base, 1);
+  EXPECT(Serial_print_char_array, " ");
+  EXPECT(Serial_println_int_base, 0);
+  EXPECT(delay, 1);
+  ++clock;
+
+  return;
+
+  for (uint8_t rebounce = 0; rebounce < 10; ++rebounce) {
+    while (clock < (edge + ButtonPlex.debounce_ms + (ButtonPlex.rebounce_ms * (rebounce + 1)))) {
+      EXPECT[clock](millis);
+      EXPECT[LOW](digitalRead, pins[1]);
+      for (uint8_t i = 2; i < sizeof(pins); ++i) {
+        EXPECT[HIGH](digitalRead, pins[i]);
+      }
+      EXPECT(delay, 1);
+      ++clock;
+    }
+
+    EXPECT[clock](millis);
+    EXPECT[LOW](digitalRead, pins[1]);
+    for (uint8_t i = 2; i < sizeof(pins); ++i) {
+      EXPECT[HIGH](digitalRead, pins[i]);
+    }
+    EXPECT(Serial_println_int_base, 1);
+    EXPECT(Serial_println_int_base, 1);
+    EXPECT(delay, 1);
+    ++clock;
+  }
+
+  edge = clock;
+  while (clock < (edge + ButtonPlex.debounce_ms)) {
+    EXPECT[clock](millis);
+    for (uint8_t i = 1; i < sizeof(pins); ++i) {
+      EXPECT[HIGH](digitalRead, pins[i]);
+    }
+    EXPECT(delay, 1);
+    ++clock;
+  }
+  EXPECT[clock](millis);
+  for (uint8_t i = 1; i < sizeof(pins); ++i) {
+    EXPECT[HIGH](digitalRead, pins[i]);
+  }
+  EXPECT(pinMode, pins[0], INPUT_PULLUP);
+  EXPECT(pinMode, pins[1], OUTPUT);
+  EXPECT(digitalWrite, pins[1], LOW);
+  EXPECT(delay, 1);
+  ++clock;
+}

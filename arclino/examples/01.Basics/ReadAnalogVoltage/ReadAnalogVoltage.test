@@ -1,0 +1,5 @@
+TEST(ReadAnalogVoltage) {
+  EXPECT(&Serial_::begin, 9600);
+  EXPECT(analogRead, A0, 2.5 * 1023.0 / 5.0);
+  EXPECT(Serial_println_double_precision, 250, 2, 4);
+}

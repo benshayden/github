@@ -1,0 +1,10 @@
+TEST(DigitalReadSerial) {
+  EXPECT(&Serial_::begin, 9600);
+  EXPECT(pinMode, pushButton, INPUT);
+  EXPECT[LOW](digitalRead, pushButton);
+  EXPECT(Serial_println_int_base, LOW);
+  EXPECT(delay, 1);
+  EXPECT[HIGH](digitalRead, pushButton);
+  EXPECT(Serial_println_int_base, HIGH);
+  EXPECT(delay, 1);
+}

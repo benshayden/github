@@ -1,0 +1,5 @@
+TEST(AnalogReadSerial) {
+  EXPECT(&Serial_::begin, 9600);
+  EXPECT[42](analogRead, A0);
+  EXPECT(Serial_println_int_base, 42);
+}

@@ -1,4 +1,5 @@
 #include <avr/pgmspace.h>
+#include <CapacitiveSensor.h>
 
 // To access keyboard_report_data directly for Teensy boards. Your board may
 // differ.
@@ -66,6 +67,9 @@
 #define MEDIA_EJECT       0x80
 
 #define MACRO_PRESS 0x8000
+
+CapacitiveSensor capsens0(0, 1);
+CapacitiveSensor capsens1(0, 2);
 
 typedef struct { uint8_t x; uint8_t y; } uint8_pair_t;
 typedef struct { uint8_t* bytes; const uint16_t size; } array8_t;
@@ -545,6 +549,11 @@ void loop() {
     press(k);
   } else {
     release(k);
+  }
+  if (false) {
+    long mousex = capsens0.capacitiveSensor(30);
+    long mousey = capsens1.capacitiveSensor(30);
+    Mouse.move(mousex, mousey, 0);
   }
 
   set_led(CONTROL_LED,

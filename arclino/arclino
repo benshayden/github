@@ -1,0 +1,2689 @@
+#!/bin/sh
+# TODO test in cygwin
+
+CD="${CD:-.}"
+subcmd="$1"
+if [ -f "$subcmd" ];then
+  CD="$(dirname "$subcmd")"
+  if echo "$subcmd" | grep -E '\.ino$' &>/dev/null;then
+    subcmd=upload
+  else
+    if echo "$subcmd" | grep -E '\.test$' &>/dev/null;then
+      subcmd=test
+    else
+      subcmd=""
+    fi
+  fi
+fi
+
+orig_pwd="$PWD"
+cd "$CD"
+if [ "$orig_pwd" != "$PWD" ];then
+  echo Now in "$PWD"
+fi
+unset CD orig_pwd cur_pwd
+
+if [ -z "$subcmd" ] || ( [ "$subcmd" != "sketch" ] &&
+                         [ "$subcmd" != "library" ] &&
+                         [ "$subcmd" != "test" ] &&
+                         [ "$subcmd" != "build" ] &&
+                         [ "$subcmd" != "upload" ] &&
+                         [ "$subcmd" != "clean" ] );then
+  cat << MAIN_HELP_DOC
+Usage:
+
+$ arclino sketch Hello
+Creates Hello/Hello.ino.
+
+$ arclino library Hello
+Creates Hello/Hello.h and Hello/Hello.cpp. Must be run in a sketch directory.
+
+$ arclino upload
+Compiles the sketch.ino and uploads it to the Arduino.
+Configuration options are stored in .arclino.conf and will be prompted on first run.
+
+$ arclino test
+Compiles the sketch.ino and *.test C++ files for the host computer and runs them natively.
+*.test files look like this:
+TEST(my_sketch) {
+  EXPECT(pinMode, buttonPin, INPUT_PULLUP);
+  for (int i = 0; i < 10; ++i) {
+    // The matching digitalRead call in sketch.ino will return HIGH.
+    EXPECT[HIGH](digitalRead, buttonPin);
+    EXPECT(delay, 1);
+  }
+}
+The .test file will be included after sketch.ino so it has access to all configuration constants defined there.
+Each .test file may contain one or more TEST(){}. setup() will be called between them so that it can reset any state as necessary.
+Mock a library by creating a 'library_name.mock' file. See libraries/EEPROM/EEPROM.mock for a sample.
+By default, tests will use the real implementations of libraries. In order to use the mock implementation, add a comment like this to the .test file:
+// MOCK Stepper
+
+$ arclino clean
+Deletes temporary files created by arclino.
+
+$ arclino path/to/sketch.ino
+Same as CD=path/to arclino upload, for convenient scripting.
+
+$ arclino path/to/sketch.test
+Same as CD=path/to arclino test, for convenient scripting.
+MAIN_HELP_DOC
+  exit
+fi
+
+if [ "$subcmd" == "sketch" ];then
+  mkdir "$2"
+  cat > "$2/$2.ino" <<NEW_SKETCH
+void setup() {
+}
+
+void loop() {
+}
+NEW_SKETCH
+  echo Now cd "$2" and run "'"arclino upload"'"
+  "$EDITOR" "$2/$2.ino"
+  exit 0
+fi
+
+if (! ls *.ino &>/dev/null) || [ $(ls *.ino | wc -l) -gt 1 ];then
+  echo Please cd to a directory containing exactly one sketch.ino file or create one.
+  exit 1
+fi
+
+INO="$(ls *.ino)"
+SKETCH=${INO%.ino}
+WORK=$(readlink -f .)/.arclino-work
+TEST_OBJDIR=$WORK/test
+TEST_CORE=$TEST_OBJDIR/.core
+TEST_LIBRARIES=$TEST_OBJDIR/libraries
+AVR_OBJDIR=$WORK/avr
+AVR_MAIN_CC=$AVR_OBJDIR/$SKETCH.cc
+AVR_CORE=$AVR_OBJDIR/.core
+AVR_LIBRARIES=$AVR_OBJDIR/libraries
+function isDarwin() {
+  uname | grep Darwin &>/dev/null
+}
+
+function invalid_root() {
+  [ ! -d "$1/hardware" ] || [ ! -d "$1/libraries" ]
+}
+
+function valid_native_cxx() {
+  which "$1" &>/dev/null || return 1
+  inp="$(tempfile -d . -s .cc)"
+  outp="$(tempfile -d .)"
+  echo 'int main(){}' > "$inp"
+  "$1" -fprofile-arcs -ftest-coverage -lm -fpermissive -w -rdynamic -Wno-pmf-conversions "$inp" -o "$outp" &>/dev/null
+  local -ir res=$?
+  rm -f "$inp" "$outp" "${inp%.cc}.gcno"
+  return $res
+}
+
+function find_avr_tools() {
+  for avr_tools in "$arduino/hardware/tools" "$arduino/hardware/tools/avr/bin" "$(dirname "$(which avr-gcc)")";do
+    if [ -f "$avr_tools/avr-g++" ];then
+      echo "$avr_tools"
+      return
+    fi
+  done
+}
+
+CONF=.arclino.conf
+if [ ! -f "$CONF" ];then
+  arduino="${arduino:-$(isDarwin && echo /Applications/Arduino.app/Contents/Resources/Java || echo)}"
+  while invalid_root "$arduino";do
+    echo -n 'Where is Arduino installed? (Tab auto-completes!) '
+    read -e arduino
+    arduino="$(readlink -f "$(echo "$arduino" | sed -e "s/^~/$(echo $HOME | sed -e 's/\//\\\//g')/")")"
+  done
+
+  avr_tools="$(find_avr_tools)"
+  if [ -z "$avr_tools" ];then
+    echo Please install gcc-avr
+    exit 1
+  fi
+
+  native_cxx=$(isDarwin && echo clang++ || echo g++)
+  while ! valid_native_cxx "$native_cxx";do
+    echo -n 'What command can compile C++ natively for test coverage with gcov? '
+    read native_cxx
+  done
+
+  # all_mcus="$( for w in $( (for w in $(avr-gcc --target-help|grep -E -A45 '^Known MCU names:'|grep -E '^  a');do echo $w;done) | sort );do echo -n "$w ";done)"
+
+  echo All known arduino boards:
+  echo -e "[codename]\t[board name]"
+  cat "$arduino"/hardware/*/boards.txt | grep -E '^\w+\.name=' | while read board_name;do
+    codename=$(echo $board_name | cut -d. -f1)
+    echo -e "$codename\t$( [ $(echo "$codename" | wc -c) -le 8 ] && echo "\t")$(echo $board_name | cut -d= -f2-)"
+  done
+  board=""
+  while ! grep -E "^$board\.name=" "$arduino"/hardware/*/boards.txt &>/dev/null;do
+    if [ -n "$board" ];then
+      echo Did not find $board
+    fi
+    echo -n 'Type the codename of the board you are using: '
+    read board
+  done
+  boards_txt=$(for d in "$arduino"/hardware/*;do
+    if grep -E "^$board\.name=" "$d/boards.txt" &>/dev/null;then
+      echo "$d/boards.txt"
+    fi
+  done)
+  board_menus=$(grep -E '^menu\.' "$boards_txt" | cut -d. -f2 | cut -d= -f1)
+  for menu in $board_menus;do
+    opts=$(grep -E "^$board\.menu\.$menu\.[a-zA-Z0-9_\\-]+\.name=" "$boards_txt" | cut -d. -f4)
+    menudefault="$(for opt in $opts;do echo $opt;break;done)"
+    eval "board_menu_$menu=$menudefault"
+    echo Defaulting menu $menu to $menudefault
+  done
+
+  (echo arduino=$arduino
+   echo native_cxx=$native_cxx
+   echo board=$board
+   for menu in $board_menus;do
+     opts=$(grep -E "^$board\.menu\.$menu\.[a-zA-Z0-9_\\-]+\.name=" "$boards_txt" | cut -d. -f4)
+     echo -n '#'
+     for w in $opts;do
+       echo -n " $w($(grep -E "^$board\.menu\.$menu\.$w\.name" "$boards_txt" | cut -d= -f2-))"
+     done
+     echo
+     echo board_menu_$menu=$(eval "echo \$board_menu_$menu")
+   done
+   echo '# Number of events to peek at after a test fails:'
+   echo failpeek=10
+   echo '# Set to 1 to compute code test coverage:'
+   echo coverage=0
+   echo '# Set to "" if your sketch reads from Serial in order to interact with it. If your sketch does not read from Serial, then anything that it writes to Serial will be logged at .arclino-work/avr/$serial_log'
+   echo serial_log=log
+  ) > "$CONF"
+  echo Wrote "$CONF"
+else
+  echo Reading "$CONF"
+
+  function getconf() {
+    grep -E "^$1=" "$CONF" | cut -d= -f2-
+  }
+  arduino="$(getconf arduino)"
+  board="$(getconf board)"
+  boards_txt=$(for d in "$arduino"/hardware/*;do
+    if grep -E "^$board\.name=" "$d/boards.txt" &>/dev/null;then
+      echo "$d/boards.txt"
+    fi
+  done)
+  board_menus=$(grep -E '^menu\.' "$boards_txt" | cut -d. -f2 | cut -d= -f1)
+  for menu in $board_menus;do
+    eval "board_menu_$menu=\$(getconf board_menu_$menu)"
+  done
+  native_cxx="$(getconf native_cxx)"
+  failpeek=${failpeek:-$(getconf failpeek)}
+  coverage=${coverage:-$(getconf coverage)}
+  serial_log=${serial_log:-$(getconf serial_log)}
+
+  if invalid_root "$arduino";then
+    echo Did not find Arduino in "$arduino"
+    echo Please fix "$CONF"
+    exit 1
+  fi
+
+  avr_tools="$(find_avr_tools)"
+  if [ -z "$avr_tools" ];then
+    echo Please install gcc-avr
+    exit 1
+  fi
+
+  if ! valid_native_cxx "$native_cxx" &>/dev/null;then
+    cat << TEST_MISSING_CXX
+Please install a non-avr C++ compiler such as gcc.gnu.org or clang.llvm.org. If
+you have already installed a non-avr C++ compiler, then please set
+native_cxx=/the/path/to/c++/compiler
+TEST_MISSING_CXX
+    echo in "$CONF"
+    exit 1
+  fi
+fi
+
+
+ARDUINO_LIBRARIES=$arduino/libraries
+
+if [ "$subcmd" == "library" ];then
+  libname="$2"
+  if [ -e "$ARDUINO_LIBRARIES/$libname" ];then
+    echo "Error! $ARDUINO_LIBRARIES/$libname already exists!"
+    exit 1
+  fi
+  mkdir "$ARDUINO_LIBRARIES/$libname"
+  cat > "$ARDUINO_LIBRARIES/$libname/$libname.h" << NEW_LIBRARY_H
+#ifndef ${libname}_h
+#define ${libname}_h
+
+#include <Arduino.h>
+
+class $libname {
+ public:
+  $libname();
+  ~$libname();
+
+ private:
+};
+
+#endif
+NEW_LIBRARY_H
+  cat > "$ARDUINO_LIBRARIES/$libname/$libname.cpp" << NEW_LIBRARY_CPP
+#include "$libname.h"
+
+$libname::$libname() {
+}
+
+$libname::~$libname() {
+}
+NEW_LIBRARY_CPP
+  echo Created "$ARDUINO_LIBRARIES/$libname/$libname.{h,cpp}"
+  "$EDITOR" "$ARDUINO_LIBRARIES/$libname/$libname.h" "$ARDUINO_LIBRARIES/$libname/$libname.cpp"
+  exit
+fi
+
+function include_libname() {
+  local include="$1"
+  if echo "$include" | grep '"' &>/dev/null;then
+    include=$(echo "$include" | cut -d'"' -f2)
+  else
+    include=$(echo "$include" | cut -d'<' -f2 | cut -d'>' -f1)
+  fi
+  echo ${include%.h}
+}
+
+# Automatically install missing libraries
+# // http://benjhayden.googlecode.com/ButtonPlex.zip
+# #include "ButtonPlex.h"
+function install_libs(){
+  local -r src="$1"
+  grep -E -B1 '^#include' "$src" | grep -E '^// http' | cut -d' ' -f2- | while read liburl;do
+    libname=$(include_libname "$(grep -A1 "// $liburl" "$src" | grep -E '^#include' | head -1)")
+    if [ ! -d "$ARDUINO_LIBRARIES/$libname" ];then
+      echo Installing $libname from $liburl
+      if ! curl -o "$ARDUINO_LIBRARIES/$libname.zip" "$liburl";then
+        echo Unable to fetch $liburl
+        exit 1
+      fi
+      mkdir "$libname"
+      pushd "$ARDUINO_LIBRARIES/$libname"
+      if ! unzip "$libname.zip";then
+        echo Unable to unzip $libname.zip
+        exit 1
+      fi
+      if [ ! -f "$libname.h" ] && [ -f "$libname/$libname.h" ];then
+        # The zip contained a directory instead of the naked files.
+        mv "$libname" ../."$libname"
+        cd ..
+        rmdir "$libname"
+        mv {.,}"$libname"
+      fi
+      popd
+      if [ ! -d "$libname" ];then
+        echo $libname.zip did not contain a directory "'$libname'"
+        exit 1
+      fi
+      (for ext in h cc cpp;do find "$libname" -iname "*.$ext";done) | while read src2;do
+        install_libs "$src2"
+      done
+    fi
+  done
+}
+install_libs "$INO"
+ls *.h *.cc *.cpp 2>/dev/null | while read src;do
+  install_libs "$src"
+done
+
+function ls_libs() {
+  grep -E '^#include ' "$@" | sort -u | ( [ -n "$ls_libs_EXCEPT" ] && grep -Evw "($ls_libs_EXCEPT)" || cat ) | while read include;do
+    libname=$(include_libname "$include")
+    [ -d "$ARDUINO_LIBRARIES/$libname" ] && echo "$libname"
+    ls_libs_EXCEPT="$ls_libs_EXCEPT|$libname" ls_libs "$ARDUINO_LIBRARIES/$libname"/* | grep -Ev "^$libname\$"
+  done
+}
+
+function maybe_ln() {
+  # gnu make will remake a file that depends on a symlink if either the
+  # symlink's timestamp or the symlink's target's timestamp is newer than the
+  # target, so be careful to not remake symlinks unnecessarily.
+  local -r src=$(readlink -f "$1")
+  local -r dest=$2/$(basename "$1")
+  if [ ! -L "$dest" ] || [ "$(readlink -f "$dest")" != "$src" ];then
+    ln -sf "$src" "$dest"
+  fi
+}
+
+function setup_libraries() {
+  local -r libobjdir="$1"
+  local -r testf="${2:-/dev/null}"
+  (ls_libs "$INO"
+   ls *.h *.cc *.cpp 2>/dev/null | while read localf;do
+     ls_libs "$localf"
+   done
+  ) | while read libname;do
+    if grep -E "^// MOCK $libname$" "$testf" &>/dev/null;then
+      outdir="$libobjdir/.mock.$libname"
+      mkdir -p "$outdir"
+      mock=$ARDUINO_LIBRARIES/$libname/$libname.mock
+      if [ ! -f "$mock" ];then
+        echo Missing "$mock" >&2
+        exit 1
+      fi
+      (echo '#include "Arduino.h"'
+       echo "#include \"$libname.h\""
+       echo '#include "arclino_test.h"'
+       echo "#include \"$mock\""
+      ) | maybe_write "$outdir/$libname.cc"
+    else
+      outdir="$libobjdir/$libname"
+      mkdir -p "$outdir"
+      ls "$ARDUINO_LIBRARIES/$libname"/*.{c,cc,cpp} 2>/dev/null | while read c;do
+        maybe_ln "$c" "$outdir"
+      done
+      local arduino_utility="$ARDUINO_LIBRARIES/$libname/utility"
+      if [ -d "$arduino_utility" ];then
+        local obj_utility="$outdir/utility"
+        mkdir "$obj_utility"
+        ls "$arduino_utility"
+        ls "$arduino_utility" 2>/dev/null | while read utilf;do
+          maybe_ln "$arduino_utility/$utilf" "$obj_utility"
+        done
+      fi
+    fi
+    ls "$ARDUINO_LIBRARIES/$libname/"*.h 2>/dev/null | while read h;do
+      maybe_ln "$h" "$outdir"
+    done
+    echo "$outdir"
+    unset outdir
+  done
+}
+
+function run_make() {
+  make -s -f - "$@" <<MAKEFILE_DOC
+CONF=\$(OBJDIR)/.conf
+include \$(CONF)
+CPPFLAGS+=-I. -I\$(CORE)
+ifneq (\$(LIBRARY_DIRS),)
+	CPPFLAGS+=\$(patsubst %,-I%,\$(LIBRARY_DIRS) \$(wildcard \$(patsubst %, %/utility,\$(LIBRARY_DIRS))))
+endif
+CFLAGS+=-std=gnu99
+CXXFLAGS+=-fno-exceptions
+ALL_C_SRCS=\$(wildcard \$(patsubst %,%/*.c,\$(LIBRARY_DIRS)) \$(patsubst %,%/utility/*.c,\$(LIBRARY_DIRS)) *.c \$(OBJDIR)/*.c \$(CORE)/*.c)
+ALL_CC_SRCS=\$(wildcard \$(patsubst %,%/*.cc,\$(LIBRARY_DIRS)) \$(patsubst %,%/utility/*.cc,\$(LIBRARY_DIRS)) *.cc \$(OBJDIR)/*.cc \$(CORE)/*.cc)
+ALL_CPP_SRCS=\$(wildcard \$(patsubst %,%/*.cpp,\$(LIBRARY_DIRS)) \$(patsubst %,%/utility/*.cpp,\$(LIBRARY_DIRS)) *.cpp \$(OBJDIR)/*.cpp \$(CORE)/*.cpp)
+OBJS=\$(ALL_C_SRCS:.c=.o) \$(ALL_CC_SRCS:.cc=.o) \$(ALL_CPP_SRCS:.cpp=.o)
+DEPS=\$(OBJS:.o=.d)
+DEP_FILE=\$(OBJDIR)/depends.mk
+\$(DEP_FILE): \$(DEPS) \$(CONF); cat \$(DEPS) > \$(DEP_FILE)
+\$(OBJDIR)/\$(TARGET).elf: \$(OBJS) \$(CONF) \$(DEP_FILE); \$(CC) -o \$@ \$(OBJS) \$(LDFLAGS)
+\$(OBJDIR)/%.o: %.c \$(CONF); \$(CC) -c \$(CPPFLAGS) \$(CFLAGS) \$< -o \$@
+\$(OBJDIR)/%.o: %.cc \$(CONF); \$(CXX) -c \$(CPPFLAGS) \$(CXXFLAGS) \$< -o \$@
+\$(OBJDIR)/%.o: %.cpp \$(CONF); \$(CXX) -c \$(CPPFLAGS) \$(CXXFLAGS) \$< -o \$@
+\$(OBJDIR)/%.o: %.S \$(CONF); \$(CC) -c \$(CPPFLAGS) \$(ASFLAGS) \$< -o \$@
+\$(OBJDIR)/%.o: %.s \$(CONF); \$(CC) -c \$(CPPFLAGS) \$(ASFLAGS) \$< -o \$@
+\$(OBJDIR)/%.d: %.c \$(CONF); \$(CC) -MM \$(CPPFLAGS) \$(CFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(OBJDIR)/%.d: %.cc \$(CONF); \$(CXX) -MM \$(CPPFLAGS) \$(CXXFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(OBJDIR)/%.d: %.cpp \$(CONF); \$(CXX) -MM \$(CPPFLAGS) \$(CXXFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(OBJDIR)/%.d: %.S \$(CONF); \$(CC) -MM \$(CPPFLAGS) \$(ASFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(OBJDIR)/%.d: %.s \$(CONF); \$(CC) -MM \$(CPPFLAGS) \$(ASFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(OBJDIR)/%.o: \$(OBJDIR)/%.cpp \$(CONF); \$(CXX) -c \$(CPPFLAGS) \$(CXXFLAGS) \$< -o \$@
+\$(OBJDIR)/%.d: \$(OBJDIR)/%.cpp \$(CONF); \$(CXX) -MM \$(CPPFLAGS) \$(CXXFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(CORE)/%.o: %.c \$(CONF); \$(CC) -c \$(CPPFLAGS) \$(CFLAGS) \$< -o \$@
+\$(CORE)/%.o: %.cpp \$(CONF); \$(CXX) -c \$(CPPFLAGS) \$(CXXFLAGS) \$< -o \$@
+\$(CORE)/%.o: %.cc \$(CONF); \$(CXX) -c \$(CPPFLAGS) \$(CXXFLAGS) \$< -o \$@
+\$(CORE)/%.d: \$(CORE)/%.c \$(CONF); \$(CC) -MM \$(CPPFLAGS) \$(CFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(CORE)/%.d: \$(CORE)/%.cc \$(CONF); \$(CXX) -MM \$(CPPFLAGS) \$(CXXFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(CORE)/%.d: \$(CORE)/%.cpp \$(CONF); \$(CXX) -MM \$(CPPFLAGS) \$(CXXFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(CORE)/%.d: \$(CORE)/%.S \$(CONF); \$(CC) -MM \$(CPPFLAGS) \$(ASFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(CORE)/%.d: \$(CORE)/%.s \$(CONF); \$(CC) -MM \$(CPPFLAGS) \$(ASFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(LIBRARIES_DIR)/%.d: \$(LIBRARIES_DIR)/%.c \$(CONF); \$(CC) -MM \$(CPPFLAGS) \$(CFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(LIBRARIES_DIR)/%.d: \$(LIBRARIES_DIR)/%.cc \$(CONF); \$(CXX) -MM \$(CPPFLAGS) \$(CXXFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(LIBRARIES_DIR)/%.d: \$(LIBRARIES_DIR)/%.cpp \$(CONF); \$(CXX) -MM \$(CPPFLAGS) \$(CXXFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(LIBRARIES_DIR)/%.d: \$(LIBRARIES_DIR)/%.S \$(CONF); \$(CC) -MM \$(CPPFLAGS) \$(ASFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(LIBRARIES_DIR)/%.d: \$(LIBRARIES_DIR)/%.s \$(CONF); \$(CC) -MM \$(CPPFLAGS) \$(ASFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(OBJDIR)/%.d: \$(OBJDIR)/%.c \$(CONF); \$(CC) -MM \$(CPPFLAGS) \$(CFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(OBJDIR)/%.d: \$(OBJDIR)/%.cc \$(CONF); \$(CXX) -MM \$(CPPFLAGS) \$(CXXFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(OBJDIR)/%.d: \$(OBJDIR)/%.cpp \$(CONF); \$(CXX) -MM \$(CPPFLAGS) \$(CXXFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(OBJDIR)/%.d: \$(OBJDIR)/%.S \$(CONF); \$(CC) -MM \$(CPPFLAGS) \$(ASFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(OBJDIR)/%.d: \$(OBJDIR)/%.s \$(CONF); \$(CC) -MM \$(CPPFLAGS) \$(ASFLAGS) \$< -MF \$@ -MT \$(@:.d=.o)
+\$(OBJDIR)/%.hex: \$(OBJDIR)/%.elf \$(CONF); \$(OBJCOPY) -O ihex -R .eeprom \$< \$@
+\$(OBJDIR)/%.eep: \$(OBJDIR)/%.elf \$(CONF); \$(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" --change-section-lma .eeprom=0 -O ihex \$< \$@
+\$(OBJDIR)/%.lss: \$(OBJDIR)/%.elf \$(CONF); \$(OBJDUMP) -h -S \$< > \$@
+\$(OBJDIR)/%.sym: \$(OBJDIR)/%.elf \$(CONF); \$(NM) -n \$< > \$@
+ifneq (\$(wildcard \$(DEP_FILE)),)
+include \$(DEP_FILE)
+endif
+# Copyright 2013 Ben Hayden, based on work that is
+# Copyright (C) 2010 Martin Oldfield <m@mjo.tc>, based on work that is
+# Copyright Nicholas Zambetti, David A. Mellis & Hernando Barragan
+# This file is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+
+MAKEFILE_DOC
+  res=$?
+  if [ $res -ne 0 ];then
+    exit 1
+  fi
+}
+
+function maybe_write() {
+  # preserve timestamps if file contents haven't changed so that make doesn't
+  # rebuild unnecessarily.
+  local -r dest="$1"
+  local -r tmpf="$(tempfile -d . -p . -s ".${1##*.}")"
+  cat > "$tmpf"
+  if [ ! -f "$dest" ] || ! diff "$dest" "$tmpf" &>/dev/null;then
+    mv "$tmpf" "$dest"
+  else
+    rm "$tmpf"
+  fi
+}
+
+if [ "$subcmd" == "test" ];then
+  NUMTESTS="$(ls *.test 2>/dev/null | wc -l)"
+
+  if [ $NUMTESTS -eq 0 ];then
+    cat << TEST_HELP_DOC
+No *.test files found!
+*.test files look like this:
+TEST(my_sketch) {
+  EXPECT(pinMode, buttonPin, INPUT_PULLUP);
+  for (int i = 0; i < 10; ++i) {
+    // The matching digitalRead call in sketch.ino will return HIGH.
+    EXPECT[HIGH](digitalRead, buttonPin);
+    EXPECT(delay, 1);
+  }
+}
+The .test file will be included after sketch.ino so it has access to all configuration constants defined there.
+Each .test file may contain one or more TEST(){}. setup() will be called between them so that it can reset any state as necessary.
+Mock a library by creating a 'library_name.mock' file. See libraries/EEPROM/EEPROM.mock for a sample.
+By default, tests will use the real implementations of libraries. In order to use the mock implementation, add a comment like this to the .test file:
+// MOCK Stepper
+TEST_HELP_DOC
+    exit 1
+  fi
+
+  mkdir -p "$TEST_CORE"
+  maybe_write "$TEST_CORE/Arduino.h" << ARDUINO_H
+#ifndef __ARDUINO_H_
+#define __ARDUINO_H_
+
+#define random stdlib_random
+
+#include <execinfo.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <vector>
+
+#undef random
+
+#define ARRAYSIZE(x) ((sizeof(x) == 0) ? 0 : (sizeof(x) / sizeof(x[0])))
+#define INPUT 0
+#define OUTPUT 1
+#define INPUT_PULLUP 2
+#define PI 3.1415926535897932384626433832795
+#define HALF_PI 1.5707963267948966192313216916398
+#define TWO_PI 6.283185307179586476925286766559
+#define DEG_TO_RAD 0.017453292519943295769236907684886
+#define RAD_TO_DEG 57.295779513082320876798154814105
+#define SERIAL  0x0
+#define DISPLAY 0x1
+#define LSBFIRST 0
+#define MSBFIRST 1
+#define CHANGE 1
+#define FALLING 2
+#define RISING 3
+#define min(x, y) (((x) < (y)) ? (x) : (y))
+#define max(x, y) (((x) > (y)) ? (x) : (y))
+#define abs(x) ((x)>0?(x):-(x))
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+#define round(x)     ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
+long map(long x, long in_min, long in_max, long out_min, long out_max);
+#define radians(deg) ((deg)*DEG_TO_RAD)
+#define degrees(rad) ((rad)*RAD_TO_DEG)
+#define sq(x) ((x)*(x))
+#define interrupts() sei()
+#define noInterrupts() cli()
+typedef unsigned char uint8_t;
+typedef signed char int8_t;
+typedef unsigned short uint16_t;
+#define lowByte(w) ((uint8_t) ((w) & 0xff))
+#define highByte(w) ((uint8_t) ((w) >> 8))
+#define LOW 0
+#define HIGH 1
+#define bitRead(value, bit) (((value) >> (bit)) & 0x01)
+#define bitSet(value, bit) ((value) |= (1UL << (bit)))
+#define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
+#define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
+unsigned long millis();
+unsigned long micros();
+void pinMode(int pin, int mode);
+#define DEFAULT 0
+#define INTERNAL 1
+#define INTERNAL1V1 2
+#define INTERNAL2V56 3
+#define EXTERNAL 4
+void analogReference(int ref);
+void analogReadResolution(int res);
+void analogWriteResolution(int res);
+void tone(int pin, int freq, int dur=0);
+void noTone(int pin);
+void shiftOut(int datapin, int clockpin, int bitorder, int value);
+int shiftIn(int datapin, int clockpin, int bitorder);
+long pulseIn(int pin, int value, int timeout=0);
+#define A0 0
+#define A1 1
+#define A2 2
+#define A3 3
+#define A4 4
+#define A5 5
+int analogRead(int pin);
+void analogWrite(int pin, int value);
+void digitalWrite(int pin, bool value);
+bool digitalRead(int pin);
+void delay(int ms);
+void delayMicroseconds(long us);
+int random(long bound, long upper=0);
+void randomSeed(int s);
+class KeyboardClass {
+ public:
+  static void set_modifier(uint8_t mod);
+  static void set_key1(uint8_t key);
+  static void send_now();
+};
+extern KeyboardClass Keyboard;
+class MouseClass {
+ public:
+  static void move(int8_t dx, int8_t dy);
+  static void scroll(int8_t ds);
+  static void set_buttons(bool left, bool middle, bool right);
+};
+extern MouseClass Mouse;
+#define DEC 10
+#define HEX 16
+#define OCT 8
+#define BIN 2
+class Print {
+ public:
+  static size_t print(const char*);
+  static size_t print(char);
+  static size_t print(int, int = DEC);
+  static size_t print(double, int = 2);
+  static size_t println(const char*);
+  static size_t println(char);
+  static size_t println(int, int = DEC);
+  static size_t println(double, int = 2);
+  static size_t println(void);
+};
+class Serial_ : public Print {
+ public:
+  static void begin(uint16_t baud_count);
+  static void end();
+  static int available();
+  static void accept();
+  static int peek();
+  static int read();
+  static void flush();
+  static size_t write(uint8_t);
+  static size_t write(const char*);
+  static size_t write(const char*, size_t);
+  static size_t print(const char*);
+  static size_t print(char);
+  static size_t print(int, int = DEC);
+  static size_t print(double, int = 2);
+  static size_t println(const char*);
+  static size_t println(char);
+  static size_t println(int, int = DEC);
+  static size_t println(double, int = 2);
+  static size_t println(void);
+  static bool _bool();
+  operator bool() {return _bool();}
+};
+extern Serial_ Serial;
+
+#endif  // __ARDUINO_H_
+
+ARDUINO_H
+  maybe_write "$TEST_CORE/arclino_test.h" << ARCLINO_TEST_H
+#ifndef ARCLINO_TEST_H_
+#define ARCLINO_TEST_H_
+
+#include "Arduino.h"
+#include <vector>
+
+namespace arclino_test {
+
+struct Event {
+  void* type;
+  std::vector<int> args;
+  int returns;
+  char* filename;
+  int lineno;
+  bool ignore;
+  bool caught;
+
+  Event& From(const char* fn, int line);
+  Event& Caught();
+  Event& Ignore();
+
+  Event& operator[](int ret);
+
+  int operator()(void* t);
+  int operator()(void* t, int a0);
+  int operator()(void* t, int a0, int a1);
+  int operator()(void* t, int a0, int a1, int a2);
+  int operator()(void* t, int a0, int a1, int a2, int a3);
+  int operator()(void* t, int a0, int a1, int a2, int a3, int a4);
+  int operator()(void* t, int a0, int a1, int a2, int a3, int a4, int a5);
+  int operator()(void* t, int a0, int a1, int a2, int a3, int a4, int a5, int a6);
+
+  Event();
+  ~Event();
+
+  int Get(int argi, int def=0) const;
+  bool Matches(const Event& that) const;
+  void Format(char* buf, int bufsize) const;
+
+  class Formatter {
+   public:
+    typedef void (*FunType)(char* buf, const Event& args);
+
+    static bool Format(const Event& evt, char* buf);
+
+    Formatter(void* type, FunType fp);
+    ~Formatter();
+
+   private:
+    static Formatter* list_;
+    Formatter* next_;
+    void* type_;
+    FunType fp_;
+  };
+};
+
+class TestCase {
+ public:
+  typedef std::vector<Event> EventVector;
+  typedef void(*ExpectationsFunction)(EventVector*);
+
+  static int Run(int argc, char* argv[]);
+  static int Caught(const Event& caught);
+
+  TestCase(const char* name, ExpectationsFunction expectations);
+
+ private:
+  static TestCase* caselist;
+  static TestCase* current_;
+  static bool running_;
+  static bool success_;
+  static int failpeek_count_;
+  static EventVector expectations_;
+  static EventVector ignoring_;
+  static int expectation_index_;
+
+  bool Run();
+
+  static void eat_ignores();
+
+  const char* name_;
+  TestCase* next_;
+  ExpectationsFunction expectations_fp_;
+};
+
+}  // namespace arclino_test
+
+#define TOKENPASTE(x, y) x ## y
+#define TOKENPASTE2(x, y) TOKENPASTE(x, y)
+
+#define TEST(name) \
+  void TOKENPASTE(name, _expectations)(arclino_test::TestCase::EventVector* events); \
+  arclino_test::TestCase TOKENPASTE(name, _TestCase)(#name, TOKENPASTE(name, _expectations)); \
+  void TOKENPASTE(name, _expectations)(arclino_test::TestCase::EventVector* events)
+
+#define EXPECT events->push_back(arclino_test::Event().From(__FILE__, __LINE__));events->back()
+#define IGNORE events->push_back(arclino_test::Event().From(__FILE__, __LINE__).Ignore());events->back()
+
+#define MOCK arclino_test::Event().Caught()
+
+#define FORMAT(name) namespace arclino_test {\
+  void TOKENPASTE2(__FORMAT__, __LINE__)(char* buf, const Event& e); \
+  Event::Formatter TOKENPASTE2(__FORMATTER__, __LINE__)((name), &TOKENPASTE2(__FORMAT__, __LINE__));\
+} \
+void arclino_test::TOKENPASTE2(__FORMAT__, __LINE__)(char* buf, const Event& e)
+
+#define Print_print_char_array ((size_t(*)(const char*))&Print::print)
+#define Print_print_char ((size_t(*)(char))&Print::print)
+#define Print_print_int_base ((size_t(*)(int,int))&Print::print)
+#define Print_print_double_precision ((size_t(*)(double,int))&Print::print)
+#define Print_println_char_array ((size_t(*)(const char*))&Print::println)
+#define Print_println_char ((size_t(*)(char))&Print::println)
+#define Print_println_int_base ((size_t(*)(int,int))&Print::println)
+#define Print_println_double_precision ((size_t(*)(double,int))&Print::println)
+#define Serial_write_byte ((size_t(*)(uint8_t))&Serial_::write)
+#define Serial_write_str ((size_t(*)(const char*))&Serial_::write)
+#define Serial_write_strn ((size_t(*)(const char*,size_t))&Serial_::write)
+#define Serial_print_char_array ((size_t(*)(const char*))&Serial_::print)
+#define Serial_print_char ((size_t(*)(char))&Serial_::print)
+#define Serial_print_int_base ((size_t(*)(int,int))&Serial_::print)
+#define Serial_print_double_precision ((size_t(*)(double,int))&Serial_::print)
+#define Serial_println_char_array ((size_t(*)(const char*))&Serial_::println)
+#define Serial_println_char ((size_t(*)(char))&Serial_::println)
+#define Serial_println_int_base ((size_t(*)(int,int))&Serial_::println)
+#define Serial_println_double_precision ((size_t(*)(double,int))&Serial_::println)
+
+#endif  // ARCLINO_TEST_H_
+
+ARCLINO_TEST_H
+
+  (echo "#define FAILPEEK_LIMIT ${failpeek:-10}"
+   cat << ARCLINO_TEST_CC
+#include "arclino_test.h"
+#include "Arduino.h"
+
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+void setup();
+void loop();
+
+namespace arclino_test {
+
+// Copyright (c) 2006, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Author: Satoru Takabayashi
+//
+// For reference check out:
+// http://www.codesourcery.com/public/cxx-abi/abi.html#mangling
+//
+// Note that we only have partial C++0x support yet.
+
+typedef struct {
+  const char *abbrev;
+  const char *real_name;
+} AbbrevPair;
+
+// List of operators from Itanium C++ ABI.
+static const AbbrevPair kOperatorList[] = {
+  { "nw", "new" },
+  { "na", "new[]" },
+  { "dl", "delete" },
+  { "da", "delete[]" },
+  { "ps", "+" },
+  { "ng", "-" },
+  { "ad", "&" },
+  { "de", "*" },
+  { "co", "~" },
+  { "pl", "+" },
+  { "mi", "-" },
+  { "ml", "*" },
+  { "dv", "/" },
+  { "rm", "%" },
+  { "an", "&" },
+  { "or", "|" },
+  { "eo", "^" },
+  { "aS", "=" },
+  { "pL", "+=" },
+  { "mI", "-=" },
+  { "mL", "*=" },
+  { "dV", "/=" },
+  { "rM", "%=" },
+  { "aN", "&=" },
+  { "oR", "|=" },
+  { "eO", "^=" },
+  { "ls", "<<" },
+  { "rs", ">>" },
+  { "lS", "<<=" },
+  { "rS", ">>=" },
+  { "eq", "==" },
+  { "ne", "!=" },
+  { "lt", "<" },
+  { "gt", ">" },
+  { "le", "<=" },
+  { "ge", ">=" },
+  { "nt", "!" },
+  { "aa", "&&" },
+  { "oo", "||" },
+  { "pp", "++" },
+  { "mm", "--" },
+  { "cm", "," },
+  { "pm", "->*" },
+  { "pt", "->" },
+  { "cl", "()" },
+  { "ix", "[]" },
+  { "qu", "?" },
+  { "st", "sizeof" },
+  { "sz", "sizeof" },
+  { NULL, NULL },
+};
+
+// List of builtin types from Itanium C++ ABI.
+static const AbbrevPair kBuiltinTypeList[] = {
+  { "v", "void" },
+  { "w", "wchar_t" },
+  { "b", "bool" },
+  { "c", "char" },
+  { "a", "signed char" },
+  { "h", "unsigned char" },
+  { "s", "short" },
+  { "t", "unsigned short" },
+  { "i", "int" },
+  { "j", "unsigned int" },
+  { "l", "long" },
+  { "m", "unsigned long" },
+  { "x", "long long" },
+  { "y", "unsigned long long" },
+  { "n", "__int128" },
+  { "o", "unsigned __int128" },
+  { "f", "float" },
+  { "d", "double" },
+  { "e", "long double" },
+  { "g", "__float128" },
+  { "z", "ellipsis" },
+  { NULL, NULL }
+};
+
+// List of substitutions Itanium C++ ABI.
+static const AbbrevPair kSubstitutionList[] = {
+  { "St", "" },
+  { "Sa", "allocator" },
+  { "Sb", "basic_string" },
+  // std::basic_string<char, std::char_traits<char>,std::allocator<char> >
+  { "Ss", "string"},
+  // std::basic_istream<char, std::char_traits<char> >
+  { "Si", "istream" },
+  // std::basic_ostream<char, std::char_traits<char> >
+  { "So", "ostream" },
+  // std::basic_iostream<char, std::char_traits<char> >
+  { "Sd", "iostream" },
+  { NULL, NULL }
+};
+
+// State needed for demangling.
+typedef struct {
+  const char *mangled_cur;  // Cursor of mangled name.
+  char *out_cur;            // Cursor of output string.
+  const char *out_begin;    // Beginning of output string.
+  const char *out_end;      // End of output string.
+  const char *prev_name;    // For constructors/destructors.
+  int prev_name_length;     // For constructors/destructors.
+  short nest_level;         // For nested names.
+  bool append;              // Append flag.
+  bool overflowed;          // True if output gets overflowed.
+} State;
+
+// We don't use strlen() in libc since it's not guaranteed to be async
+// signal safe.
+static size_t StrLen(const char *str) {
+  size_t len = 0;
+  while (*str != '\0') {
+    ++str;
+    ++len;
+  }
+  return len;
+}
+
+// Returns true if "str" has at least "n" characters remaining.
+static bool AtLeastNumCharsRemaining(const char *str, int n) {
+  for (int i = 0; i < n; ++i) {
+    if (str == '\0') {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Returns true if "str" has "prefix" as a prefix.
+static bool StrPrefix(const char *str, const char *prefix) {
+  size_t i = 0;
+  while (str[i] != '\0' && prefix[i] != '\0' &&
+         str[i] == prefix[i]) {
+    ++i;
+  }
+  return prefix[i] == '\0';  // Consumed everything in "prefix".
+}
+
+static void InitState(State *state, const char *mangled,
+                      char *out, int out_size) {
+  state->mangled_cur = mangled;
+  state->out_cur = out;
+  state->out_begin = out;
+  state->out_end = out + out_size;
+  state->prev_name  = NULL;
+  state->prev_name_length = -1;
+  state->nest_level = -1;
+  state->append = true;
+  state->overflowed = false;
+}
+
+// Returns true and advances "mangled_cur" if we find "one_char_token"
+// at "mangled_cur" position.  It is assumed that "one_char_token" does
+// not contain '\0'.
+static bool ParseOneCharToken(State *state, const char one_char_token) {
+  if (state->mangled_cur[0] == one_char_token) {
+    ++state->mangled_cur;
+    return true;
+  }
+  return false;
+}
+
+// Returns true and advances "mangled_cur" if we find "two_char_token"
+// at "mangled_cur" position.  It is assumed that "two_char_token" does
+// not contain '\0'.
+static bool ParseTwoCharToken(State *state, const char *two_char_token) {
+  if (state->mangled_cur[0] == two_char_token[0] &&
+      state->mangled_cur[1] == two_char_token[1]) {
+    state->mangled_cur += 2;
+    return true;
+  }
+  return false;
+}
+
+// Returns true and advances "mangled_cur" if we find any character in
+// "char_class" at "mangled_cur" position.
+static bool ParseCharClass(State *state, const char *char_class) {
+  if (state->mangled_cur == '\0') {
+    return false;
+  }
+  const char *p = char_class;
+  for (; *p != '\0'; ++p) {
+    if (state->mangled_cur[0] == *p) {
+      ++state->mangled_cur;
+      return true;
+    }
+  }
+  return false;
+}
+
+// This function is used for handling an optional non-terminal.
+static bool Optional(bool) {
+  return true;
+}
+
+// This function is used for handling <non-terminal>+ syntax.
+typedef bool (*ParseFunc)(State *);
+static bool OneOrMore(ParseFunc parse_func, State *state) {
+  if (parse_func(state)) {
+    while (parse_func(state)) {
+    }
+    return true;
+  }
+  return false;
+}
+
+// This function is used for handling <non-terminal>* syntax. The function
+// always returns true and must be followed by a termination token or a
+// terminating sequence not handled by parse_func (e.g.
+// ParseOneCharToken(state, 'E')).
+static bool ZeroOrMore(ParseFunc parse_func, State *state) {
+  while (parse_func(state)) {
+  }
+  return true;
+}
+
+// Append "str" at "out_cur".  If there is an overflow, "overflowed"
+// is set to true for later use.  The output string is ensured to
+// always terminate with '\0' as long as there is no overflow.
+static void Append(State *state, const char * const str, const int length) {
+  int i;
+  for (i = 0; i < length; ++i) {
+    if (state->out_cur + 1 < state->out_end) {  // +1 for '\0'
+      *state->out_cur = str[i];
+      ++state->out_cur;
+    } else {
+      state->overflowed = true;
+      break;
+    }
+  }
+  if (!state->overflowed) {
+    *state->out_cur = '\0';  // Terminate it with '\0'
+  }
+}
+
+// We don't use equivalents in libc to avoid locale issues.
+static bool IsLower(char c) {
+  return c >= 'a' && c <= 'z';
+}
+
+static bool IsAlpha(char c) {
+  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+static bool IsDigit(char c) {
+  return c >= '0' && c <= '9';
+}
+
+// Returns true if "str" is a function clone suffix.  These suffixes are used
+// by GCC 4.5.x and later versions to indicate functions which have been
+// cloned during optimization.  We treat any sequence (.<alpha>+.<digit>+)+ as
+// a function clone suffix.
+static bool IsFunctionCloneSuffix(const char *str) {
+  size_t i = 0;
+  while (str[i] != '\0') {
+    // Consume a single .<alpha>+.<digit>+ sequence.
+    if (str[i] != '.' || !IsAlpha(str[i + 1])) {
+      return false;
+    }
+    i += 2;
+    while (IsAlpha(str[i])) {
+      ++i;
+    }
+    if (str[i] != '.' || !IsDigit(str[i + 1])) {
+      return false;
+    }
+    i += 2;
+    while (IsDigit(str[i])) {
+      ++i;
+    }
+  }
+  return true;  // Consumed everything in "str".
+}
+
+// Append "str" with some tweaks, iff "append" state is true.
+// Returns true so that it can be placed in "if" conditions.
+static void MaybeAppendWithLength(State *state, const char * const str,
+                                  const int length) {
+  if (state->append && length > 0) {
+    // Append a space if the output buffer ends with '<' and "str"
+    // starts with '<' to avoid <<<.
+    if (str[0] == '<' && state->out_begin < state->out_cur  &&
+        state->out_cur[-1] == '<') {
+      Append(state, " ", 1);
+    }
+    // Remember the last identifier name for ctors/dtors.
+    if (IsAlpha(str[0]) || str[0] == '_') {
+      state->prev_name = state->out_cur;
+      state->prev_name_length = length;
+    }
+    Append(state, str, length);
+  }
+}
+
+// A convenient wrapper arount MaybeAppendWithLength().
+static bool MaybeAppend(State *state, const char * const str) {
+  if (state->append) {
+    int length = StrLen(str);
+    MaybeAppendWithLength(state, str, length);
+  }
+  return true;
+}
+
+// This function is used for handling nested names.
+static bool EnterNestedName(State *state) {
+  state->nest_level = 0;
+  return true;
+}
+
+// This function is used for handling nested names.
+static bool LeaveNestedName(State *state, short prev_value) {
+  state->nest_level = prev_value;
+  return true;
+}
+
+// Disable the append mode not to print function parameters, etc.
+static bool DisableAppend(State *state) {
+  state->append = false;
+  return true;
+}
+
+// Restore the append mode to the previous state.
+static bool RestoreAppend(State *state, bool prev_value) {
+  state->append = prev_value;
+  return true;
+}
+
+// Increase the nest level for nested names.
+static void MaybeIncreaseNestLevel(State *state) {
+  if (state->nest_level > -1) {
+    ++state->nest_level;
+  }
+}
+
+// Appends :: for nested names if necessary.
+static void MaybeAppendSeparator(State *state) {
+  if (state->nest_level >= 1) {
+    MaybeAppend(state, "::");
+  }
+}
+
+// Cancel the last separator if necessary.
+static void MaybeCancelLastSeparator(State *state) {
+  if (state->nest_level >= 1 && state->append &&
+      state->out_begin <= state->out_cur - 2) {
+    state->out_cur -= 2;
+    *state->out_cur = '\0';
+  }
+}
+
+// Returns true if the identifier of the given length pointed to by
+// "mangled_cur" is anonymous namespace.
+static bool IdentifierIsAnonymousNamespace(State *state, int length) {
+  static const char anon_prefix[] = "_GLOBAL__N_";
+  return (length > (int)sizeof(anon_prefix) - 1 &&  // Should be longer.
+          StrPrefix(state->mangled_cur, anon_prefix));
+}
+
+// Forward declarations of our parsing functions.
+static bool ParseMangledName(State *state);
+static bool ParseEncoding(State *state);
+static bool ParseName(State *state);
+static bool ParseUnscopedName(State *state);
+static bool ParseUnscopedTemplateName(State *state);
+static bool ParseNestedName(State *state);
+static bool ParsePrefix(State *state);
+static bool ParseUnqualifiedName(State *state);
+static bool ParseSourceName(State *state);
+static bool ParseLocalSourceName(State *state);
+static bool ParseNumber(State *state, int *number_out);
+static bool ParseFloatNumber(State *state);
+static bool ParseSeqId(State *state);
+static bool ParseIdentifier(State *state, int length);
+static bool ParseOperatorName(State *state);
+static bool ParseSpecialName(State *state);
+static bool ParseCallOffset(State *state);
+static bool ParseNVOffset(State *state);
+static bool ParseVOffset(State *state);
+static bool ParseCtorDtorName(State *state);
+static bool ParseType(State *state);
+static bool ParseCVQualifiers(State *state);
+static bool ParseBuiltinType(State *state);
+static bool ParseFunctionType(State *state);
+static bool ParseBareFunctionType(State *state);
+static bool ParseClassEnumType(State *state);
+static bool ParseArrayType(State *state);
+static bool ParsePointerToMemberType(State *state);
+static bool ParseTemplateParam(State *state);
+static bool ParseTemplateTemplateParam(State *state);
+static bool ParseTemplateArgs(State *state);
+static bool ParseTemplateArg(State *state);
+static bool ParseExpression(State *state);
+static bool ParseExprPrimary(State *state);
+static bool ParseLocalName(State *state);
+static bool ParseDiscriminator(State *state);
+static bool ParseSubstitution(State *state);
+
+// Implementation note: the following code is a straightforward
+// translation of the Itanium C++ ABI defined in BNF with a couple of
+// exceptions.
+//
+// - Support GNU extensions not defined in the Itanium C++ ABI
+// - <prefix> and <template-prefix> are combined to avoid infinite loop
+// - Reorder patterns to shorten the code
+// - Reorder patterns to give greedier functions precedence
+//   We'll mark "Less greedy than" for these cases in the code
+//
+// Each parsing function changes the state and returns true on
+// success.  Otherwise, don't change the state and returns false.  To
+// ensure that the state isn't changed in the latter case, we save the
+// original state before we call more than one parsing functions
+// consecutively with &&, and restore the state if unsuccessful.  See
+// ParseEncoding() as an example of this convention.  We follow the
+// convention throughout the code.
+//
+// Originally we tried to do demangling without following the full ABI
+// syntax but it turned out we needed to follow the full syntax to
+// parse complicated cases like nested template arguments.  Note that
+// implementing a full-fledged demangler isn't trivial (libiberty's
+// cp-demangle.c has +4300 lines).
+//
+// Note that (foo) in <(foo) ...> is a modifier to be ignored.
+//
+// Reference:
+// - Itanium C++ ABI
+//   <http://www.codesourcery.com/cxx-abi/abi.html#mangling>
+
+// <mangled-name> ::= _Z <encoding>
+static bool ParseMangledName(State *state) {
+  return ParseTwoCharToken(state, "_Z") && ParseEncoding(state);
+}
+
+// <encoding> ::= <(function) name> <bare-function-type>
+//            ::= <(data) name>
+//            ::= <special-name>
+static bool ParseEncoding(State *state) {
+  State copy = *state;
+  if (ParseName(state) && ParseBareFunctionType(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseName(state) || ParseSpecialName(state)) {
+    return true;
+  }
+  return false;
+}
+
+// <name> ::= <nested-name>
+//        ::= <unscoped-template-name> <template-args>
+//        ::= <unscoped-name>
+//        ::= <local-name>
+static bool ParseName(State *state) {
+  if (ParseNestedName(state) || ParseLocalName(state)) {
+    return true;
+  }
+
+  State copy = *state;
+  if (ParseUnscopedTemplateName(state) &&
+      ParseTemplateArgs(state)) {
+    return true;
+  }
+  *state = copy;
+
+  // Less greedy than <unscoped-template-name> <template-args>.
+  if (ParseUnscopedName(state)) {
+    return true;
+  }
+  return false;
+}
+
+// <unscoped-name> ::= <unqualified-name>
+//                 ::= St <unqualified-name>
+static bool ParseUnscopedName(State *state) {
+  if (ParseUnqualifiedName(state)) {
+    return true;
+  }
+
+  State copy = *state;
+  if (ParseTwoCharToken(state, "St") &&
+      MaybeAppend(state, "std::") &&
+      ParseUnqualifiedName(state)) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <unscoped-template-name> ::= <unscoped-name>
+//                          ::= <substitution>
+static bool ParseUnscopedTemplateName(State *state) {
+  return ParseUnscopedName(state) || ParseSubstitution(state);
+}
+
+// <nested-name> ::= N [<CV-qualifiers>] <prefix> <unqualified-name> E
+//               ::= N [<CV-qualifiers>] <template-prefix> <template-args> E
+static bool ParseNestedName(State *state) {
+  State copy = *state;
+  if (ParseOneCharToken(state, 'N') &&
+      EnterNestedName(state) &&
+      Optional(ParseCVQualifiers(state)) &&
+      ParsePrefix(state) &&
+      LeaveNestedName(state, copy.nest_level) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// This part is tricky.  If we literally translate them to code, we'll
+// end up infinite loop.  Hence we merge them to avoid the case.
+//
+// <prefix> ::= <prefix> <unqualified-name>
+//          ::= <template-prefix> <template-args>
+//          ::= <template-param>
+//          ::= <substitution>
+//          ::= # empty
+// <template-prefix> ::= <prefix> <(template) unqualified-name>
+//                   ::= <template-param>
+//                   ::= <substitution>
+static bool ParsePrefix(State *state) {
+  bool has_something = false;
+  while (true) {
+    MaybeAppendSeparator(state);
+    if (ParseTemplateParam(state) ||
+        ParseSubstitution(state) ||
+        ParseUnscopedName(state)) {
+      has_something = true;
+      MaybeIncreaseNestLevel(state);
+      continue;
+    }
+    MaybeCancelLastSeparator(state);
+    if (has_something && ParseTemplateArgs(state)) {
+      return ParsePrefix(state);
+    } else {
+      break;
+    }
+  }
+  return true;
+}
+
+// <unqualified-name> ::= <operator-name>
+//                    ::= <ctor-dtor-name>
+//                    ::= <source-name>
+//                    ::= <local-source-name>
+static bool ParseUnqualifiedName(State *state) {
+  return (ParseOperatorName(state) ||
+          ParseCtorDtorName(state) ||
+          ParseSourceName(state) ||
+          ParseLocalSourceName(state));
+}
+
+// <source-name> ::= <positive length number> <identifier>
+static bool ParseSourceName(State *state) {
+  State copy = *state;
+  int length = -1;
+  if (ParseNumber(state, &length) && ParseIdentifier(state, length)) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <local-source-name> ::= L <source-name> [<discriminator>]
+//
+// References:
+//   http://gcc.gnu.org/bugzilla/show_bug.cgi?id=31775
+//   http://gcc.gnu.org/viewcvs?view=rev&revision=124467
+static bool ParseLocalSourceName(State *state) {
+  State copy = *state;
+  if (ParseOneCharToken(state, 'L') && ParseSourceName(state) &&
+      Optional(ParseDiscriminator(state))) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <number> ::= [n] <non-negative decimal integer>
+// If "number_out" is non-null, then *number_out is set to the value of the
+// parsed number on success.
+static bool ParseNumber(State *state, int *number_out) {
+  int sign = 1;
+  if (ParseOneCharToken(state, 'n')) {
+    sign = -1;
+  }
+  const char *p = state->mangled_cur;
+  int number = 0;
+  for (;*p != '\0'; ++p) {
+    if (IsDigit(*p)) {
+      number = number * 10 + (*p - '0');
+    } else {
+      break;
+    }
+  }
+  if (p != state->mangled_cur) {  // Conversion succeeded.
+    state->mangled_cur = p;
+    if (number_out != NULL) {
+      *number_out = number * sign;
+    }
+    return true;
+  }
+  return false;
+}
+
+// Floating-point literals are encoded using a fixed-length lowercase
+// hexadecimal string.
+static bool ParseFloatNumber(State *state) {
+  const char *p = state->mangled_cur;
+  for (;*p != '\0'; ++p) {
+    if (!IsDigit(*p) && !(*p >= 'a' && *p <= 'f')) {
+      break;
+    }
+  }
+  if (p != state->mangled_cur) {  // Conversion succeeded.
+    state->mangled_cur = p;
+    return true;
+  }
+  return false;
+}
+
+// The <seq-id> is a sequence number in base 36,
+// using digits and upper case letters
+static bool ParseSeqId(State *state) {
+  const char *p = state->mangled_cur;
+  for (;*p != '\0'; ++p) {
+    if (!IsDigit(*p) && !(*p >= 'A' && *p <= 'Z')) {
+      break;
+    }
+  }
+  if (p != state->mangled_cur) {  // Conversion succeeded.
+    state->mangled_cur = p;
+    return true;
+  }
+  return false;
+}
+
+// <identifier> ::= <unqualified source code identifier> (of given length)
+static bool ParseIdentifier(State *state, int length) {
+  if (length == -1 ||
+      !AtLeastNumCharsRemaining(state->mangled_cur, length)) {
+    return false;
+  }
+  if (IdentifierIsAnonymousNamespace(state, length)) {
+    MaybeAppend(state, "(anonymous namespace)");
+  } else {
+    MaybeAppendWithLength(state, state->mangled_cur, length);
+  }
+  state->mangled_cur += length;
+  return true;
+}
+
+// <operator-name> ::= nw, and other two letters cases
+//                 ::= cv <type>  # (cast)
+//                 ::= v  <digit> <source-name> # vendor extended operator
+static bool ParseOperatorName(State *state) {
+  if (!AtLeastNumCharsRemaining(state->mangled_cur, 2)) {
+    return false;
+  }
+  // First check with "cv" (cast) case.
+  State copy = *state;
+  if (ParseTwoCharToken(state, "cv") &&
+      MaybeAppend(state, "operator ") &&
+      EnterNestedName(state) &&
+      ParseType(state) &&
+      LeaveNestedName(state, copy.nest_level)) {
+    return true;
+  }
+  *state = copy;
+
+  // Then vendor extended operators.
+  if (ParseOneCharToken(state, 'v') && ParseCharClass(state, "0123456789") &&
+      ParseSourceName(state)) {
+    return true;
+  }
+  *state = copy;
+
+  // Other operator names should start with a lower alphabet followed
+  // by a lower/upper alphabet.
+  if (!(IsLower(state->mangled_cur[0]) &&
+        IsAlpha(state->mangled_cur[1]))) {
+    return false;
+  }
+  // We may want to perform a binary search if we really need speed.
+  const AbbrevPair *p;
+  for (p = kOperatorList; p->abbrev != NULL; ++p) {
+    if (state->mangled_cur[0] == p->abbrev[0] &&
+        state->mangled_cur[1] == p->abbrev[1]) {
+      MaybeAppend(state, "operator");
+      if (IsLower(*p->real_name)) {  // new, delete, etc.
+        MaybeAppend(state, " ");
+      }
+      MaybeAppend(state, p->real_name);
+      state->mangled_cur += 2;
+      return true;
+    }
+  }
+  return false;
+}
+
+// <special-name> ::= TV <type>
+//                ::= TT <type>
+//                ::= TI <type>
+//                ::= TS <type>
+//                ::= Tc <call-offset> <call-offset> <(base) encoding>
+//                ::= GV <(object) name>
+//                ::= T <call-offset> <(base) encoding>
+// G++ extensions:
+//                ::= TC <type> <(offset) number> _ <(base) type>
+//                ::= TF <type>
+//                ::= TJ <type>
+//                ::= GR <name>
+//                ::= GA <encoding>
+//                ::= Th <call-offset> <(base) encoding>
+//                ::= Tv <call-offset> <(base) encoding>
+//
+// Note: we don't care much about them since they don't appear in
+// stack traces.  The are special data.
+static bool ParseSpecialName(State *state) {
+  State copy = *state;
+  if (ParseOneCharToken(state, 'T') &&
+      ParseCharClass(state, "VTIS") &&
+      ParseType(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseTwoCharToken(state, "Tc") && ParseCallOffset(state) &&
+      ParseCallOffset(state) && ParseEncoding(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseTwoCharToken(state, "GV") &&
+      ParseName(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOneCharToken(state, 'T') && ParseCallOffset(state) &&
+      ParseEncoding(state)) {
+    return true;
+  }
+  *state = copy;
+
+  // G++ extensions
+  if (ParseTwoCharToken(state, "TC") && ParseType(state) &&
+      ParseNumber(state, NULL) && ParseOneCharToken(state, '_') &&
+      DisableAppend(state) &&
+      ParseType(state)) {
+    RestoreAppend(state, copy.append);
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOneCharToken(state, 'T') && ParseCharClass(state, "FJ") &&
+      ParseType(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseTwoCharToken(state, "GR") && ParseName(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseTwoCharToken(state, "GA") && ParseEncoding(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOneCharToken(state, 'T') && ParseCharClass(state, "hv") &&
+      ParseCallOffset(state) && ParseEncoding(state)) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <call-offset> ::= h <nv-offset> _
+//               ::= v <v-offset> _
+static bool ParseCallOffset(State *state) {
+  State copy = *state;
+  if (ParseOneCharToken(state, 'h') &&
+      ParseNVOffset(state) && ParseOneCharToken(state, '_')) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOneCharToken(state, 'v') &&
+      ParseVOffset(state) && ParseOneCharToken(state, '_')) {
+    return true;
+  }
+  *state = copy;
+
+  return false;
+}
+
+// <nv-offset> ::= <(offset) number>
+static bool ParseNVOffset(State *state) {
+  return ParseNumber(state, NULL);
+}
+
+// <v-offset>  ::= <(offset) number> _ <(virtual offset) number>
+static bool ParseVOffset(State *state) {
+  State copy = *state;
+  if (ParseNumber(state, NULL) && ParseOneCharToken(state, '_') &&
+      ParseNumber(state, NULL)) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <ctor-dtor-name> ::= C1 | C2 | C3
+//                  ::= D0 | D1 | D2
+static bool ParseCtorDtorName(State *state) {
+  State copy = *state;
+  if (ParseOneCharToken(state, 'C') &&
+      ParseCharClass(state, "123")) {
+    const char * const prev_name = state->prev_name;
+    const int prev_name_length = state->prev_name_length;
+    MaybeAppendWithLength(state, prev_name, prev_name_length);
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOneCharToken(state, 'D') &&
+      ParseCharClass(state, "012")) {
+    const char * const prev_name = state->prev_name;
+    const int prev_name_length = state->prev_name_length;
+    MaybeAppend(state, "~");
+    MaybeAppendWithLength(state, prev_name, prev_name_length);
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <type> ::= <CV-qualifiers> <type>
+//        ::= P <type>   # pointer-to
+//        ::= R <type>   # reference-to
+//        ::= O <type>   # rvalue reference-to (C++0x)
+//        ::= C <type>   # complex pair (C 2000)
+//        ::= G <type>   # imaginary (C 2000)
+//        ::= U <source-name> <type>  # vendor extended type qualifier
+//        ::= <builtin-type>
+//        ::= <function-type>
+//        ::= <class-enum-type>
+//        ::= <array-type>
+//        ::= <pointer-to-member-type>
+//        ::= <template-template-param> <template-args>
+//        ::= <template-param>
+//        ::= <substitution>
+//        ::= Dp <type>          # pack expansion of (C++0x)
+//        ::= Dt <expression> E  # decltype of an id-expression or class
+//                               # member access (C++0x)
+//        ::= DT <expression> E  # decltype of an expression (C++0x)
+//
+static bool ParseType(State *state) {
+  // We should check CV-qualifers, and PRGC things first.
+  State copy = *state;
+  if (ParseCVQualifiers(state) && ParseType(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseCharClass(state, "OPRCG") && ParseType(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseTwoCharToken(state, "Dp") && ParseType(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOneCharToken(state, 'D') && ParseCharClass(state, "tT") &&
+      ParseExpression(state) && ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOneCharToken(state, 'U') && ParseSourceName(state) &&
+      ParseType(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseBuiltinType(state) ||
+      ParseFunctionType(state) ||
+      ParseClassEnumType(state) ||
+      ParseArrayType(state) ||
+      ParsePointerToMemberType(state) ||
+      ParseSubstitution(state)) {
+    return true;
+  }
+
+  if (ParseTemplateTemplateParam(state) &&
+      ParseTemplateArgs(state)) {
+    return true;
+  }
+  *state = copy;
+
+  // Less greedy than <template-template-param> <template-args>.
+  if (ParseTemplateParam(state)) {
+    return true;
+  }
+
+  return false;
+}
+
+// <CV-qualifiers> ::= [r] [V] [K]
+// We don't allow empty <CV-qualifiers> to avoid infinite loop in
+// ParseType().
+static bool ParseCVQualifiers(State *state) {
+  int num_cv_qualifiers = 0;
+  num_cv_qualifiers += ParseOneCharToken(state, 'r');
+  num_cv_qualifiers += ParseOneCharToken(state, 'V');
+  num_cv_qualifiers += ParseOneCharToken(state, 'K');
+  return num_cv_qualifiers > 0;
+}
+
+// <builtin-type> ::= v, etc.
+//                ::= u <source-name>
+static bool ParseBuiltinType(State *state) {
+  const AbbrevPair *p;
+  for (p = kBuiltinTypeList; p->abbrev != NULL; ++p) {
+    if (state->mangled_cur[0] == p->abbrev[0]) {
+      MaybeAppend(state, p->real_name);
+      ++state->mangled_cur;
+      return true;
+    }
+  }
+
+  State copy = *state;
+  if (ParseOneCharToken(state, 'u') && ParseSourceName(state)) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <function-type> ::= F [Y] <bare-function-type> E
+static bool ParseFunctionType(State *state) {
+  State copy = *state;
+  if (ParseOneCharToken(state, 'F') &&
+      Optional(ParseOneCharToken(state, 'Y')) &&
+      ParseBareFunctionType(state) && ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <bare-function-type> ::= <(signature) type>+
+static bool ParseBareFunctionType(State *state) {
+  State copy = *state;
+  DisableAppend(state);
+  if (OneOrMore(ParseType, state)) {
+    RestoreAppend(state, copy.append);
+    MaybeAppend(state, "()");
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <class-enum-type> ::= <name>
+static bool ParseClassEnumType(State *state) {
+  return ParseName(state);
+}
+
+// <array-type> ::= A <(positive dimension) number> _ <(element) type>
+//              ::= A [<(dimension) expression>] _ <(element) type>
+static bool ParseArrayType(State *state) {
+  State copy = *state;
+  if (ParseOneCharToken(state, 'A') && ParseNumber(state, NULL) &&
+      ParseOneCharToken(state, '_') && ParseType(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOneCharToken(state, 'A') && Optional(ParseExpression(state)) &&
+      ParseOneCharToken(state, '_') && ParseType(state)) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <pointer-to-member-type> ::= M <(class) type> <(member) type>
+static bool ParsePointerToMemberType(State *state) {
+  State copy = *state;
+  if (ParseOneCharToken(state, 'M') && ParseType(state) &&
+      ParseType(state)) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <template-param> ::= T_
+//                  ::= T <parameter-2 non-negative number> _
+static bool ParseTemplateParam(State *state) {
+  if (ParseTwoCharToken(state, "T_")) {
+    MaybeAppend(state, "?");  // We don't support template substitutions.
+    return true;
+  }
+
+  State copy = *state;
+  if (ParseOneCharToken(state, 'T') && ParseNumber(state, NULL) &&
+      ParseOneCharToken(state, '_')) {
+    MaybeAppend(state, "?");  // We don't support template substitutions.
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+
+// <template-template-param> ::= <template-param>
+//                           ::= <substitution>
+static bool ParseTemplateTemplateParam(State *state) {
+  return (ParseTemplateParam(state) ||
+          ParseSubstitution(state));
+}
+
+// <template-args> ::= I <template-arg>+ E
+static bool ParseTemplateArgs(State *state) {
+  State copy = *state;
+  DisableAppend(state);
+  if (ParseOneCharToken(state, 'I') &&
+      OneOrMore(ParseTemplateArg, state) &&
+      ParseOneCharToken(state, 'E')) {
+    RestoreAppend(state, copy.append);
+    MaybeAppend(state, "<>");
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <template-arg>  ::= <type>
+//                 ::= <expr-primary>
+//                 ::= I <template-arg>* E        # argument pack
+//                 ::= X <expression> E
+static bool ParseTemplateArg(State *state) {
+  State copy = *state;
+  if (ParseOneCharToken(state, 'I') &&
+      ZeroOrMore(ParseTemplateArg, state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseType(state) ||
+      ParseExprPrimary(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOneCharToken(state, 'X') && ParseExpression(state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <expression> ::= <template-param>
+//              ::= <expr-primary>
+//              ::= <unary operator-name> <expression>
+//              ::= <binary operator-name> <expression> <expression>
+//              ::= <trinary operator-name> <expression> <expression>
+//                  <expression>
+//              ::= st <type>
+//              ::= sr <type> <unqualified-name> <template-args>
+//              ::= sr <type> <unqualified-name>
+static bool ParseExpression(State *state) {
+  if (ParseTemplateParam(state) || ParseExprPrimary(state)) {
+    return true;
+  }
+
+  State copy = *state;
+  if (ParseOperatorName(state) &&
+      ParseExpression(state) &&
+      ParseExpression(state) &&
+      ParseExpression(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOperatorName(state) &&
+      ParseExpression(state) &&
+      ParseExpression(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOperatorName(state) &&
+      ParseExpression(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseTwoCharToken(state, "st") && ParseType(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseTwoCharToken(state, "sr") && ParseType(state) &&
+      ParseUnqualifiedName(state) &&
+      ParseTemplateArgs(state)) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseTwoCharToken(state, "sr") && ParseType(state) &&
+      ParseUnqualifiedName(state)) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <expr-primary> ::= L <type> <(value) number> E
+//                ::= L <type> <(value) float> E
+//                ::= L <mangled-name> E
+//                // A bug in g++'s C++ ABI version 2 (-fabi-version=2).
+//                ::= LZ <encoding> E
+static bool ParseExprPrimary(State *state) {
+  State copy = *state;
+  if (ParseOneCharToken(state, 'L') && ParseType(state) &&
+      ParseNumber(state, NULL) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOneCharToken(state, 'L') && ParseType(state) &&
+      ParseFloatNumber(state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOneCharToken(state, 'L') && ParseMangledName(state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseTwoCharToken(state, "LZ") && ParseEncoding(state) &&
+      ParseOneCharToken(state, 'E')) {
+    return true;
+  }
+  *state = copy;
+
+  return false;
+}
+
+// <local-name> := Z <(function) encoding> E <(entity) name>
+//                 [<discriminator>]
+//              := Z <(function) encoding> E s [<discriminator>]
+static bool ParseLocalName(State *state) {
+  State copy = *state;
+  if (ParseOneCharToken(state, 'Z') && ParseEncoding(state) &&
+      ParseOneCharToken(state, 'E') && MaybeAppend(state, "::") &&
+      ParseName(state) && Optional(ParseDiscriminator(state))) {
+    return true;
+  }
+  *state = copy;
+
+  if (ParseOneCharToken(state, 'Z') && ParseEncoding(state) &&
+      ParseTwoCharToken(state, "Es") && Optional(ParseDiscriminator(state))) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <discriminator> := _ <(non-negative) number>
+static bool ParseDiscriminator(State *state) {
+  State copy = *state;
+  if (ParseOneCharToken(state, '_') && ParseNumber(state, NULL)) {
+    return true;
+  }
+  *state = copy;
+  return false;
+}
+
+// <substitution> ::= S_
+//                ::= S <seq-id> _
+//                ::= St, etc.
+static bool ParseSubstitution(State *state) {
+  if (ParseTwoCharToken(state, "S_")) {
+    MaybeAppend(state, "?");  // We don't support substitutions.
+    return true;
+  }
+
+  State copy = *state;
+  if (ParseOneCharToken(state, 'S') && ParseSeqId(state) &&
+      ParseOneCharToken(state, '_')) {
+    MaybeAppend(state, "?");  // We don't support substitutions.
+    return true;
+  }
+  *state = copy;
+
+  // Expand abbreviations like "St" => "std".
+  if (ParseOneCharToken(state, 'S')) {
+    const AbbrevPair *p;
+    for (p = kSubstitutionList; p->abbrev != NULL; ++p) {
+      if (state->mangled_cur[0] == p->abbrev[1]) {
+        MaybeAppend(state, "std");
+        if (p->real_name[0] != '\0') {
+          MaybeAppend(state, "::");
+          MaybeAppend(state, p->real_name);
+        }
+        ++state->mangled_cur;
+        return true;
+      }
+    }
+  }
+  *state = copy;
+  return false;
+}
+
+// Parse <mangled-name>, optionally followed by either a function-clone suffix
+// or version suffix.  Returns true only if all of "mangled_cur" was consumed.
+static bool ParseTopLevelMangledName(State *state) {
+  if (ParseMangledName(state)) {
+    if (state->mangled_cur[0] != '\0') {
+      // Drop trailing function clone suffix, if any.
+      if (IsFunctionCloneSuffix(state->mangled_cur)) {
+        return true;
+      }
+      // Append trailing version suffix if any.
+      // ex. _Z3foo@@GLIBCXX_3.4
+      if (state->mangled_cur[0] == '@') {
+        MaybeAppend(state, state->mangled_cur);
+        return true;
+      }
+      return false;  // Unconsumed suffix.
+    }
+    return true;
+  }
+  return false;
+}
+
+// The demangler entry point.
+bool Demangle(const char *mangled, char *out, int out_size) {
+  State state;
+  InitState(&state, mangled, out, out_size);
+  return ParseTopLevelMangledName(&state) && !state.overflowed;
+}
+
+
+bool func_name(void* fp, char* buf) {
+  void* fps[] = {fp};
+  char** strs = backtrace_symbols(fps, 1);
+  if (!strs)
+    return false;
+  char* op = strchr(strs[0], '(');
+  char* cp = strchr(strs[0], ')');
+  if (!op || !cp)
+    return false;
+  char mangled[256], demangled[256];
+  memset(mangled, 0, sizeof(mangled));
+  memset(demangled, 0, sizeof(demangled));
+  if (cp-op<=3)
+    return false;
+  strncpy(mangled, op + 1, cp-op-3);
+  char* plus = strrchr(mangled, '+');
+  if (plus) *plus = 0;
+  if (!Demangle(mangled, demangled, sizeof(demangled)))
+    return false;
+  op = strchr(demangled, '(');
+  if (!op)
+    return false;
+  *op = 0;
+  strcpy(buf, demangled);
+  return true;
+}
+
+int CaughtEvent(const Event& evt);
+
+Event& Event::From(const char* fn, int line) {
+  filename = const_cast<char*>(fn);
+  lineno = line;
+  return *this;
+}
+Event& Event::Caught() {
+  caught = true;
+  return *this;
+}
+Event& Event::Ignore() {
+  ignore = true;
+  return *this;
+}
+
+Event& Event::operator[](int ret) {
+  returns = ret;
+  return *this;
+}
+
+int Event::operator()(void* t) {
+  type = t;
+  return caught ? CaughtEvent(*this) : 0;
+}
+int Event::operator()(void* t, int a0) {
+  type = t;
+  args.push_back(a0);
+  return caught ? CaughtEvent(*this) : 0;
+}
+int Event::operator()(void* t, int a0, int a1) {
+  type = t;
+  args.push_back(a0);
+  args.push_back(a1);
+  return caught ? CaughtEvent(*this) : 0;
+}
+int Event::operator()(void* t, int a0, int a1, int a2) {
+  type = t;
+  args.push_back(a0);
+  args.push_back(a1);
+  args.push_back(a2);
+  return caught ? CaughtEvent(*this) : 0;
+}
+int Event::operator()(void* t, int a0, int a1, int a2, int a3) {
+  type = t;
+  args.push_back(a0);
+  args.push_back(a1);
+  args.push_back(a2);
+  args.push_back(a3);
+  return caught ? CaughtEvent(*this) : 0;
+}
+int Event::operator()(void* t, int a0, int a1, int a2, int a3, int a4) {
+  type = t;
+  args.push_back(a0);
+  args.push_back(a1);
+  args.push_back(a2);
+  args.push_back(a3);
+  args.push_back(a4);
+  return caught ? CaughtEvent(*this) : 0;
+}
+int Event::operator()(void* t, int a0, int a1, int a2, int a3, int a4, int a5) {
+  type = t;
+  args.push_back(a0);
+  args.push_back(a1);
+  args.push_back(a2);
+  args.push_back(a3);
+  args.push_back(a4);
+  args.push_back(a5);
+  return caught ? CaughtEvent(*this) : 0;
+}
+int Event::operator()(void* t, int a0, int a1, int a2, int a3, int a4, int a5, int a6) {
+  type = t;
+  args.push_back(a0);
+  args.push_back(a1);
+  args.push_back(a2);
+  args.push_back(a3);
+  args.push_back(a4);
+  args.push_back(a5);
+  args.push_back(a6);
+  return caught ? CaughtEvent(*this) : 0;
+}
+
+Event::Event() : type(0), returns(0), filename(NULL), lineno(0), ignore(false), caught(false) {}
+Event::~Event() {}
+
+int Event::Get(int argi, int def=0) const {
+  return (argi >= args.size()) ? def : args[argi];
+}
+bool Event::Matches(const Event& that) const {
+  if (type != that.type) return false;
+  for (size_t i = 0; i < min(args.size(), that.args.size()); ++i) {
+    if (args[i] != that.args[i])
+      return false;
+  }
+  return true;
+}
+void Event::Format(char* buf, int bufsize) const {
+  memset(buf, 0, bufsize);
+  if (!Formatter::Format(*this, buf)) {
+    if (!func_name(type, buf)) {
+      sprintf(buf, "_unknown_");
+    }
+    if (strlen(buf) > bufsize - 3)
+      return;
+    *(buf + strlen(buf)) = '(';
+    for (int argi = 0; argi < args.size(); ++argi) {
+      if (strlen(buf) > bufsize - (3 + round(log10(args[argi]))))
+        break;
+      if (argi > 0) {
+        sprintf(buf + strlen(buf), ", ");
+      }
+      sprintf(buf + strlen(buf), "%d", args[argi]);
+    }
+    if (strlen(buf) > bufsize - 2)
+      return;
+    *(buf + strlen(buf)) = ')';
+  }
+}
+
+bool Event::Formatter::Format(const Event& evt, char* buf) {
+  Formatter* current = list_;
+  while (current) {
+    if (current->type_ == evt.type) {
+      (*(current->fp_))(buf, evt);
+      return true;
+    }
+    current = current->next_;
+  }
+  return false;
+}
+
+Event::Formatter::Formatter(void* type, FunType fp)
+    : next_(list_),
+      type_(type),
+      fp_(fp) {
+  list_ = this;
+}
+Event::Formatter::~Formatter() {}
+
+Event::Formatter* Event::Formatter::list_ = NULL;
+
+int TestCase::Run(int argc, char* argv[]) {
+  if (TestCase::caselist == NULL) {
+    return 1;
+  }
+  TestCase* c = TestCase::caselist;
+  while (c) {
+    if (!c->Run()) {
+      return 1;
+    }
+    c = c->next_;
+  }
+  return 0;
+}
+
+int TestCase::Caught(const Event& caught) {
+  for (size_t ignore_i = 0; ignore_i < ignoring_.size(); ++ignore_i) {
+    if (caught.Matches(ignoring_[ignore_i]))
+      return ignoring_[ignore_i].returns;
+  }
+  if (!success_) {
+    if (failpeek_count_ < FAILPEEK_LIMIT) {
+      char buf[256];
+      caught.Format(buf, sizeof(buf));
+      printf("  %s\n", buf);
+      ++failpeek_count_;
+      if (failpeek_count_ == FAILPEEK_LIMIT) {
+        running_ = false;
+      }
+    }
+    return 0;
+  }
+  if (expectation_index_ >= expectations_.size()) {
+    running_ = false;
+    return 0;
+  }
+  const Event& expected = expectations_[expectation_index_];
+  ++expectation_index_;
+  eat_ignores();
+  for (size_t ignore_i = 0; ignore_i < ignoring_.size(); ++ignore_i) {
+    if (expectations_[expectation_index_].Matches(ignoring_[ignore_i])) {
+      ignoring_.erase(ignoring_.begin() + ignore_i);
+      --ignore_i;
+    }
+  }
+  if (expectation_index_ == expectations_.size()) {
+    running_ = false;
+  }
+  if (!caught.Matches(expected)) {
+    char ebuf[256], cbuf[256];
+    expected.Format(ebuf, sizeof(ebuf));
+    caught.Format(cbuf, sizeof(cbuf));
+    printf("Expected %s from %s:%d\nCaught %s\n", ebuf, expected.filename, expected.lineno, cbuf);
+    success_ = false;
+    void* fps[100];
+    int nfps = backtrace(fps, sizeof(fps));
+    printf("Traceback:\n");
+    char name[256];
+    for (int stri = nfps - 4; stri > 0; --stri) {
+      memset(name, 0, sizeof(name));
+      if (func_name(fps[stri], name)) {
+        static const char ignore[] = "arclino_test::";
+        if (strncmp(name, ignore, strlen(ignore))) {
+          printf("  %s\n", name);
+        }
+      }
+    }
+    if (FAILPEEK_LIMIT == 0) {
+      running_ = false;
+    } else {
+      printf("Failpeek %d:\n", FAILPEEK_LIMIT);
+    }
+    return 0;
+  }
+  return expected.returns;
+}
+
+TestCase::TestCase(const char* name, ExpectationsFunction expectations)
+    : name_(name),
+      next_(TestCase::caselist),
+      expectations_fp_(expectations) {
+  TestCase::caselist = this;
+}
+
+bool TestCase::Run() {
+  printf("Running %s\n", name_);
+  expectation_index_ = 0;
+  expectations_fp_(&expectations_);
+  current_ = this;
+  running_ = true;
+  success_ = true;
+  failpeek_count_ = 0;
+  eat_ignores();
+
+  if (expectation_index_ < expectations_.size()) {
+    setup();
+    while (running_) loop();
+  }
+
+  printf("%s %s\n", success_ ? "SUCCESS" : "FAILURE", name_);
+  expectations_.clear();
+  ignoring_.clear();
+  return success_;
+}
+
+void TestCase::eat_ignores() {
+  char ibuf[256];
+  while (expectation_index_ < expectations_.size() &&
+      expectations_[expectation_index_].ignore) {
+    ignoring_.push_back(expectations_[expectation_index_]);
+    expectations_[expectation_index_].Format(ibuf, sizeof(ibuf));
+    printf("Ignoring %s\n", ibuf);
+    ++expectation_index_;
+  }
+}
+
+TestCase* TestCase::caselist = NULL;
+TestCase* TestCase::current_ = NULL;
+bool TestCase::running_ = false;
+bool TestCase::success_ = true;
+int TestCase::failpeek_count_ = 0;
+TestCase::EventVector TestCase::expectations_;
+TestCase::EventVector TestCase::ignoring_;
+int TestCase::expectation_index_ = 0;
+
+int CaughtEvent(const Event& evt) {
+  return TestCase::Caught(evt);
+}
+
+}  // namespace arclino_test
+
+unsigned long millis() {return MOCK(millis);}
+unsigned long micros() {return MOCK(micros);}
+void pinMode(int pin, int mode) {MOCK(pinMode, pin, mode);}
+void analogReference(int ref) {MOCK(analogReference, ref);}
+void analogReadResolution(int res) {MOCK(analogReadResolution, res);}
+void analogWriteResolution(int res) {MOCK(analogWriteResolution, res);}
+int analogRead(int pin) {return MOCK(analogRead, pin);}
+void analogWrite(int pin, int value) {MOCK(analogWrite, pin, value);}
+void tone(int pin, int freq, int dur){dur?MOCK(tone, pin, freq, dur):MOCK(tone, pin, freq);}
+void noTone(int pin) {MOCK(noTone, pin);}
+void shiftOut(int datapin, int clockpin, int bitorder, int value) {MOCK(shiftOut, datapin, clockpin, bitorder, value);}
+int shiftIn(int datapin, int clockpin, int bitorder) {return MOCK(shiftIn, datapin, clockpin, bitorder);}
+long pulseIn(int pin, int value, int timeout) {return timeout?MOCK(pulseIn, pin, value, timeout):MOCK(pulseIn, pin, value);}
+void digitalWrite(int pin, bool value) {MOCK(digitalWrite, pin, value);}
+bool digitalRead(int pin) {return MOCK(digitalRead, pin);}
+void delay(int ms) {MOCK(delay, ms);}
+void delayMicroseconds(long us) {MOCK(delayMicroseconds, us);}
+int random(long bound, long upper){return upper?MOCK(random, bound, upper):MOCK(random, bound);}
+void randomSeed(int s) {MOCK(randomSeed, s);}
+void KeyboardClass::set_modifier(uint8_t mod) {MOCK(&KeyboardClass::set_modifier, mod);}
+void KeyboardClass::set_key1(uint8_t key) {MOCK(&KeyboardClass::set_key1, key);}
+void KeyboardClass::send_now() {MOCK(&KeyboardClass::send_now);}
+KeyboardClass Keyboard;
+FORMAT(&KeyboardClass::set_modifier) {sprintf(buf, "Keyboard.set_modifier(%d)", e.Get(0));}
+FORMAT(&KeyboardClass::set_key1) {sprintf(buf, "Keyboard.set_key1(%d)", e.Get(0));}
+FORMAT(&KeyboardClass::send_now) {sprintf(buf, "Keyboard.send_now()");}
+void MouseClass::move(int8_t dx, int8_t dy) {MOCK(&MouseClass::move, dx, dy);}
+void MouseClass::scroll(int8_t ds) {MOCK(&MouseClass::scroll, ds);}
+void MouseClass::set_buttons(bool left, bool middle, bool right) {MOCK(&MouseClass::set_buttons, left, middle, right);}
+MouseClass Mouse;
+FORMAT(&MouseClass::move) {sprintf(buf, "Mouse.move(%d, %d)", e.Get(0), e.Get(1));}
+FORMAT(&MouseClass::scroll) {sprintf(buf, "Mouse.scroll(%d)", e.Get(0));}
+FORMAT(&MouseClass::set_buttons) {sprintf(buf, "Mouse.set_buttons(%d, %d, %d)", e.Get(0), e.Get(1), e.Get(2));}
+
+size_t Print::print(const char* s){return MOCK(Print_print_char_array, s);}
+FORMAT(Print_print_char_array){sprintf(buf, "Print::print(\"%s\")", e.Get(0));}
+size_t Print::print(char s){return MOCK(Print_print_char, s);}
+FORMAT(Print_print_char){sprintf(buf, "Print::print('%c')", e.Get(0));}
+size_t Print::print(int i, int b = DEC){return MOCK(Print_print_int_base, i, b);}
+size_t Print::print(double d, int p){return MOCK(Print_print_double_precision, round(d * pow(10, p)), p);}
+FORMAT(Print_print_double_precision){sprintf(buf, "Print::print(%f, %d)", 1.0 * e.Get(0) / pow(10, e.Get(1, 2)), e.Get(1, 2));}
+
+size_t Print::println(const char* s){return MOCK(Print_println_char_array, s);}
+FORMAT(Print_println_char_array){sprintf(buf, "Print::println(\"%s\")", e.Get(0));}
+size_t Print::println(char s){return MOCK(Print_println_char, s);}
+FORMAT(Print_println_char){sprintf(buf, "Print::println('%c')", e.Get(0));}
+size_t Print::println(int i, int b = DEC){return MOCK(Print_println_int_base, i, b);}
+size_t Print::println(double d, int p){return MOCK(Print_println_double_precision, round(d * pow(10, p)), p);}
+FORMAT(Print_println_double_precision){sprintf(buf, "Print::println(%f, %d)", 1.0 * e.Get(0) / pow(10, e.Get(1, 2)), e.Get(1, 2));}
+
+void Serial_::begin(uint16_t baud_count) {MOCK(&Serial_::begin, baud_count);}
+FORMAT(&Serial_::begin){sprintf(buf, "Serial.begin(%d)", e.Get(0));}
+void Serial_::end() {MOCK(&Serial_::end);}
+FORMAT(&Serial_::end){sprintf(buf, "Serial.end()");}
+int Serial_::available() {return MOCK(&Serial_::available);}
+FORMAT(&Serial_::available){sprintf(buf, "Serial.available()");}
+void Serial_::accept() {MOCK(&Serial_::accept);}
+FORMAT(&Serial_::accept){sprintf(buf, "Serial.accept()");}
+int Serial_::peek() {return MOCK(&Serial_::peek);}
+FORMAT(&Serial_::peek){sprintf(buf, "Serial.peek()");}
+int Serial_::read() {return MOCK(&Serial_::read);}
+FORMAT(&Serial_::read){sprintf(buf, "Serial.read()");}
+void Serial_::flush() {MOCK(&Serial_::flush);}
+FORMAT(&Serial_::flush){sprintf(buf, "Serial.flush()");}
+size_t Serial_::write(uint8_t b) {return MOCK(Serial_write_byte, b);}
+FORMAT(Serial_write_byte){sprintf(buf, "Serial.write(%d)", e.Get(0));}
+size_t Serial_::write(const char* s){return MOCK(Serial_write_str, s);}
+FORMAT(Serial_write_str){sprintf(buf, "Serial.write(\"%s\")", (e.Get(0) ? (const char*)e.Get(0) : ""));}
+size_t Serial_::write(const char* s, size_t n){return MOCK(Serial_write_str, s, n);}
+FORMAT(Serial_write_strn){sprintf(buf, "Serial.write(\"%s\", %d)", (e.Get(0) ? (const char*)e.Get(0) : ""), e.Get(1));}
+
+size_t Serial_::print(const char* s){return MOCK(Serial_print_char_array, s);}
+FORMAT(Serial_print_char_array){sprintf(buf, "Serial.print(\"%s\")", e.Get(0));}
+size_t Serial_::print(char s){return MOCK(Serial_print_char, s);}
+FORMAT(Serial_print_char){sprintf(buf, "Serial.print('%c')", e.Get(0));}
+size_t Serial_::print(int i, int b = DEC){return MOCK(Serial_print_int_base, i, b);}
+FORMAT(Serial_print_int_base){sprintf(buf, "Serial.print(%d, %d)", e.Get(0), e.Get(1));}
+size_t Serial_::print(double d, int p){return MOCK(Serial_print_double_precision, round(d * pow(10, p)), p);}
+FORMAT(Serial_print_double_precision){sprintf(buf, "Serial.print(%f, %d)", 1.0 * e.Get(0) / pow(10, e.Get(1, 2)), e.Get(1, 2));}
+
+size_t Serial_::println(const char* s){return MOCK(Serial_println_char_array, s);}
+FORMAT(Serial_println_char_array){sprintf(buf, "Serial.println(\"%s\")", e.Get(0));}
+size_t Serial_::println(char s){return MOCK(Serial_println_char, s);}
+FORMAT(Serial_println_char){sprintf(buf, "Serial.println('%c')", e.Get(0));}
+size_t Serial_::println(int i, int b = DEC){return MOCK(Serial_println_int_base, i, b);}
+FORMAT(Serial_println_int_base){sprintf(buf, "Serial.println(%d, %d)", e.Get(0), e.Get(1) || 10);}
+size_t Serial_::println(double d, int p){return MOCK(Serial_println_double_precision, round(d * pow(10, p)), p);}
+FORMAT(Serial_println_double_precision){sprintf(buf, "Serial.println(%f, %d)", 1.0 * e.Get(0) / pow(10, e.Get(1, 2)), e.Get(1, 2));}
+
+bool Serial_::_bool() {return MOCK(&Serial_::_bool);}
+FORMAT(&Serial_::_bool){sprintf(buf, "if(Serial)");}
+Serial_ Serial;
+// MISSING DEFINITION?
+
+long map(long x, long in_min, long in_max, long out_min, long out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+int main(int argc, char* argv[]) {
+  return arclino_test::TestCase::Run(argc, argv);
+}
+
+ARCLINO_TEST_CC
+  ) | maybe_write "$TEST_CORE/arclino_test.cc"
+
+  ls *.test | while read TESTF;do
+    TEST=${TESTF%.test}
+    # TODO separate objdir, .conf for each test, shared core, libraries
+    THIS_TEST_OBJDIR=$TEST_OBJDIR/$TEST
+    mkdir -p "$THIS_TEST_OBJDIR"
+    ln -sf "$TEST_CORE" "$THIS_TEST_OBJDIR"
+
+    TEST_BIN=$THIS_TEST_OBJDIR/$TEST.elf
+    TEST_LOG=$THIS_TEST_OBJDIR/$TEST.log
+    TEST_MAIN_CC=$THIS_TEST_OBJDIR/$TEST.cc
+
+    TEST_COVERAGE_LOG=$THIS_TEST_OBJDIR/coverage.log
+    TEST_COVERAGE_DIR=$THIS_TEST_OBJDIR/coverage
+
+    (echo '#include "Arduino.h"'
+     echo "#include \"$INO\""
+     echo '#include "arclino_test.h"'
+     echo "#include \"$TESTF\""
+    ) | maybe_write "$TEST_MAIN_CC"
+
+    (echo CXX=$native_cxx
+     echo CC=$native_cxx
+     echo CORE=$TEST_CORE
+     setup_libraries "$TEST_LIBRARIES" "$TESTF" | while read d;do
+       echo LIBRARY_DIRS += $d
+     done
+     echo CPPFLAGS += -lm -fpermissive -w -rdynamic -Wno-pmf-conversions -DARCLINO_TEST
+     echo LDFLAGS += -rdynamic
+     if [ $coverage -eq 1 ];then
+       echo CPPFLAGS += -fprofile-arcs -ftest-coverage
+     fi
+     echo TARGET=$TEST
+    ) | maybe_write "$THIS_TEST_OBJDIR/.conf"
+
+    OBJDIR="$THIS_TEST_OBJDIR" run_make "$TEST_BIN"
+    if [ ! -f "$TEST_BIN" ];then
+      exit 1
+    fi
+    "$(readlink -f "$TEST_BIN")"
+    res=$?
+    if [ $res -ne 0 ];then
+      exit 1
+    fi
+
+    if [ $coverage -eq 1 ]; then
+      gcov "$TEST_MAIN_CC" &> "$TEST_COVERAGE_LOG"
+      ls *.ino *.cc *.cpp 2>/dev/null | while read f;do
+        grep -A 1 "$f" "$TEST_COVERAGE_LOG" | grep . | grep -v :creating | grep -v '^--$'
+      done
+      rm -f *.mock.gcov *.h.gcov vector.tcc.gcov *.tests.gcov new.gcov .arclino_unittests.gcda .arclino_unittests.gcno .arclino_unittests.cc.gcov "$TEST_COVERAGE_LOG"
+      if [ $NUMTESTS -ne 1 ]; then
+        mkdir -p "$TEST_COVERAGE_DIR"
+        rm -rf "$TEST_COVERAGE_DIR"/*
+        mv *.gcov "$TEST_COVERAGE_DIR"
+      fi
+    fi  # coverage
+  done  # for each TESTF
+fi  # arclino test
+
+function boardconf() {
+  local -r conf="$1"
+  ( grep -E "^$board\.$conf=" "$boards_txt"
+    for menu in $board_menus;do
+      grep -E "^$board\.menu\.$menu\.$(eval "echo \${board_menu_$menu}")\.$conf=" "$boards_txt"
+    done
+  ) | grep . | cut -d= -f2-
+}
+
+if [ "$subcmd" == "build" ] || [ "$subcmd" == "upload" ];then
+  mkdir -p "$AVR_OBJDIR"
+  (echo '#include "Arduino.h"'
+   echo "#include \"$INO\""
+  ) | maybe_write "$AVR_MAIN_CC"
+
+  core_src=$(for d in "$arduino"/hardware/*;do
+    subcore=$(grep -E "^$board.build.core=" "$d/boards.txt" 2>/dev/null | cut -d= -f2)
+    if [ -n "$subcore" ];then
+      echo "$d"/cores/$subcore
+    fi
+  done)
+
+  mkdir -p "$AVR_CORE"
+  ls "$core_src" 2>/dev/null | while read coref;do
+    maybe_ln "$core_src/$coref" "$AVR_CORE"
+  done
+
+  setup_libraries "$AVR_LIBRARIES" &>/dev/null
+
+  mcu=$(boardconf build.mcu)
+  f_cpu=$(boardconf build.f_cpu)
+  board_cppflags="$(boardconf "build.define[0-9]+")"
+
+  (echo CORE=$AVR_CORE
+   echo CXX=$avr_tools/avr-g++
+   echo CC=$avr_tools/avr-gcc
+   echo OBJCOPY=$avr_tools/avr-objcopy
+   echo OBJDUMP=$avr_tools/avr-objdump
+   echo AR=$avr_tools/avr-ar
+   echo SIZE=$avr_tools/avr-size
+   echo NM=$avr_tools/avr-nm
+   echo ASFLAGS += -mmcu=$mcu -I. -x assembler-with-cpp
+   echo LDFLAGS += -mmcu=$mcu -lm -Wl,--gc-sections -Os
+   echo 'LIBRARY_DIRS=$(wildcard '$AVR_LIBRARIES'/*/)'
+   echo CPPFLAGS += -mmcu=$mcu -DF_CPU=$f_cpu -g -Os -w -Wall -ffunction-sections -fdata-sections -I\"$core_src\" $board_cppflags
+   echo TARGET=$SKETCH
+  ) | maybe_write "$AVR_OBJDIR/.conf"
+
+  OBJDIR="$AVR_OBJDIR" run_make "$AVR_OBJDIR/$SKETCH.hex"
+
+  post_compile_script=$(boardconf build.post_compile_script)
+  if [ -n "$post_compile_script" ];then
+    base="$arduino/hardware/tools"
+    "$base/$post_compile_script" -board=$board -tools="$base/" -path="$AVR_OBJDIR" -file="$SKETCH"
+  fi
+fi
+
+function tools_avr_foo_avrdude() {
+  "$arduino/hardware/tools/avr/bin/avrdude" -C"$arduino/hardware/tools/avr/etc/avrdude.conf" "$@"
+}
+
+function tools_avrdude() {
+  "$arduino/hardware/tools/avrdude" -C"$arduino/hardware/tools/avrdude.conf" "$@"
+}
+
+function scan_serial_ports() {
+  addrlist="28541 4984 18924 16924 27183 31091"
+  for port in $addrlist;do
+    if echo -n | nc -q0 localhost $port &>/dev/null;then
+      echo $port
+    fi
+  done
+}
+
+function monitor_serial() {
+  local -ir port=$1
+  if [ -n "$serial_log" ];then
+    stdbuf -i0 -o0 -e0 nc -d -q-1 localhost $port 2>&1 | stdbuf -i0 -o0 -e0 tee "$AVR_OBJDIR/$serial_log" &>/dev/null &
+  else
+    echo You are online with $SKETCH.ino:
+    nc localhost $port
+  fi
+}
+
+if [ "$subcmd" == "upload" ];then
+  avrdude_wrapper=$(boardconf upload.avrdude_wrapper)
+  if [ -n "$avrdude_wrapper" ];then
+    base_cmd="$arduino/hardware/tools/$avrdude_wrapper"
+  else
+    if [ "$(uname)" == "Linux" ];then
+      if [ -f "$arduino/hardware/tools/avrdude" ];then
+        base_cmd=tools_avrdude
+      else
+        base_cmd=avrdude
+      fi
+    else
+      base_cmd=tools_avr_foo_avrdude
+    fi
+  fi
+  "$base_cmd" -p"$(boardconf build.mcu)" \
+              -c"$(boardconf upload.protocol)" \
+              -P"$(boardconf serial.port)" \
+              -b"$(boardconf upload.speed)" \
+              -D -V \
+              -U"flash:w:$AVR_OBJDIR/$SKETCH.hex:i"
+
+  port=$(scan_serial_ports)
+  if [ -n "$port" ];then
+    monitor_serial "$port"
+  else
+    fake_serial=$(boardconf fake_serial)
+    if [ -n "$fake_serial" ];then
+      "$arduino/hardware/tools/$fake_serial" &
+      port=$(scan_serial_ports)
+      if [ -z "$port" ];then
+        echo Unable to connect to serial
+        exit 1
+      fi
+      monitor_serial "$port"
+    fi
+  fi
+fi
+
+if [ "$subcmd" == "clean" ];then
+  rm -rf "$WORK"
+fi

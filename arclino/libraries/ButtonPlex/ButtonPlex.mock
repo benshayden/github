@@ -1,0 +1,17 @@
+uint16_t ButtonPlexClass::debounce_ms = 0;
+uint16_t ButtonPlexClass::first_rebounce_ms = 0;
+uint16_t ButtonPlexClass::rebounce_ms = 0;
+uint16_t ButtonPlexClass::scan_ms = 0;
+uint8_t* ButtonPlexClass::pins_ = NULL;
+uint8_t ButtonPlexClass::count_ = 0;
+uint8_t ButtonPlexClass::pin_i_ = 0;
+uint8_t ButtonPlexClass::connected_ = 0;
+bool ButtonPlexClass::is_rebounce_ = false;
+unsigned long ButtonPlexClass::started_ = 0;
+unsigned long ButtonPlexClass::edge_detected_ = 0;
+unsigned long ButtonPlexClass::returned_ = 0;
+ButtonPlexClass ButtonPlex;
+ButtonPlexClass::ButtonPlexClass(){}
+void ButtonPlexClass::setup(uint8_t* pins, uint8_t count){MOCK(&ButtonPlexClass::setup, pins, count);}
+uint16_t ButtonPlexClass::read(){return MOCK(&ButtonPlexClass::read);}
+bool ButtonPlexClass::is_rebounce(){return MOCK(&ButtonPlexClass::is_rebounce);}
