@@ -503,13 +503,6 @@ void setup() {
 }
 
 void loop() {
-  // keyboard_leds is sent from the host asynchronously from button presses.
-  set_led(NUM_LOCK_LED, (keyboard_leds & 1) != 0);
-  set_led(CAPS_LOCK_LED, (keyboard_leds & 2) != 0);
-  set_led(SCROLL_LOCK_LED, (keyboard_leds & 4) != 0);
-  set_led(COMPOSE_LED, (keyboard_leds & 8) != 0);
-  set_led(KANA_LED, (keyboard_leds & 0x10) != 0);
-
   paint_led_row();
 
   bool state = digitalRead(current_button_pin);
@@ -572,4 +565,10 @@ void loop() {
   set_led(MODE1_LED, (mode & 2) != 0);
   set_led(LOCK_NEXT_LED, lock_next);
   set_led(RECORDING_MACRO_LED, record_macro < NUM_MACROS);
+  // keyboard_leds is sent from the host asynchronously from button presses.
+  set_led(NUM_LOCK_LED, (keyboard_leds & 1) != 0);
+  set_led(CAPS_LOCK_LED, (keyboard_leds & 2) != 0);
+  set_led(SCROLL_LOCK_LED, (keyboard_leds & 4) != 0);
+  set_led(COMPOSE_LED, (keyboard_leds & 8) != 0);
+  set_led(KANA_LED, (keyboard_leds & 0x10) != 0);
 }
