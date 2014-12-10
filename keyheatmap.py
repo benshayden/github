@@ -18,7 +18,7 @@ MODIFIERS = ['Shift', 'Lock', 'Control', 'Alt', 'Mod2', 'Mod3', 'Super', 'Mod5']
 def bit(buf, i):
   return ord(buf[i/8]) & (1 << (i % 8)) != 0
 
-def genkeys(delay_us=1000):
+def genkeys(delay_ms=10):
   buf_a = ctypes.create_string_buffer(32)
   buf_b = ctypes.create_string_buffer(32)
   current_buf, prev_buf = buf_a, buf_b
@@ -30,7 +30,7 @@ def genkeys(delay_us=1000):
   alt_mods = set()
   x11.XQueryKeymap(display, current_buf)
   while True:
-    x11.usleep(delay_us)
+    x11.usleep(delay_ms * 1000)
     current_buf, prev_buf = prev_buf, current_buf
     x11.XQueryKeymap(display, current_buf)
     modifiers = []
@@ -70,7 +70,7 @@ def histinc(histogram, keyname):
   try: histogram[keyname] += 1
   except KeyError: histogram[keyname] = 1
 
-def keyheatmap(logfilename, flush_keys=1000):
+def keyheatmap(logfilename, flush_keys=100):
   logfilename = os.path.abspath(os.path.expanduser(logfilename))
   histogram = {}
   digraphs = {}
@@ -94,14 +94,10 @@ def keyheatmap(logfilename, flush_keys=1000):
     prev_key = key_name
     captured += 1
     if captured >= flush_keys:
-      counts = histogram.items()
-      counts.sort(key=lambda (key, value): -value)
-      dicounts = digraphs.items()
-      dicounts.sort(key=lambda (key, value): -value)
       logfile = file(logfilename, 'w')
-      for key, value in counts:
+      for key, value in histogram.iteritems():
         logfile.write('%s %d\n' % (key, value))
-      for key, value in dicounts:
+      for key, value in digraphs.iteritems():
         logfile.write('%s,%s %d\n' % (key[0], key[1], value))
       logfile.flush()
       logfile.close()
