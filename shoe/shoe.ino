@@ -1,39 +1,17 @@
 #include <avr/pgmspace.h>
 #include <CapacitiveSensor.h>
 
-// To access keyboard_report_data directly for Teensy boards. Your board may
-// differ.
+// You may need to change this next line if you don't use a Teensy
+// microcontroller in order to allow direct access to `keyboard_report_data`.
 #include "../usb_hid/usb_private.h"
 
 // SETTINGS
 
-// See circuit.svg for how to charlie-plex the buttons in a way that is
-// compatible with this firmware.
-// Charlieplexing LEDs is similar, except you don't need the pull-down
-// resistors, and the current-limiting resistors will depend on your LEDs.
 // This firmware cannot support more than 16 button pins (240 buttons). In order
 // to support >240 buttons, `current_button` would need to be changed to
 // uint16_t.
-//#define LED_PINS 4, 5, 6, 7, 8
-//#define BUTTON_PINS 12, 13, 14, 15, 16, 17, 18, 19, 20
-#define BUTTON_PINS 5, 6, 7
-#define LED_PINS 8, 9, 10
-
-// pins buttons/LEDs
-// 3    6
-// 4    12
-// 5    20
-// 6    30
-// 7    42
-// 8    56
-// 9    72
-// 10   90
-// 11   110
-// 12   132
-// 13   156
-// 14   182
-// 15   210
-// 16   240
+#define LED_PINS 4, 5, 6, 7
+#define BUTTON_PINS 12, 13, 14, 15, 16, 17, 18
 
 #define NUM_MACROS 10
 #define MAX_MACRO_LEN 100

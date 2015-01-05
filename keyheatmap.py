@@ -1,7 +1,9 @@
 #!/usr/bin/env python2.6
-import sys
-import os
+import code
 import ctypes
+import os
+import readline
+import sys
 
 x11 = ctypes.CDLL('libX11.so')
 
@@ -70,20 +72,32 @@ def histinc(histogram, keyname):
   try: histogram[keyname] += 1
   except KeyError: histogram[keyname] = 1
 
+def load(logfilename, histogram=None, digraphs=None):
+  if histogram is None: histogram = {}
+  if digraphs is None: digraphs = {}
+  for line in file(logfilename):
+    if line and ' ' in line:
+      keyname, count = line.split()
+      if ',' in keyname:
+        digraphs[tuple(keyname.split(','))] = int(count)
+      else:
+        histogram[keyname] = int(count)
+  return histogram, digraphs
+
+def flush(logfilename, histogram, digraphs):
+  logfile = file(logfilename, 'w')
+  for key, value in histogram.iteritems():
+    logfile.write('%s %d\n' % (key, value))
+  for key, value in digraphs.iteritems():
+    logfile.write('%s,%s %d\n' % (key[0], key[1], value))
+
 def keyheatmap(logfilename, flush_keys=100):
-  logfilename = os.path.abspath(os.path.expanduser(logfilename))
   histogram = {}
   digraphs = {}
   if os.path.exists(logfilename):
-    for line in file(logfilename):
-      if line and ' ' in line:
-        keyname, count = line.split()
-        if ',' in keyname:
-          digraphs[tuple(keyname.split(','))] = int(count)
-        else:
-          histogram[keyname] = int(count)
+    load(logfilename, histogram, digraphs)
   else:
-    file(logfilename, 'w').write('')
+    flush(logfilename, histogram, digraphs)
   os.chmod(logfilename, 0600)
   prev_key = None
   captured = 0
@@ -94,22 +108,55 @@ def keyheatmap(logfilename, flush_keys=100):
     prev_key = key_name
     captured += 1
     if captured >= flush_keys:
-      logfile = file(logfilename, 'w')
-      for key, value in histogram.iteritems():
-        logfile.write('%s %d\n' % (key, value))
-      for key, value in digraphs.iteritems():
-        logfile.write('%s,%s %d\n' % (key[0], key[1], value))
-      logfile.flush()
-      logfile.close()
-      del logfile
+      flush(logfilename, histogram, digraphs)
       captured = 0
+
+def probs(histogram, digraphs):
+  total = float(sum(histogram.itervalues()))
+  prob = {}
+  for key, count in histogram.iteritems():
+    prob[key] = ((float(count) / total), {})
+  for (key0, key1), count in digraphs.iteritems():
+    prob[key0][1][key1] = float(count) / float(histogram[key1])
+  return prob
+
+def sd(digraphs):
+  d2 = {}
+  for keys, count in digraphs.iteritems():
+    d2.setdefault(keys[0], {})[keys[1]] = count
+  return d2
+
+def sorts(h, d):
+  hi = h.items()
+  hi.sort(key=lambda(k, v): -v)
+  di = [(k, list(sorted(d.get(k, {}).items(), key=lambda(k,v): -v))) for k, v in hi]
+  return hi, di
+
+def analyze(logfilename):
+  histogram, digraphs = load(logfilename)
+  d2 = sd(digraphs)
+  hs, ds = sorts(histogram, d2)
+  env = dict(
+    h=histogram, d=digraphs, hs=hs, ds=ds, load=load, flush=flush,
+    probs=probs(histogram, digraphs),
+    d2=d2)
+  if len(sys.argv[2]) > 1:
+    s = 'from __future__' + ' import print_function\n' + sys.argv[2]
+    exec s in env
+  else:
+    readline
+    code.InteractiveConsole(env).interact()
 
 if __name__ == '__main__':
   try:
     if len(sys.argv) < 2:
-        for k in genkeys():
-          print k
+      for k in genkeys():
+        print k
     else:
-      keyheatmap(sys.argv[1])
+      logfilename = os.path.abspath(os.path.expanduser(sys.argv[1]))
+      if len(sys.argv) > 2 and os.path.exists(logfilename):
+        analyze(logfilename)
+      else:
+        keyheatmap(sys.argv[1])
   except KeyboardInterrupt:
     pass
