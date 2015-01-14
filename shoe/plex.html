@@ -4,44 +4,60 @@ body{white-space:pre;font-family:monospace;}
 </style>
 <script>
 onload=function(){
-  var s=[]
-  var pins=parseInt(location.search.substr(1) || 7)
-  var charlies=pins*pins-pins
-  var cd=Math.floor(1+Math.log10(charlies))
-  var pd=Math.floor(1+Math.log10(pins))
+  var s=[];
+  var routesl=[],routesr=[];
+  var pins=parseInt(location.search.substr(1) || 7);
+  var charlies=pins*pins-pins;
+  var cd=Math.floor(1+Math.log10(charlies));
+  var pd=Math.floor(1+Math.log10(pins));
   function pair(c){
-    var x=c%pins, y=Math.floor(c/pins)
-    if(y>=x) ++y
-    return [x,y]
+    var x=c%pins, y=Math.floor(c/pins);
+    if(y>=x) ++y;
+    return [x,y];
   }
   for (var i=0;i<pins;++i){
-    var is = '' + i
-    while (is.length < pd) is = ' ' + is
-    s.push(is)
+    var is = '' + i;
+    while (is.length < pd) is = ' ' + is;
+    s.push(is);
+    if (i < (pins - 2)) routesl.push([]);
+    routesr.push([]);
   }
   for(var i=0;i<cd;++i){
-    var l=''
-    for (var is=0; is < pd; ++is) l += ' '
+    var l='';
+    for (var is=0; is < pd; ++is) l += ' ';
     for(var j=0;j<charlies;++j){
-      l += ''+parseInt(j/Math.pow(10, cd-i-1)) % 10
+      l += ''+parseInt(j/Math.pow(10, cd-i-1)) % 10;
     }
-    s.push(l)
+    s.push(l);
   }
   for(var i=0;i<pins;++i){
-    var is = '' + i
-    while (is.length < pd) is = ' ' + is
-    s.push(is)
+    var is = '' + i;
+    while (is.length < pd) is = ' ' + is;
+    s.push(is);
   }
-  s.push('')
+  s.push('');
   for(var c=0;c<charlies;++c){
-    var xy=pair(c), x=xy[0], y=xy[1]
+    var xy=pair(c), x=xy[0], y=xy[1];
+    var route = (Math.max(x,y)<(pins-2)) ? routesl : routesr;
+    route[x].push(c+'d');
+    route[y].push(c+'r');
     for(var i=0;i<pins;++i){
-      s[i]+=(i<x)?'-':((i>x)?'|':'+')
+      s[i]+=(i<x)?'-':((i>x)?'|':'+');
     }
     for (var i=0;i<pins;++i){
-      s[pins+cd+i]+=(i<y)?'|':((i>y)?'-':'+')
+      s[pins+cd+i]+=(i<y)?'|':((i>y)?'-':'+');
     }
   }
+  s.unshift('');
+  s.unshift('-Diode|--button--100kOhm-');
+  s.push('');
+  routesl.forEach(function(route, i) {
+    s.push(i+' : '+route.join(' '));
+  });
+  s.push('');
+  routesr.forEach(function(route, i) {
+    s.push(i+' : '+route.join(' '));
+  });
   document.body.innerText=s.join('\n')
 }
 </script>
