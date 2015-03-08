@@ -1,11 +1,9 @@
-#define btn 2
+#define btn 0
 #define led 1
-#define spkr 0
+#define spkr 2
 
 // RC low-pass filter design tool
 // http://sim.okawa-denshi.jp/en/CRlowkeisan.htm
-
-// http://ledcalc.com/
 
 // 4 minutes / 110 in ms
 #define whole_ms 2182
@@ -16,6 +14,11 @@
 
 // periods in microseconds
 // http://www.phy.mtu.edu/~suits/notefreqs.html
+// for o in xrange(5, 0, -1):
+//   for a in 'B Bb A Ab G Gb F E Eb D Db C'.split():
+//     print '#define '+a+str(o)+'p ('+a+str(o-1)+'p / 2)'
+// def pus(fhz): return int(round(1e6/fhz))
+// for i,n in zip(xrange(-10,-22,-1), 'B Bb A Ab G Gb F E Eb D Db C'.split()):f=55*(2**(i/12.0));print '#define %s0p %d /* %.02f Hz */'%(n, int(round(pus(f))),f)
 #define B5p (B4p / 2)
 #define Bb5p (Bb4p / 2)
 #define A5p (A4p / 2)
@@ -89,18 +92,6 @@
 #define Db0p 57724 /* 17.32 Hz */
 #define C0p 61156 /* 16.35 Hz */
 
-// for o in xrange(5, 0, -1):
-//   for a in 'B Bb A Ab G Gb F E Eb D Db C'.split():
-//     print '#define '+a+str(o)+'p ('+a+str(o-1)+'p / 2)'
-// def pus(fhz): return int(round(1e6/fhz))
-// for i,n in zip(xrange(-10,-22,-1), 'B Bb A Ab G Gb F E Eb D Db C'.split()):f=55*(2**(i/12.0));print '#define %s0p %d /* %.02f Hz */'%(n, int(round(pus(f))),f)
-
-void setup() {
-  pinMode(spkr, OUTPUT);
-  pinMode(led, OUTPUT);
-  pinMode(btn, INPUT);
-}
-
 void tone(uint16_t period_us, int16_t total_ms) {
   uint16_t half_period_us = period_us / 2;
   uint16_t total_us = 0;
@@ -116,7 +107,7 @@ void tone(uint16_t period_us, int16_t total_ms) {
 }
 
 void lullaby() {
-  // http://www.justmegawatt.com/sheetmusic/zelda/sheetimages/zeldas-lullaby.png
+  // http://herbalcell.com/static/sheets/legend-of-zelda-ocarina-of-time/zeldas-lullaby.pdf
   tone(B3p, half_ms);
   tone(D4p, quarter_ms);
   tone(A3p, half_ms);
@@ -133,6 +124,7 @@ void lullaby() {
   tone(C4p, eighth_ms);
   tone(B3p, eighth_ms);
   tone(A3p, half_dot_ms);
+#if 0
   tone(B3p, half_ms);
   tone(D4p, quarter_ms);
   tone(A3p, half_ms);
@@ -145,7 +137,7 @@ void lullaby() {
   tone(D4p, quarter_ms);
   tone(A4p, half_ms);
   tone(G4p, quarter_ms);
-  tone(D5p, /* half_dot_ms + */ whole_ms);
+  tone(D5p, half_dot_ms);
   delay(50);
   tone(D5p, half_ms);
   tone(C5p, eighth_ms);
@@ -167,6 +159,13 @@ void lullaby() {
   tone(G4p, quarter_ms);
   tone(C5p, quarter_ms);
   tone(F5p, whole_ms);
+#endif
+}
+
+void setup() {
+  pinMode(btn, INPUT);
+  pinMode(led, OUTPUT);
+  pinMode(spkr, OUTPUT);
 }
 
 void loop() {
