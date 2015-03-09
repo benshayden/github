@@ -2,6 +2,15 @@
 #define led 1
 #define spkr 2
 
+// BOM:
+// Trinket 3V: http://www.adafruit.com/products/1500
+// transducer/speaker e.g. http://www.adafruit.com/products/1674
+// battery: http://www.adafruit.com/products/1578
+// charger: http://www.adafruit.com/products/259
+// button e.g. http://www.adafruit.com/products/1119
+// PN2222: http://www.adafruit.com/products/756
+// 100R, 1kR, 4.7uF
+
 // RC low-pass filter design tool
 // http://sim.okawa-denshi.jp/en/CRlowkeisan.htm
 
