@@ -97,6 +97,7 @@ set wildmenu
 set wildmode=longest,list,full
 syntax on
 hi VertSplit term=none gui=none cterm=none
+hi link javaScript NONE
 "autocmd filetype cpp setlocal foldenable
 set nofoldenable
 "set foldmethod=expr
