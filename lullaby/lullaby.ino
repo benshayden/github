@@ -1,18 +1,18 @@
-#define btn 0
-#define led 1
-#define spkr 2
-
 // BOM:
-// Trinket 3V: http://www.adafruit.com/products/1500
+// Gemma: https://www.adafruit.com/products/1222
 // transducer/speaker e.g. http://www.adafruit.com/products/1674
 // battery: http://www.adafruit.com/products/1578
-// charger: http://www.adafruit.com/products/259
+// charger: https://www.adafruit.com/products/1304
 // button e.g. http://www.adafruit.com/products/1119
 // PN2222: http://www.adafruit.com/products/756
 // 100R, 1kR, 4.7uF
 
 // RC low-pass filter design tool
 // http://sim.okawa-denshi.jp/en/CRlowkeisan.htm
+
+#define btn 0
+#define led 1
+#define spkr 2
 
 // 4 / (110 / minute) in ms
 #define whole_ms 2182
