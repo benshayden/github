@@ -23,8 +23,7 @@
 
 // Musical note periods in microseconds
 // http://www.phy.mtu.edu/~suits/notefreqs.html
-// TODO experimentally determine overhead us: 20?
-// for i in xrange(7 * 12 - 1, -1, -1): f = 440 * (2 ** ((i - 57) / 12.)); print '#define %s%dp %d /* %.02f Hz */' % ('B Bb A Ab G Gb F E Eb D Db C'.split()[(11 - i) % 12], i / 12, round(1e6 / f) - 20, f)
+// for i in xrange(7 * 12 - 1, -1, -1): f = 440 * (2 ** ((i - 57) / 12.)); print '#define %s%dp %d /* %.02f Hz */' % ('B Bb A Ab G Gb F E Eb D Db C'.split()[(11 - i) % 12], i / 12, round(1e6 / f), f)
 #define B6p 506 /* 1975.53 Hz */
 #define Bb6p 536 /* 1864.66 Hz */
 #define A6p 568 /* 1760.00 Hz */
@@ -110,6 +109,44 @@
 #define Db0p 57724 /* 17.32 Hz */
 #define C0p 61156 /* 16.35 Hz */
 
+#if 1
+
+#define MAX_UINT32 0xFFFFFFFF
+
+// micros() has a resolution of 8us on 8MHz systems.
+// TODO use interrupts?
+
+void tone(uint16_t period_us, int16_t total_ms) {
+  uint16_t half_period_us = period_us / 2;
+  uint16_t total_us = 0;
+  unsigned long flip_us = micros();
+  unsigned long flipend = MAX_UINT32 - flip_us;
+  do {
+    if (flipend < half_period_us) {
+      // Wait until micros() overflows:
+      while (micros() > flip_us);
+      // Now micros() is as small as it will ever be.
+      // The next line will overflow flip_us.
+    }
+    flip_us += half_period_us;
+    while (micros() < flip_us);
+    PORTB |= (1 << spkr);
+    flipend -= half_period_us;
+    total_us += period_us;
+    if (flipend < half_period_us) {
+      while (micros() > flip_us);
+    }
+    flip_us += half_period_us;
+    while (micros() < flip_us);
+    PORTB &= ~(1 << spkr);
+    flipend -= half_period_us;
+    total_ms -= (total_us / 1000);
+    total_us %= 1000;
+  } while (total_ms > 0);
+}
+
+#else
+
 void tone(uint16_t period_us, int16_t total_ms) {
   uint16_t half_period_us = period_us / 2;
   uint16_t total_us = 0;
@@ -123,6 +160,8 @@ void tone(uint16_t period_us, int16_t total_ms) {
     total_us %= 1000;
   }
 }
+
+#endif
 
 void lullaby() {
   // http://herbalcell.com/static/sheets/legend-of-zelda-ocarina-of-time/zeldas-lullaby.pdf
