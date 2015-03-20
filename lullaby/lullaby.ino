@@ -7,7 +7,7 @@
 // PN2222: http://www.adafruit.com/products/756
 // 100R, 1kR, 4.7uF
 
-// RC low-pass filter design tool
+// RC low-pass filter design tool:
 // http://sim.okawa-denshi.jp/en/CRlowkeisan.htm
 
 #define btn 0
@@ -23,8 +23,8 @@
 
 // Musical note periods in microseconds
 // http://www.phy.mtu.edu/~suits/notefreqs.html
-// TODO measure number of cycles in tone loop / 8MHz, subtract from note period
-// for i in xrange(7*12-1,-1,-1):f=440*(2**((i-57)/12.));print '#define %s%dp %d /* %.02f Hz */'%('B Bb A Ab G Gb F E Eb D Db C'.split()[(11-i)%12],i/12,round(1e6/f),f)
+// TODO experimentally determine overhead us: 20?
+// for i in xrange(7 * 12 - 1, -1, -1): f = 440 * (2 ** ((i - 57) / 12.)); print '#define %s%dp %d /* %.02f Hz */' % ('B Bb A Ab G Gb F E Eb D Db C'.split()[(11 - i) % 12], i / 12, round(1e6 / f) - 20, f)
 #define B6p 506 /* 1975.53 Hz */
 #define Bb6p 536 /* 1864.66 Hz */
 #define A6p 568 /* 1760.00 Hz */
