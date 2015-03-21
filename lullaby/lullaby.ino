@@ -109,12 +109,9 @@
 #define Db0p 57724 /* 17.32 Hz */
 #define C0p 61156 /* 16.35 Hz */
 
-#if 1
-
 #define MAX_UINT32 0xFFFFFFFF
 
 // micros() has a resolution of 8us on 8MHz systems.
-// TODO use interrupts?
 
 void tone(uint16_t period_us, int16_t total_ms) {
   uint16_t half_period_us = period_us / 2;
@@ -145,81 +142,63 @@ void tone(uint16_t period_us, int16_t total_ms) {
   } while (total_ms > 0);
 }
 
-#else
-
-void tone(uint16_t period_us, int16_t total_ms) {
-  uint16_t half_period_us = period_us / 2;
-  uint16_t total_us = 0;
-  while (total_ms > 0) {
-    digitalWrite(spkr, HIGH);
-    delayMicroseconds(half_period_us);
-    digitalWrite(spkr, LOW);
-    delayMicroseconds(half_period_us);
-    total_us += period_us;
-    total_ms -= (total_us / 1000);
-    total_us %= 1000;
-  }
-}
-
-#endif
-
 void lullaby() {
   // http://herbalcell.com/static/sheets/legend-of-zelda-ocarina-of-time/zeldas-lullaby.pdf
-  tone(B2p, half_ms);
-  tone(D3p, quarter_ms);
-  tone(A2p, half_ms);
-  tone(G2p, eighth_ms);
-  tone(A2p, eighth_ms);
-  tone(B2p, half_ms);
-  tone(D3p, quarter_ms);
-  tone(A2p, half_dot_ms);
+  tone(B4p, half_ms);
+  tone(D5p, quarter_ms);
+  tone(A4p, half_ms);
+  tone(G4p, eighth_ms);
+  tone(A4p, eighth_ms);
+  tone(B4p, half_ms);
+  tone(D5p, quarter_ms);
+  tone(A4p, half_dot_ms);
 
-  tone(B2p, half_ms);
-  tone(D3p, quarter_ms);
-  tone(A3p, half_ms);
-  tone(G3p, quarter_ms);
-  tone(D3p, half_ms);
-  tone(C3p, eighth_ms);
-  tone(B2p, eighth_ms);
-  tone(A2p, half_dot_ms);
+  tone(B4p, half_ms);
+  tone(D5p, quarter_ms);
+  tone(A5p, half_ms);
+  tone(G5p, quarter_ms);
+  tone(D5p, half_ms);
+  tone(C5p, eighth_ms);
+  tone(B4p, eighth_ms);
+  tone(A4p, half_dot_ms);
 
-  tone(B2p, half_ms);
-  tone(D3p, quarter_ms);
-  tone(A2p, half_ms);
-  tone(G2p, eighth_ms);
-  tone(A2p, eighth_ms);
-  tone(B2p, half_ms);
-  tone(D3p, quarter_ms);
-  tone(A2p, half_dot_ms);
+  tone(B4p, half_ms);
+  tone(D5p, quarter_ms);
+  tone(A4p, half_ms);
+  tone(G4p, eighth_ms);
+  tone(A4p, eighth_ms);
+  tone(B4p, half_ms);
+  tone(D5p, quarter_ms);
+  tone(A4p, half_dot_ms);
 
-  tone(B2p, half_ms);
-  tone(D3p, quarter_ms);
-  tone(A3p, half_ms);
-  tone(G3p, quarter_ms);
-  tone(D4p, half_dot_ms);
+  tone(B4p, half_ms);
+  tone(D5p, quarter_ms);
+  tone(A5p, half_ms);
+  tone(G5p, quarter_ms);
+  tone(D6p, half_dot_ms);
   delay(50);
-  tone(D4p, half_ms);
-  tone(C4p, eighth_ms);
-  tone(B3p, eighth_ms);
-  tone(C4p, eighth_ms);
-  tone(B3p, eighth_ms);
-  tone(G3p, half_ms);
+  tone(D6p, half_ms);
+  tone(C6p, eighth_ms);
+  tone(B5p, eighth_ms);
+  tone(C6p, eighth_ms);
+  tone(B5p, eighth_ms);
+  tone(G5p, half_ms);
 
-  tone(C4p, half_ms);
-  tone(B3p, eighth_ms);
-  tone(A3p, eighth_ms);
-  tone(B3p, eighth_ms);
-  tone(A3p, eighth_ms);
-  tone(E3p, half_ms);
+  tone(C6p, half_ms);
+  tone(B5p, eighth_ms);
+  tone(A5p, eighth_ms);
+  tone(B5p, eighth_ms);
+  tone(A5p, eighth_ms);
+  tone(E5p, half_ms);
 
-  tone(D4p, half_ms);
-  tone(C4p, eighth_ms);
-  tone(B3p, eighth_ms);
-  tone(C4p, eighth_ms);
-  tone(B3p, eighth_ms);
-  tone(G3p, quarter_ms);
-  tone(C4p, quarter_ms);
-  tone(F4p, whole_ms);
+  tone(D5p, half_ms);
+  tone(C5p, eighth_ms);
+  tone(B4p, eighth_ms);
+  tone(C5p, eighth_ms);
+  tone(B4p, eighth_ms);
+  tone(G4p, quarter_ms);
+  tone(C5p, half_ms);
+  tone(F5p, whole_ms);
 }
 
 void setup() {
