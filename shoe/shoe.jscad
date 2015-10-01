@@ -29,17 +29,19 @@ function debug(o) {
   return o.setColor(1, 0.2, 0.2);
 }
 
-function dome() {
+function makeDome() {
    var c0 = cylinder({r: BUTTON_SIDE / 2, h: BUTTON_SIDE});
    var c1 = c0.rotateX(90).translate([0, BUTTON_SIDE / 2, BUTTON_SIDE / 2]);
    var q = cube({size:[BUTTON_SIDE, BUTTON_SIDE, BUTTON_SIDE]}).translate([0, -BUTTON_SIDE / 2, 0]);
-   return c0.intersect(c1).subtract(q).center().translate([-BUTTON_SIDE / 4, 0, BUTTON_SIDE / 2]).setColor([.9, .9, .9]);
+   var dome = c0.intersect(c1).subtract(q);
+   dome = dome.center().translate([-BUTTON_SIDE / 4, 0, BUTTON_SIDE / 2]);
+   return dome.setColor([.9, .9, .9]);
 }
 
 function makeWireLead() {
   var wireLead = [[0.5, 0], [0, 0.5], [0, LEAD_HEIGHT + 0.5], [0.5, LEAD_HEIGHT + 1], [1, LEAD_HEIGHT + 0.5], [1, 0.5]];
   wireLead = linear_extrude({height: BUTTON_SIDE}, polygon(wireLead)).rotateX(90).translate([0,BUTTON_SIDE, -0.5]);
-  wireLead = union(wireLead, wireLead.translate([0, 0,BUTTON_SIDE - LEAD_HEIGHT]));
+  wireLead = union(wireLead, wireLead.translate([0, 0, BUTTON_SIDE - LEAD_HEIGHT]));
   return wireLead.setColor([.9, .9, .9]);
 }
 
