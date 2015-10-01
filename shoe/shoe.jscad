@@ -46,11 +46,13 @@ function makeWireLead() {
 }
 
 function makeThumb(height, frontWidth, backWidth, wireLead) {
+  var width = frontWidth + backWidth;
   var thumb = [];
-  thumb.push(cube({size: [1, 1, 1]}));
-  thumb.push(cube({size: [1, 1, 1]}));
-  thumb.push(cube({size: [1, 1, 1]}));
-  thumb.push(cube({size: [1, 1, 1]}));
+  thumb.push(cube({size: [BUTTON_SIDE, BUTTON_SIDE + height, BUTTON_SIDE]}).translate([0, 0, 0]));
+  var thumbSide = cube({size: [BUTTON_SIDE + width, BUTTON_SIDE, BUTTON_SIDE]});
+  thumb.push(thumbSide.translate([0, 0, 0]));
+  thumb.push(thumbSide.translate([0, 0, 0]));
+  thumb.push(cube({size: [2, BUTTON_SIDE + height, BUTTON_SIDE]}).translate([0, 0, 0]));
   thumb = union(thumb);
   thumb = thumb.subtract(wireLead.translate([0, 0, 0]));
   thumb = thumb.subtract(wireLead.translate([0, 0, 0]));
@@ -67,9 +69,9 @@ function makeBase() {
 
 function makeFinger(frontHeight, backHeight, frontWidth, backWidth, wireLead, dome) {
   var finger = [];
-  finger.push(cube({size: [1, 1, 1]}));
-  finger.push(cube({size: [1, 1, 1]}));
-  finger.push(cube({size: [1, 1, 1]}));
+  finger.push(cube({size: [BUTTON_SIDE, BUTTON_SIDE + frontHeight, BUTTON_SIDE]}).translate([0, 0, 0]));
+  finger.push(cube({size: [frontWidth + BUTTON_SIDE + backWidth, BUTTON_SIDE, BUTTON_SIDE]}).translate([0, 0, 0]));
+  finger.push(cube({size: [BUTTON_SIDE, BUTTON_SIDE + backHeight, BUTTON_SIDE]}).translate([0, 0, 0]));
   finger.push(dome.translate([0, 0, 0]));
   finger.push(dome.translate([0, 0, 0]));
   finger = union(finger);
