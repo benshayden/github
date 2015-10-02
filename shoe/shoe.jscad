@@ -110,10 +110,14 @@ function makeThumb(height, frontWidth, backWidth, wire, corner, bone) {
   return thumb;
 }
 
+var BASE_HEIGHT = 20;
+var BASE_WIDTH = 9 * 2 * BONE_RADIUS;
+var BASE_LENGTH = 10.5 * 4 * BONE_RADIUS;
+
 function makeBase(bone) {
-  var height = 20;
-  var width = 9 * 2 * BONE_RADIUS;
-  var length = 10.5 * 4 * BONE_RADIUS;
+  var height = BASE_HEIGHT;
+  var width = BASE_WIDTH;
+  var length = BASE_LENGTH;
   var base = cube({size: [length, width, height]});
   
   bone = bone.rotateX(90).scale([1, 1, height]);
@@ -258,6 +262,23 @@ function makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finge
   return finger;
 }
 
+function makeBaseBones(base, bone) {
+  bone = bone.setColor(1, 1, 1);
+  var piece = bone.rotateZ(-90);
+  piece = piece.scale([BASE_LENGTH, 1, 1]);
+  piece = piece.translate([0, (BUTTON_SIDE / 2) + (BASE_WIDTH / 2), BASE_HEIGHT - BONE_RADIUS - (BUTTON_SIDE / 2)]);
+  base = base.union(piece);
+  
+  piece = bone.rotateX(90);
+  piece = piece.scale([1, 1, BASE_HEIGHT - BONE_RADIUS]);
+  piece = piece.translate([-(BUTTON_SIDE / 2) + BONE_RADIUS, (BUTTON_SIDE / 2) + (BASE_WIDTH / 2)]);
+  base = base.union(piece);
+  
+  piece = piece.translate([BASE_LENGTH - (2 * BONE_RADIUS), 0]);
+  base = base.union(piece);
+  return base;
+}
+
 function main(params) {
   var wire = makeWire();
   var dome = makeDome();
@@ -277,6 +298,8 @@ function main(params) {
       thumb = makeThumbButtons(thumbHeight, thumbFrontWidth, thumbBackWidth, thumb, button);
       thumb = thumb.rotateX(90);
       thumb = thumb.translate([-20, 20, 25]);
+      base = makeBaseBones(base, bone);
+      base = base.translate([BUTTON_SIDE, 0]);
     } else {
       thumb = thumb.translate([0, 20 * BONE_RADIUS, 0]);
     }
@@ -291,15 +314,16 @@ function main(params) {
       var finger = makeFinger(frontHeight, backHeight, frontWidth, backWidth, wire, dome, corner, bone);
       if (params.displayMode === 'visual') {
         finger = makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finger, button);
-        finger = finger.rotateX(90).rotateZ(90);
-        finger = finger.translate([BUTTON_SIDE * 2, 15, 25]);
+        finger = finger.rotateX(90).rotateZ(-90);
+        finger = finger.translate([BUTTON_SIDE * (2 * digit + 1), 50, 25]);
       } else {
         finger = finger.rotateZ(-90);
-        finger = finger.translate([0, -2]);
+        finger = finger.translate([30 * (digit - 1), -2]);
+        // TODO pack more compactly?
       }
       world.push(finger);
-      return world;
     }
+    return world; // TODO position other hand
   }
   return world;
 }
