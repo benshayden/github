@@ -243,6 +243,21 @@ function makeThumbButtons(height, frontWidth, backWidth, thumb, button) {
   return thumb;
 }
 
+function makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finger, button) {
+  var piece = button.rotateX(-90).rotateY(-90);
+  piece = piece.translate([BUTTON_SIDE + frontWidth, BUTTON_SIDE]);
+  finger = finger.union(piece);
+  
+  piece = button.rotateY(90).rotateX(180);
+  piece = piece.translate([BUTTON_SIDE, 2 * BUTTON_SIDE + frontHeight]);
+  finger = finger.union(piece);
+  
+  piece = button.rotateY(-90);
+  piece = piece.translate([2 * BUTTON_SIDE + frontWidth + backWidth, BUTTON_SIDE + backHeight - 0.7]);
+  finger = finger.union(piece);
+  return finger;
+}
+
 function main(params) {
   var wire = makeWire();
   var dome = makeDome();
@@ -267,7 +282,6 @@ function main(params) {
     }
     world.push(thumb);
     world.push(base);
-    return world;
 
     for (var digit = 1; digit < 5; ++digit) {
       var frontHeight = params[hand + digit + 'FrontHeight'];
@@ -276,10 +290,12 @@ function main(params) {
       var backWidth = params[hand + digit + 'BackWidth'];
       var finger = makeFinger(frontHeight, backHeight, frontWidth, backWidth, wire, dome, corner, bone);
       if (params.displayMode === 'visual') {
-        // todo add buttons to finger
-        // todo position finger
+        finger = makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finger, button);
+        finger = finger.rotateX(90).rotateZ(90);
+        finger = finger.translate([BUTTON_SIDE * 2, 15, 25]);
       } else {
-        // todo position finger
+        finger = finger.rotateZ(-90);
+        finger = finger.translate([0, -2]);
       }
       world.push(finger);
       return world;
