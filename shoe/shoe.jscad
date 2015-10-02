@@ -111,9 +111,13 @@ function makeThumb(height, frontWidth, backWidth, wire, corner, bone) {
 }
 
 function makeBase(bone) {
-  var base = cube({size: [11 * 4 * BONE_RADIUS, 9 * 2 * BONE_RADIUS, 25]});
+  var height = 25;
+  var width = 9 * 2 * BONE_RADIUS;
+  var length = 11 * 4 * BONE_RADIUS;
+  var base = cube({size: [length, width, height]});
   
-  var piece = bone;
+  var piece = bone.rotateX(90).scale([1, 1, height]);
+  piece = piece.translate([0, (3 * BONE_RADIUS) + (BUTTON_SIDE / 2), 0]);
   base = base.subtract(piece);
 
   return base.setColor(COLOR);
