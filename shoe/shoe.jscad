@@ -2,7 +2,7 @@
 
 // Everything is in mm.
 
-var HANDS = ['left', 'right'];
+var HANDS = {left: 1, right: 1};
 var BONE_RADIUS = 1.4;
 var BUTTON_SIDE = 8;
 var BUTTON_SEAT = [3, 1, 1.5];
@@ -11,7 +11,7 @@ var LEAD_HEIGHT = 1.5;
 function getParameterDefinitions() {
   var params = [];
   params.push({name: 'displayMode', type: 'choice', values: ['visual', 'printable']});
-  HANDS.foreach(function(hand) {
+  for (var hand in HANDS) {
     params.push({name: hand + 'ThumbHeight', type: 'float', initial: 20});
     params.push({name: hand + 'ThumbFrontWidth', type: 'float', initial: 5});
     params.push({name: hand + 'ThumbBackWidth', type: 'float', initial: 7});
@@ -21,7 +21,7 @@ function getParameterDefinitions() {
       params.push({name: hand + digit + 'FrontWidth', type: 'float', initial: 4});
       params.push({name: hand + digit + 'BackWidth', type: 'float', initial: 6});
     }
-  });
+  }
   return params;
 }
 
@@ -97,7 +97,7 @@ function main(params) {
   var wireLead = makeWireLead();
   var dome = makeDome();
   var world = [];
-  HANDS.forEach(function(hand) {
+  for (var hand in HANDS) {
     var thumb = makeThumb(
       params[hand + 'ThumbHeight'],
       params[hand + 'ThumbFrontWidth'],
@@ -129,6 +129,6 @@ function main(params) {
       }
       world.push(finger);
     }
-  });
+  }
   return world;
 }
