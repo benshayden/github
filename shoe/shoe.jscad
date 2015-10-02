@@ -33,7 +33,8 @@ function makeDome() {
    var c1 = c0.rotateX(90).translate([0, BUTTON_SIDE / 2, BUTTON_SIDE / 2]);
    var q = cube({size:[BUTTON_SIDE, BUTTON_SIDE, BUTTON_SIDE]}).translate([0, -BUTTON_SIDE / 2, 0]);
    var dome = c0.intersect(c1).subtract(q);
-   dome = dome.center().translate([-BUTTON_SIDE / 4, 0, BUTTON_SIDE / 2]);
+   dome = dome.center().translate([-BUTTON_SIDE / 4, BUTTON_SIDE / 2, BUTTON_SIDE / 2]);
+   dome = dome.rotateZ(-90);
    return dome.setColor(COLOR);
 }
 
@@ -122,19 +123,40 @@ function makeBase() {
   return base;
 }
 
-function makeFinger(frontHeight, backHeight, frontWidth, backWidth, wire, dome, bone) {
+function makeFinger(frontHeight, backHeight, frontWidth, backWidth, wire, dome, corner, bone) {
   var finger = [];
-  finger.push(cube({size: [BUTTON_SIDE, BUTTON_SIDE + frontHeight, BUTTON_SIDE]}).translate([0, 0, 0]));
-  finger.push(cube({size: [frontWidth + BUTTON_SIDE + backWidth, BUTTON_SIDE, BUTTON_SIDE]}).translate([0, 0, 0]));
-  finger.push(cube({size: [BUTTON_SIDE, BUTTON_SIDE + backHeight, BUTTON_SIDE]}).translate([0, 0, 0]));
-  finger.push(dome.translate([0, 0, 0]));
-  finger.push(dome.translate([0, 0, 0]));
+  
+  var piece = cube({size: [BUTTON_SIDE, BUTTON_SIDE + frontHeight, BUTTON_SIDE]});
+  piece = piece.translate([0, BUTTON_SIDE, 0]);
+  piece = piece.subtract(wire.rotateZ(-90).translate([0, (1.5 * BUTTON_SIDE) + frontHeight]));
+  finger.push(piece.setColor(COLOR));
+  
+  piece = corner.rotateZ(180);
+  piece = piece.translate([BUTTON_SIDE, BUTTON_SIDE]);
+  finger.push(piece);
+  
+  piece = dome.translate([0, 2 * BUTTON_SIDE + frontHeight]);
+  finger.push(piece);
+  
+  piece = cube({size: [frontWidth + BUTTON_SIDE + backWidth, BUTTON_SIDE, BUTTON_SIDE]}).translate([0, 0, 0]);
+  piece = piece.translate([BUTTON_SIDE, 0]);
+  piece = piece.subtract(wire.translate([frontWidth + (1.5 * BUTTON_SIDE), 0]));
+  finger.push(piece.setColor(COLOR));
+  
+  piece = corner.rotateZ(-90);
+  piece = piece.translate([BUTTON_SIDE + frontWidth + BUTTON_SIDE + backWidth, BUTTON_SIDE])
+  finger.push(piece);
+  
+  var backX = BUTTON_SIDE + frontWidth + BUTTON_SIDE + backWidth;
+  piece = cube({size: [BUTTON_SIDE, BUTTON_SIDE + backHeight, BUTTON_SIDE]});
+  piece = piece.translate([backX, BUTTON_SIDE]);
+  piece = piece.subtract(wire.rotateZ(-90).translate([backX, (1.5 * BUTTON_SIDE) + backHeight]));
+  finger.push(piece.setColor(COLOR));
+  
+  piece = dome.translate([backX, 2 * BUTTON_SIDE + backHeight])
+  finger.push(piece);
+
   finger = union(finger);
-  finger = finger.subtract(wire.translate([0, 0, 0]));
-  finger = finger.subtract(wire.translate([0, 0, 0]));
-  finger = finger.subtract(wire.translate([0, 0, 0]));
-  finger = finger.subtract(bone.translate([0, 0, 0]));
-  finger = finger.subtract(bone.translate([0, 0, 0]));
   return finger;
 }
 
@@ -144,7 +166,7 @@ function main(params) {
   var corner = makeCorner();
   var bone = makeBone();
   var world = [];
-  return makeThumb(20, 3, 6, wire, corner, bone);
+  return makeFinger(4, 7, 4, 6, wire, dome, corner, bone);
   for (var hand in HANDS) {
     var thumb = makeThumb(
       params[hand + 'ThumbHeight'],
