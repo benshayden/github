@@ -34,11 +34,11 @@ function makeDome() {
    return dome;
 }
 
-function makeWireLead() {
-  var wireLead = [[0.5, 0], [0, 0.5], [0, LEAD_HEIGHT + 0.5], [0.5, LEAD_HEIGHT + 1], [1, LEAD_HEIGHT + 0.5], [1, 0.5]];
-  wireLead = linear_extrude({height: BUTTON_SIDE}, polygon(wireLead)).rotateX(90).translate([0,BUTTON_SIDE, -0.5]);
-  wireLead = union(wireLead, wireLead.translate([0, 0, BUTTON_SIDE - LEAD_HEIGHT]));
-  return wireLead;
+function makeWire() {
+  var wire = [[0.5, 0], [0, 0.5], [0, LEAD_HEIGHT + 0.5], [0.5, LEAD_HEIGHT + 1], [1, LEAD_HEIGHT + 0.5], [1, 0.5]];
+  wire = linear_extrude({height: BUTTON_SIDE}, polygon(wire)).rotateX(90).translate([0,BUTTON_SIDE, -0.5]);
+  wire = union(wire, wire.translate([0, 0, BUTTON_SIDE - LEAD_HEIGHT]));
+  return wire;
 }
 
 function makeCorner() {
@@ -47,7 +47,7 @@ function makeCorner() {
   return corner;
 }
 
-function makeThumb(height, frontWidth, backWidth, wireLead) {
+function makeThumb(height, frontWidth, backWidth, wire) {
   var width = frontWidth + backWidth;
   var thumb = [];
   thumb.push(cube({size: [BUTTON_SIDE, BUTTON_SIDE + height, BUTTON_SIDE]}).translate([0, 0, 0]));
@@ -56,10 +56,10 @@ function makeThumb(height, frontWidth, backWidth, wireLead) {
   thumb.push(thumbSide.translate([0, 0, 0]));
   thumb.push(cube({size: [2, BUTTON_SIDE + height, BUTTON_SIDE]}).translate([0, 0, 0]));
   thumb = union(thumb);
-  thumb = thumb.subtract(wireLead.translate([0, 0, 0]));
-  thumb = thumb.subtract(wireLead.translate([0, 0, 0]));
-  thumb = thumb.subtract(wireLead.translate([0, 0, 0]));
-  thumb = thumb.subtract(wireLead.translate([0, 0, 0]));
+  thumb = thumb.subtract(wire.translate([0, 0, 0]));
+  thumb = thumb.subtract(wire.translate([0, 0, 0]));
+  thumb = thumb.subtract(wire.translate([0, 0, 0]));
+  thumb = thumb.subtract(wire.translate([0, 0, 0]));
   return thumb;
 }
 
@@ -69,7 +69,7 @@ function makeBase() {
   return base;
 }
 
-function makeFinger(frontHeight, backHeight, frontWidth, backWidth, wireLead, dome) {
+function makeFinger(frontHeight, backHeight, frontWidth, backWidth, wire, dome) {
   var finger = [];
   finger.push(cube({size: [BUTTON_SIDE, BUTTON_SIDE + frontHeight, BUTTON_SIDE]}).translate([0, 0, 0]));
   finger.push(cube({size: [frontWidth + BUTTON_SIDE + backWidth, BUTTON_SIDE, BUTTON_SIDE]}).translate([0, 0, 0]));
@@ -77,16 +77,16 @@ function makeFinger(frontHeight, backHeight, frontWidth, backWidth, wireLead, do
   finger.push(dome.translate([0, 0, 0]));
   finger.push(dome.translate([0, 0, 0]));
   finger = union(finger);
-  finger = finger.subtract(wireLead.translate([0, 0, 0]));
-  finger = finger.subtract(wireLead.translate([0, 0, 0]));
-  finger = finger.subtract(wireLead.translate([0, 0, 0]));
+  finger = finger.subtract(wire.translate([0, 0, 0]));
+  finger = finger.subtract(wire.translate([0, 0, 0]));
+  finger = finger.subtract(wire.translate([0, 0, 0]));
   finger = finger.subtract(bone.translate([0, 0, 0]));
   finger = finger.subtract(bone.translate([0, 0, 0]));
   return finger;
 }
 
 function main(params) {
-  var wireLead = makeWireLead();
+  var wire = makeWire();
   var dome = makeDome();
   var world = [];
   for (var hand in HANDS) {
@@ -94,7 +94,7 @@ function main(params) {
       params[hand + 'ThumbHeight'],
       params[hand + 'ThumbFrontWidth'],
       params[hand + 'ThumbBackWidth'],
-      wireLead);
+      wire);
     var base = makeBase();
     if (params.displayMode === 'visual') {
       // todo add buttons to thumb
@@ -111,7 +111,7 @@ function main(params) {
         params[hand + digit + 'BackHeight'],
         params[hand + digit + 'FrontWidth'],
         params[hand + digit + 'BackWidth'],
-        wireLead,
+        wire,
         dome);
       if (params.displayMode === 'visual') {
         // todo add buttons to finger
