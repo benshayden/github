@@ -111,16 +111,52 @@ function makeThumb(height, frontWidth, backWidth, wire, corner, bone) {
 }
 
 function makeBase(bone) {
-  var height = 25;
+  var height = 20;
   var width = 9 * 2 * BONE_RADIUS;
-  var length = 11 * 4 * BONE_RADIUS;
+  var length = 10.5 * 4 * BONE_RADIUS;
   var base = cube({size: [length, width, height]});
   
-  var piece = bone.rotateX(90).scale([1, 1, height]);
-  piece = piece.translate([0, (3 * BONE_RADIUS) + (BUTTON_SIDE / 2), 0]);
+  bone = bone.rotateX(90).scale([1, 1, height]);
+  
+  var piece = cube({size: [BONE_RADIUS * 2, BONE_RADIUS * 2, height]});
+  piece = piece.translate([0, width / 2 - BONE_RADIUS, 0]);
   base = base.subtract(piece);
-
+  
+  piece = piece.translate([length - (BONE_RADIUS * 2), 0, 0]);
+  base = base.subtract(piece);
+  
+  piece = cube({size: [length, BONE_RADIUS * 2, BONE_RADIUS * 2]});
+  piece = piece.translate([0, width / 2 - BONE_RADIUS, 0]);
+  base = base.subtract(piece);
+  
+  piece = piece.translate([0, 0, height - BONE_RADIUS * 2]);
+  base = base.subtract(piece);
+  
+  piece = bone.translate([BONE_RADIUS -BUTTON_SIDE / 2, BUTTON_SIDE / 2 + 3 * BONE_RADIUS, 0]);
+  piece = union(piece, piece.translate([0, width - BONE_RADIUS * 6, 0]));
+  var subpiece = cube({size: [BONE_RADIUS * 2, width, BONE_RADIUS * 4]});
+  subpiece = subpiece.translate([0, 0, height - BONE_RADIUS * 4]);
+  piece = union(piece, subpiece);
+  piece = piece.translate([BONE_RADIUS * 2, 0, 0]);
+  base = base.subtract(piece);
+  
+  for (var i = 0; i < 9; ++i) {
+    piece = piece.translate([BONE_RADIUS * 4, 0, 0]);
+    base = base.subtract(piece);
+  }
+  
   return base.setColor(COLOR);
+}
+
+function makeButton() {
+  var button = [];
+  button = union(button);
+  return button;
+}
+
+function makeHeatShrink() {
+  var heatShrink = cylinder({h: 1, r: Math.sqrt(2) * BUTTON_SIDE});
+  return heatShrink.setColor(0, 0, 0, .3);
 }
 
 function makeFinger(frontHeight, backHeight, frontWidth, backWidth, wire, dome, corner, bone) {
