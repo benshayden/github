@@ -99,28 +99,24 @@ function makeThumb(height, frontWidth, backWidth, wire, corner, bone) {
   thumb = union(thumb);
   
   piece = bone.scale([1, BUTTON_SIDE + height + BUTTON_SIDE + (BUTTON_SIDE / 2), 1]);
+  piece = piece.translate([-BUTTON_SIDE / 2, 0]);
   thumb = thumb.subtract(piece);
 
   piece = bone.rotateZ(-90);
   piece = piece.scale([BUTTON_SIDE + width, 1, 1]);
   piece = piece.translate([0, height + (3 * BUTTON_SIDE)]);
   thumb = thumb.subtract(piece);
-  
-  piece = cube({size: [BUTTON_SIDE / 2, height + (2.5 * BUTTON_SIDE), BONE_RADIUS * 2]});
-  piece = piece.translate([0, 0, (BUTTON_SIDE / 2) - BONE_RADIUS]);
-  thumb = thumb.subtract(piece.setColor(COLOR));
-
-  piece = cylinder({r: 0.5, h: BUTTON_SIDE});
-  piece = piece.translate([(BUTTON_SIDE / 2) - BONE_RADIUS, 1.5 * BUTTON_SIDE]);
-  thumb = thumb.subtract(piece.setColor(COLOR));
 
   return thumb;
 }
 
-function makeBase() {
-  var base = cube({size: [1, 1, 1]});
-  base = base.subtract(cylinder({r: 1, h: 1}));
-  return base;
+function makeBase(bone) {
+  var base = cube({size: [11 * 4 * BONE_RADIUS, 9 * 2 * BONE_RADIUS, 25]});
+  
+  var piece = bone;
+  base = base.subtract(piece);
+
+  return base.setColor(COLOR);
 }
 
 function makeFinger(frontHeight, backHeight, frontWidth, backWidth, wire, dome, corner, bone) {
@@ -157,6 +153,16 @@ function makeFinger(frontHeight, backHeight, frontWidth, backWidth, wire, dome, 
   finger.push(piece);
 
   finger = union(finger);
+  
+  piece = bone.scale([1, 2 * BUTTON_SIDE + backHeight, 1]);
+  piece = piece.translate([backX, 0]);
+  finger = finger.subtract(piece);
+  
+  piece = bone.scale([1, backX + BUTTON_SIDE / 2, 1]);
+  piece = piece.rotateZ(-90);
+  piece = piece.translate([0, BUTTON_SIDE / 2]);
+  finger = finger.subtract(piece);
+  
   return finger;
 }
 
@@ -166,7 +172,9 @@ function main(params) {
   var corner = makeCorner();
   var bone = makeBone();
   var world = [];
-  return makeFinger(4, 7, 4, 6, wire, dome, corner, bone);
+  return makeBase(bone);
+  //return makeThumb(20, 5, 7, wire, corner, bone);
+  //return makeFinger(4, 7, 4, 6, wire, dome, corner, bone);
   for (var hand in HANDS) {
     var thumb = makeThumb(
       params[hand + 'ThumbHeight'],
