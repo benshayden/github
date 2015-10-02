@@ -51,7 +51,7 @@ function makeCorner() {
 }
 
 function makeBone() {
-  var bone = cylinder({r: BONE_RADIUS, h: 30});
+  var bone = cylinder({r: BONE_RADIUS, h: 1});
   bone = bone.rotateX(-90);
   bone = bone.translate([(BUTTON_SIDE / 2), 0, (BUTTON_SIDE / 2)]);
   return bone.setColor(COLOR);
@@ -96,7 +96,23 @@ function makeThumb(height, frontWidth, backWidth, wire, corner, bone) {
   thumb.push(piece.setColor(COLOR));
 
   thumb = union(thumb);
-  thumb = thumb.subtract(bone);
+  
+  piece = bone.scale([1, BUTTON_SIDE + height + BUTTON_SIDE + (BUTTON_SIDE / 2), 1]);
+  thumb = thumb.subtract(piece);
+
+  piece = bone.rotateZ(-90);
+  piece = piece.scale([BUTTON_SIDE + width, 1, 1]);
+  piece = piece.translate([0, height + (3 * BUTTON_SIDE)]);
+  thumb = thumb.subtract(piece);
+  
+  piece = cube({size: [BUTTON_SIDE / 2, height + (2.5 * BUTTON_SIDE), BONE_RADIUS * 2]});
+  piece = piece.translate([0, 0, (BUTTON_SIDE / 2) - BONE_RADIUS]);
+  thumb = thumb.subtract(piece.setColor(COLOR));
+
+  piece = cylinder({r: 0.5, h: BUTTON_SIDE});
+  piece = piece.translate([(BUTTON_SIDE / 2) - BONE_RADIUS, 1.5 * BUTTON_SIDE]);
+  thumb = thumb.subtract(piece.setColor(COLOR));
+
   return thumb;
 }
 
@@ -106,7 +122,7 @@ function makeBase() {
   return base;
 }
 
-function makeFinger(frontHeight, backHeight, frontWidth, backWidth, wire, dome) {
+function makeFinger(frontHeight, backHeight, frontWidth, backWidth, wire, dome, bone) {
   var finger = [];
   finger.push(cube({size: [BUTTON_SIDE, BUTTON_SIDE + frontHeight, BUTTON_SIDE]}).translate([0, 0, 0]));
   finger.push(cube({size: [frontWidth + BUTTON_SIDE + backWidth, BUTTON_SIDE, BUTTON_SIDE]}).translate([0, 0, 0]));
@@ -134,7 +150,7 @@ function main(params) {
       params[hand + 'ThumbHeight'],
       params[hand + 'ThumbFrontWidth'],
       params[hand + 'ThumbBackWidth'],
-      wire);
+      wire, corner, bone);
     var base = makeBase();
     if (params.displayMode === 'visual') {
       // todo add buttons to thumb
@@ -151,8 +167,7 @@ function main(params) {
         params[hand + digit + 'BackHeight'],
         params[hand + digit + 'FrontWidth'],
         params[hand + digit + 'BackWidth'],
-        wire,
-        dome);
+        wire, dome, bone);
       if (params.displayMode === 'visual') {
         // todo add buttons to finger
         // todo position finger
