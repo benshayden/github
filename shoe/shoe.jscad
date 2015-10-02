@@ -1,3 +1,4 @@
+'use strict';
 // http://openjscad.org/
 
 // Everything is in mm.
@@ -49,31 +50,54 @@ function makeCorner() {
   return corner.setColor(COLOR);
 }
 
-function makeThumb(height, frontWidth, backWidth, wire, corner) {
+function makeBone() {
+  var bone = cylinder({r: BONE_RADIUS, h: 30});
+  bone = bone.rotateX(-90);
+  bone = bone.translate([(BUTTON_SIDE / 2), 0, (BUTTON_SIDE / 2)]);
+  return bone.setColor(COLOR);
+}
+
+function makeThumb(height, frontWidth, backWidth, wire, corner, bone) {
   var width = frontWidth + backWidth;
   var thumb = [];
   
   var piece = cube({size: [BUTTON_SIDE, BUTTON_SIDE + height, BUTTON_SIDE]});
   piece = piece.subtract(wire.rotateZ(-90).translate([0, (BUTTON_SIDE + height) / 2, 0]));
   piece = piece.translate([0, BUTTON_SIDE, 0])
-  thumb.push(piece);
+  thumb.push(piece.setColor(COLOR));
   
+  piece = piece.translate([BUTTON_SIDE + width + BUTTON_SIDE, 0]);
+  piece = piece.subtract(piece.translate([2, 0]));
+  thumb.push(piece.setColor(COLOR));
+
   piece = cube({size: [BUTTON_SIDE + width, BUTTON_SIDE, BUTTON_SIDE]});
   piece = piece.subtract(wire.translate([(BUTTON_SIDE / 2) + frontWidth, 0, 0]));
   piece = piece.translate([BUTTON_SIDE, 0, 0]);
-  thumb.push(piece);
+  thumb.push(piece.setColor(COLOR));
+  
+  piece = piece.translate([0, BUTTON_SIDE + height + BUTTON_SIDE]);
+  thumb.push(piece.setColor(COLOR));
   
   piece = corner.rotateZ(180);
   piece = piece.translate([BUTTON_SIDE, BUTTON_SIDE, 0]);
-  thumb.push(piece);
-  //thumb.push(thumbSide.translate([0, 0, 0]));
-  //thumb.push(thumbSide.translate([0, 0, 0]));
-  //thumb.push(cube({size: [2, BUTTON_SIDE + height, BUTTON_SIDE]}).translate([0, 0, 0]));
+  thumb.push(piece.setColor(COLOR));
+  
+  piece = corner.rotateZ(90);
+  piece = piece.translate([BUTTON_SIDE, BUTTON_SIDE + height + BUTTON_SIDE]);
+  thumb.push(piece.setColor(COLOR));
+  
+  piece = corner.scale([1 / 4, 1, 1]);
+  piece = piece.translate([BUTTON_SIDE + width + BUTTON_SIDE, BUTTON_SIDE + height + BUTTON_SIDE])
+  thumb.push(piece.setColor(COLOR));
+  
+  piece = corner.rotateZ(-90);
+  piece = piece.scale([1 / 4, 1, 1]);
+  piece = piece.translate([BUTTON_SIDE + width + BUTTON_SIDE, BUTTON_SIDE])
+  thumb.push(piece.setColor(COLOR));
+
   thumb = union(thumb);
-  //thumb = thumb.subtract(wire.translate([0, 0, 0]));
-  //thumb = thumb.subtract(wire.translate([0, 0, 0]));
-  //thumb = thumb.subtract(wire.translate([0, 0, 0]));
-  return thumb.setColor(COLOR);
+  thumb = thumb.subtract(bone);
+  return thumb;
 }
 
 function makeBase() {
@@ -102,8 +126,9 @@ function main(params) {
   var wire = makeWire();
   var dome = makeDome();
   var corner = makeCorner();
+  var bone = makeBone();
   var world = [];
-  return makeThumb(20, 3, 6, wire, corner);
+  return makeThumb(20, 3, 6, wire, corner, bone);
   for (var hand in HANDS) {
     var thumb = makeThumb(
       params[hand + 'ThumbHeight'],
