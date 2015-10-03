@@ -13,7 +13,7 @@ var COLOR = [0.4, 0.4, 1];
 function getParameterDefinitions() {
   var params = [];
   echo(HANDS);
-  params.push({name: 'displayMode', type: 'choice', values: ['printable', 'visual']});
+  params.push({name: 'displayMode', type: 'choice', values: ['visual', 'printable']});
   for (var hand in {left: 1, right: 1}) {
     params.push({name: hand + 'ThumbHeight', type: 'float', initial: 20});
     params.push({name: hand + 'ThumbFrontWidth', type: 'float', initial: 5});
@@ -297,11 +297,15 @@ function main(params) {
     if (params.displayMode === 'visual') {
       thumb = makeThumbButtons(thumbHeight, thumbFrontWidth, thumbBackWidth, thumb, button);
       thumb = thumb.rotateX(90);
-      thumb = thumb.translate([-20, 20, 25]);
       base = makeBaseBones(base, bone);
-      base = base.translate([BUTTON_SIDE, 0]);
       if (hand === 'left') {
-          
+        thumb = thumb.rotateZ(180);
+        base = base.rotateZ(180);
+        thumb = thumb.translate([-30, 20 - BUTTON_SIDE, 25]);
+        base = base.translate([-60, BASE_WIDTH]);
+      } else {
+        thumb = thumb.translate([-20, 20, 25]);
+        base = base.translate([BUTTON_SIDE, 0]);
       }
     } else {
       thumb = thumb.rotateZ(90);
@@ -325,9 +329,10 @@ function main(params) {
       if (params.displayMode === 'visual') {
         finger = makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finger, button);
         finger = finger.rotateX(90).rotateZ(-90);
-        finger = finger.translate([BUTTON_SIDE * (2 * digit + 1), 50, 25]);
         if (hand === 'left') {
-            
+          finger = finger.translate([-BUTTON_SIDE * (2 * digit + 1) - 40, 50, 25]);
+        } else {
+          finger = finger.translate([BUTTON_SIDE * (2 * digit + 1), 50, 25]);
         }
       } else {
         finger = finger.rotateZ(((digit % 2) ? -1 : 1) * 90);
