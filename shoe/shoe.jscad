@@ -13,7 +13,7 @@ var COLOR = [0.4, 0.4, 1];
 function getParameterDefinitions() {
   var params = [];
   echo(HANDS);
-  params.push({name: 'displayMode', type: 'choice', values: ['visual', 'printable']});
+  params.push({name: 'displayMode', type: 'choice', values: ['printable', 'visual']});
   for (var hand in {left: 1, right: 1}) {
     params.push({name: hand + 'ThumbHeight', type: 'float', initial: 20});
     params.push({name: hand + 'ThumbFrontWidth', type: 'float', initial: 5});
@@ -300,8 +300,18 @@ function main(params) {
       thumb = thumb.translate([-20, 20, 25]);
       base = makeBaseBones(base, bone);
       base = base.translate([BUTTON_SIDE, 0]);
+      if (hand === 'left') {
+          
+      }
     } else {
-      thumb = thumb.translate([0, 20 * BONE_RADIUS, 0]);
+      thumb = thumb.rotateZ(90);
+      thumb = thumb.translate([3 * BUTTON_SIDE + thumbHeight, 20 * BONE_RADIUS, 0]);
+      if (hand === 'right') {
+        thumb = thumb.rotateZ(180);
+        thumb = thumb.translate([-2, 0]);
+        base = base.rotateZ(180);
+        base = base.translate([-2, 0]);
+      }
     }
     world.push(thumb);
     world.push(base);
@@ -316,14 +326,27 @@ function main(params) {
         finger = makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finger, button);
         finger = finger.rotateX(90).rotateZ(-90);
         finger = finger.translate([BUTTON_SIDE * (2 * digit + 1), 50, 25]);
+        if (hand === 'left') {
+            
+        }
       } else {
-        finger = finger.rotateZ(-90);
-        finger = finger.translate([30 * (digit - 1), -2]);
-        // TODO pack more compactly?
+        finger = finger.rotateZ(((digit % 2) ? -1 : 1) * 90);
+        if (digit === 1) {
+          finger = finger.translate([0, -12]);
+        } else if (digit === 2) {
+          finger = finger.translate([33, -37]);
+        } else if (digit === 3) {
+          finger = finger.translate([35, -12]);
+        } else if (digit === 4) {
+          finger = finger.translate([68, -37]);
+        }
+        if (hand === 'right') {
+          finger = finger.rotateZ(180);
+          finger = finger.translate([-2, 0]);
+        }
       }
       world.push(finger);
     }
-    return world; // TODO position other hand
   }
   return world;
 }
