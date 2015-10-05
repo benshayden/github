@@ -8,7 +8,8 @@ var BONE_RADIUS = 1.4;
 var BUTTON_SIDE = 8;
 var BUTTON_SEAT = [3, 1, 1.5];
 var LEAD_HEIGHT = 1.5;
-var COLOR = [0.4, 0.4, 1];
+var COLOR = [0.2, 0.8, 0.2];
+var BASE_COLOR = [0.4, 0.4, 0];
 
 function getParameterDefinitions() {
   var params = [];
@@ -54,7 +55,7 @@ function makeBone() {
   var bone = cylinder({r: BONE_RADIUS, h: 1});
   bone = bone.rotateX(-90);
   bone = bone.translate([(BUTTON_SIDE / 2), 0, (BUTTON_SIDE / 2)]);
-  return bone.setColor(COLOR);
+  return bone.setColor(BASE_COLOR);
 }
 
 function makeThumb(height, frontWidth, backWidth, wire, corner, bone) {
@@ -148,7 +149,7 @@ function makeBase(bone) {
     base = base.subtract(piece);
   }
   
-  return base.setColor(COLOR);
+  return base.setColor(BASE_COLOR);
 }
 
 function makeButton() {
@@ -262,7 +263,6 @@ function makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finge
 }
 
 function makeBaseBones(base, bone) {
-  bone = bone.setColor(1, 1, 1);
   var piece = bone.rotateZ(-90);
   piece = piece.scale([BASE_LENGTH, 1, 1]);
   piece = piece.translate([0, (BUTTON_SIDE / 2) + (BASE_WIDTH / 2), BASE_HEIGHT - BONE_RADIUS - (BUTTON_SIDE / 2)]);
@@ -294,6 +294,8 @@ function main(params) {
     var thumb = makeThumb(thumbHeight, thumbFrontWidth, thumbBackWidth, wire, corner, bone);
     var base = makeBase(bone);
     var thumbBounds = thumb.getBounds();
+    var baseBounds = base.getBounds();
+
     if (params.displayMode === 'visual') {
       thumb = makeThumbButtons(thumbHeight, thumbFrontWidth, thumbBackWidth, thumb, button);
       thumb = thumb.rotateX(90);
@@ -302,10 +304,10 @@ function main(params) {
       if (hand === 'left') {
         thumb = thumb.rotateZ(180);
         base = base.rotateZ(180);
-        thumb = thumb.translate([-30, 0, 25]);
+        thumb = thumb.translate([-30, 0, BASE_HEIGHT + BUTTON_SIDE]);
         base = base.translate([-60, BASE_WIDTH]);
       } else {
-        thumb = thumb.translate([-20, BUTTON_SIDE, 25]);
+        thumb = thumb.translate([-20, BUTTON_SIDE, BASE_HEIGHT + BUTTON_SIDE]);
         base = base.translate([BUTTON_SIDE, 0]);
       }
     } else {
@@ -327,13 +329,15 @@ function main(params) {
       var frontWidth = params[hand + digit + 'FrontWidth'];
       var backWidth = params[hand + digit + 'BackWidth'];
       var finger = makeFinger(frontHeight, backHeight, frontWidth, backWidth, wire, dome, corner, bone);
+      var fingerBounds = finger.getBounds();
+      var yLength = fingerBounds[1].x - fingerBounds[0].x;
       if (params.displayMode === 'visual') {
         finger = makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finger, button);
         finger = finger.rotateX(90).rotateZ(-90);
         if (hand === 'left') {
-          finger = finger.translate([-BUTTON_SIDE * (2 * digit + 1) - 40, 0, 25]);
+          finger = finger.translate([-BUTTON_SIDE * (2 * digit + 1) - 40, yLength, BASE_HEIGHT + BUTTON_SIDE]);
         } else {
-          finger = finger.translate([BUTTON_SIDE * (2 * digit + 1), 0, 25]);
+          finger = finger.translate([BUTTON_SIDE * (2 * digit + 1), yLength, BASE_HEIGHT + BUTTON_SIDE]);
         }
       } else {
         finger = finger.rotateZ(((digit % 2) ? -1 : 1) * 90);
