@@ -1,18 +1,20 @@
-Shoe is a **custom-tailored** 3d-printed Arduino USB keyboard _as comfortable as an old shoe_. By positioning buttons precisely in 3d space around your individual fingers, the travel distance from your finger to each button is reduced to zero.
+Shoe is a custom-tailored USB keyboard that is as comfortable as an old shoe. By positioning buttons precisely in 3d space around your individual fingers, the travel distance from your finger to each button is reduced to zero.
 
-1. Measure the relevant aspects of your fingers and configure [printable parts](http://openjscad.org/#https://raw.githubusercontent.com/benshayden/github/master/shoe/shoe.jscad) or design your own. Don't forget to leave room for the buttons themselves. You can design key caps if you want them. Use [cloud.netfabb](https://netfabb.azurewebsites.net/) to fix up the models. (TODO pictures of measuring parameters.)
-2. Acquire the parts:
-  * 50x [buttons](http://www.digikey.com/product-detail/en/EVQ-QJJ05Q/P8029SCT-ND/165317) -- If you use different buttons, then you may need to tweak the 3d-printed button mounts.
+1. Measure your fingers and configure [printable parts](http://openjscad.org/#https://raw.githubusercontent.com/benshayden/github/master/shoe/shoe.jscad). Use [cloud.netfabb](https://netfabb.azurewebsites.net/) to clean up the models.
+1. Acquire the parts:
+  * 50x [buttons](http://www.digikey.com/product-detail/en/EVQ-QJJ05Q/P8029SCT-ND/165317)
   * 50x [diodes](http://www.digikey.com/product-detail/en/1N914BTR/1N914BCT-ND/458919)
   * 50x [100K Ohm](http://www.digikey.com/product-detail/en/CFM12JT100K/S100KHCT-ND/2617545)
   * 10x [500K Ohm](http://www.digikey.com/product-detail/en/CFM12JT510K/S510KHCT-ND/2617424)
-  * a few diffused through-hole discrete indicator LEDs with a wide viewing angle, not too dim nor too bright nor too large, nor requiring >40mA, nor too expensive: [digikey](http://www.digikey.com/product-search/en?FV=fff40008%2Cfff801b9%2C1140050%2C11402b2%2C3380001%2C3380003%2C3380004%2C3380005%2C3380007%2C3380009%2C338000a%2C338000c%2C338000d%2C338000f%2C3380012%2C3380014%2C3380015%2C338001b%2C338001c%2C3380021%2C3380029%2C3380034%2C3380035%2C3380037%2C3380042%2C3380049%2C338004b%2C338004f%2C3380054%2C3380057%2C338005a%2C338005b%2C338005d%2C3380083%2C3380085%2C338008e%2C338009a%2C338009b%2C338009c%2C338009d%2C33800a0%2C33800a3%2C33800ae%2C33800d2%2C33800f7%2C338011d%2C3380122%2C3380157%2C33801af%2C33801b0%2C33801b1%2C33801b3%2C3380430%2C3380447%2C338045c%2C3380476%2C338048f%2C3380648%2C338073d%2C3380751%2C338076d%2C338076e%2C3380774%2C3380a2e%2C3380ae0%2C3380aec%2C3380aed%2C3380b4f%2C89c001c%2C89c001e%2C89c001f%2C89c0020%2C89c0022%2C89c0023%2C89c0024%2C89c0025%2C89c0026%2C89c0028%2C89c0029%2C89c002d%2C8c40001%2C8c4003c&mnonly=0&newproducts=0&ColumnSort=1000011&page=1&stock=1&pbfree=1&rohs=1&quantity=&ptm=0&fid=0&pageSize=500)
-  * Print the button mounts you configured or designed using [Shapeways](http://www.shapeways.com/), [i.materialise](http://i.materialise.com/), [UPS](http://www.theupsstore.com/small-business-solutions/Pages/3d-printing-locations.aspx), a [local hackerspace](http://hackerspaces.org/wiki/List_of_Hacker_Spaces), or your own printer.
-4. Solder one diode and one resistor to each button. Solder insulated leads to the diode and resistor, about 8cm or 3-4 inches long. (TODO picture)
-5. [Charlieplex the buttons](https://cdn.rawgit.com/benshayden/github/fa1d9b66a3ab6c28a09d01b76f260b5df45dfd6d/shoe/circuit.svg)
-6. Charlieplex the LEDs. (TODO schematic)
-7. Move everything else aside and take a moment to look at your hands, or whatever you press buttons with. Relax them. Let them fall into a comfortable position. Imagine and practice pressing buttons by moving your fingers 2mm (1/16 inch) forward, down, back. Leave room between your thumb and index finger for the button there. Finally, holding your hand in that comfortable position, use your other hand to place one button mount on each finger at a time. Update your hand position accordingly to allow space for the button mount around it.
-8. Beginning with the thumb, bend the coat hanger to hold the button mounts in position around your fingers in their comfortable position. (TODO pictures)
-9. Slide the buttons into the grooves in the button mounts, and bend the leads to hold them in place.
-10. Snap the button mounts into the coat hanger.
-11. Practice typing with your new keyboard. Have patience with yourself. Muscles take a few weeks to learn.
+  * some LEDs
+  * Print the button mounts you configured or designed using [fictiv](https://www.fictiv.com/) or [Shapeways](http://www.shapeways.com/) or [i.materialise](http://i.materialise.com/), [UPS](http://www.theupsstore.com/small-business-solutions/Pages/3d-printing-locations.aspx) or a [local hackerspace](http://hackerspaces.org/wiki/List_of_Hacker_Spaces) or your own printer.
+1. Solder a diode and a 100K resistor to each button. Solder insulated leads to the diode and resistor, about 8cm or 3-4 inches long.
+1. [Charlieplex the buttons](https://cdn.rawgit.com/benshayden/github/fa1d9b66a3ab6c28a09d01b76f260b5df45dfd6d/shoe/circuit.svg)
+1. Charlieplex the LEDs.
+1. Slide the buttons into the grooves in the button mounts, and bend the leads to hold them in place.
+1. Cut the coat-hanger into 10cm-15cm (4-6 inches) sections. These will form the skeleton.
+1. Secure the mounts to the coat-hanger skeleton bones.
+1. Secure the other ends of the skeleton bones to the 3d printed base.
+1. Stop. Bonsai time. Move everything else aside and take a moment to look at your hands. Relax them. Let them fall into a comfortable position. Imagine and practice pressing buttons by moving your fingers 2mm (1/16 inch) forward, down, back. Mr. Miyagi say: Think "typing hands".
+1. Make typing hands: bend the coat-hanger skeleton bones to position the button mounts where your fingers want to be.
+1. Practice typing with your new keyboard as much as you can every day, but have patience with yourself when you need to go back to a flat keyboard. Muscles take a few weeks to learn.
