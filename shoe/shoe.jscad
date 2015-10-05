@@ -12,7 +12,6 @@ var COLOR = [0.4, 0.4, 1];
 
 function getParameterDefinitions() {
   var params = [];
-  echo(HANDS);
   params.push({name: 'displayMode', type: 'choice', values: ['visual', 'printable']});
   for (var hand in {left: 1, right: 1}) {
     params.push({name: hand + 'ThumbHeight', type: 'float', initial: 20});
@@ -294,17 +293,19 @@ function main(params) {
     var thumbBackWidth = params[hand + 'ThumbBackWidth'];
     var thumb = makeThumb(thumbHeight, thumbFrontWidth, thumbBackWidth, wire, corner, bone);
     var base = makeBase(bone);
+    var thumbBounds = thumb.getBounds();
     if (params.displayMode === 'visual') {
       thumb = makeThumbButtons(thumbHeight, thumbFrontWidth, thumbBackWidth, thumb, button);
       thumb = thumb.rotateX(90);
       base = makeBaseBones(base, bone);
+
       if (hand === 'left') {
         thumb = thumb.rotateZ(180);
         base = base.rotateZ(180);
-        thumb = thumb.translate([-30, 20 - BUTTON_SIDE, 25]);
+        thumb = thumb.translate([-30, 0, 25]);
         base = base.translate([-60, BASE_WIDTH]);
       } else {
-        thumb = thumb.translate([-20, 20, 25]);
+        thumb = thumb.translate([-20, BUTTON_SIDE, 25]);
         base = base.translate([BUTTON_SIDE, 0]);
       }
     } else {
@@ -330,20 +331,20 @@ function main(params) {
         finger = makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finger, button);
         finger = finger.rotateX(90).rotateZ(-90);
         if (hand === 'left') {
-          finger = finger.translate([-BUTTON_SIDE * (2 * digit + 1) - 40, 50, 25]);
+          finger = finger.translate([-BUTTON_SIDE * (2 * digit + 1) - 40, 0, 25]);
         } else {
-          finger = finger.translate([BUTTON_SIDE * (2 * digit + 1), 50, 25]);
+          finger = finger.translate([BUTTON_SIDE * (2 * digit + 1), 0, 25]);
         }
       } else {
         finger = finger.rotateZ(((digit % 2) ? -1 : 1) * 90);
         if (digit === 1) {
-          finger = finger.translate([0, -12]);
+          finger = finger.translate([0, 0]);
         } else if (digit === 2) {
-          finger = finger.translate([33, -37]);
+          finger = finger.translate([33, 0]);
         } else if (digit === 3) {
-          finger = finger.translate([35, -12]);
+          finger = finger.translate([35, 0]);
         } else if (digit === 4) {
-          finger = finger.translate([68, -37]);
+          finger = finger.translate([68, 0]);
         }
         if (hand === 'right') {
           finger = finger.rotateZ(180);
