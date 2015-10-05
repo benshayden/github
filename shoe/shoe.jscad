@@ -337,7 +337,7 @@ function main(params) {
         finger = makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finger, button);
         finger = finger.rotateX(90).rotateZ(-90);
         finger = finger.translate([
-              ((hand === 'left') ? -1 : 1) * (thumbBounds[1].x + BUTTON_SIDE * (2 * digit + (hand === 'left'))),
+              ((hand === 'left') ? -1 : 1) * (thumbBounds[1].x + BUTTON_SIDE * (2 * digit + (hand === 'right'))),
               fingerBounds[1].x - fingerBounds[0].x,
               BASE_HEIGHT + BUTTON_SIDE]);
       } else {
