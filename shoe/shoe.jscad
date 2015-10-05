@@ -1,5 +1,5 @@
 'use strict';
-// http://openjscad.org/
+// http://openjscad.org/#https://raw.githubusercontent.com/benshayden/github/master/shoe/shoe.jscad
 
 // Everything is in mm.
 
