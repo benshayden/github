@@ -36,6 +36,7 @@ function! MySetPath()
   exe 'set path=' . matchstr(expand('%:h'), '\C\zs.\{-}dev/./src\ze') . ',,.,/usr/include'
 endfunction
 autocmd BufRead,BufEnter,BufFilePost,BufWinEnter **/dev/?/src/** call MySetPath()
+autocmd BufEnter * :syntax sync fromstart
 nmap <silent> <leader>P :call MySetPath()<CR>
 autocmd BufRead **/dev/?/src/** nmap <silent> <buffer> <leader>m :silent !n %:h &<CR>:redraw!<CR>
 autocmd BufRead *.ino nmap <buffer> <leader>a :up<CR>:!arclino %<CR>
