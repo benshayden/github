@@ -266,7 +266,9 @@ function makeBaseBones(base, bone) {
   bone = bone.setColor(BONE_COLOR);
   var piece = bone.rotateZ(-90);
   piece = piece.scale([BASE_LENGTH, 1, 1]);
-  piece = piece.translate([0, (BUTTON_SIDE / 2) + (BASE_WIDTH / 2), BASE_HEIGHT - BONE_RADIUS - (BUTTON_SIDE / 2)]);
+  piece = piece.translate([0, (BUTTON_SIDE / 2) + (BASE_WIDTH / 2), BONE_RADIUS - (BUTTON_SIDE / 2)]);
+  base = base.union(piece);
+  piece = piece.translate([0, 0, BASE_HEIGHT - 2 * BONE_RADIUS]);
   base = base.union(piece);
   
   piece = bone.rotateX(90);
