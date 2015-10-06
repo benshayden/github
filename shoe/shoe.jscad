@@ -1,6 +1,4 @@
 'use strict';
-// http://openjscad.org/#https://raw.githubusercontent.com/benshayden/github/master/shoe/shoe.jscad
-
 // Everything is in mm.
 
 var HANDS = {left: 1, right: 1};
