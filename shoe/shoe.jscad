@@ -8,8 +8,8 @@ var BONE_RADIUS = 1.4;
 var BUTTON_SIDE = 8;
 var BUTTON_SEAT = [3, 1, 1.5];
 var LEAD_HEIGHT = 1.5;
-var COLOR = [0.2, 0.8, 0.2];
-var BASE_COLOR = [0.4, 0.4, 0];
+var COLOR = [0.6, 0.6, 0.9];
+var BONE_COLOR = [1, 1, 1];
 
 function getParameterDefinitions() {
   var params = [];
@@ -55,7 +55,7 @@ function makeBone() {
   var bone = cylinder({r: BONE_RADIUS, h: 1});
   bone = bone.rotateX(-90);
   bone = bone.translate([(BUTTON_SIDE / 2), 0, (BUTTON_SIDE / 2)]);
-  return bone.setColor(BASE_COLOR);
+  return bone.setColor(COLOR);
 }
 
 function makeThumb(height, frontWidth, backWidth, wire, corner, bone) {
@@ -150,7 +150,7 @@ function makeBase(bone) {
     base = base.subtract(piece);
   }
   
-  return base.setColor(BASE_COLOR);
+  return base.setColor(COLOR);
 }
 
 function makeButton() {
@@ -265,6 +265,7 @@ function makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finge
 }
 
 function makeBaseBones(base, bone) {
+  bone = bone.setColor(BONE_COLOR);
   var piece = bone.rotateZ(-90);
   piece = piece.scale([BASE_LENGTH, 1, 1]);
   piece = piece.translate([0, (BUTTON_SIDE / 2) + (BASE_WIDTH / 2), BASE_HEIGHT - BONE_RADIUS - (BUTTON_SIDE / 2)]);
@@ -343,13 +344,13 @@ function main(params) {
       } else {
         finger = finger.rotateZ(((digit % 2) ? -1 : 1) * 90);
         if (digit === 1) {
-          finger = finger.translate([0, 0]);
+          finger = finger.translate([0, -2]);
         } else if (digit === 2) {
-          finger = finger.translate([33, 0]);
+          finger = finger.translate([37, -47]);
         } else if (digit === 3) {
-          finger = finger.translate([35, 0]);
+          finger = finger.translate([39, -2]);
         } else if (digit === 4) {
-          finger = finger.translate([68, 0]);
+          finger = finger.translate([76, -47]);
         }
         if (hand === 'right') {
           finger = finger.rotateZ(180);
