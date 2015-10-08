@@ -363,12 +363,12 @@ function makeFingerConnectionBone(left, digit, base, finger, bone) {
   var fingerBounds = finger.getBounds();
   var baseBounds = base.getBounds();
   var fingerBone = [
-      fingerBounds[left ? 1 : 0].x + (BONE_DIAMETER * (left ? -1 : 1)),
+      fingerBounds[left ? 1 : 0].x + (BUTTON_SIDE * (left ? -1 : 1) / 2),
       fingerBounds[1].y - BUTTON_SIDE,
       fingerBounds[0].z + BONE_RADIUS
   ];
   var baseBone = [
-      baseBounds[left ? 1 : 0].x + (1.5 * BONE_DIAMETER * (left ? -1 : 1)),
+      baseBounds[left ? 0 : 1].x + (((4 * BONE_DIAMETER * (4 - digit)) + (1.5 * BONE_DIAMETER)) * (left ? 1 : -1)),
       baseBounds[0].y + (baseBounds[1].y / 2) + BONE_DIAMETER * (left ? -1 : 1),
       baseBounds[1].z
   ];
