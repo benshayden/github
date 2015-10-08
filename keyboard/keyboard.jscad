@@ -288,6 +288,20 @@ function makeFingerBones(fingerWidth, bone) {
   return piece;
 }
 
+function makeThumbBones(thumb, bone) {
+  bone = bone.setColor(BONE_COLOR);
+  var height = thumb.getBounds()[1].y;
+  var piece = bone.translate([-BUTTON_SIDE / 2, 0, 0]);
+  piece = piece.scale([1, height - (BUTTON_SIDE / 2), 1]);
+  thumb = thumb.union(piece);
+  piece = bone.rotateZ(90);
+  piece = piece.translate([1, height - BUTTON_SIDE, 0]);
+  piece = piece.scale([2 * BUTTON_SIDE, 1, 1]);
+  piece = piece.translate([-BONE_RADIUS, 0, 0]);
+  thumb = thumb.union(piece);
+  return thumb;
+}
+
 function main(params) {
   var wire = makeWire();
   var dome = makeDome();
@@ -308,9 +322,10 @@ function main(params) {
 
     if (params.displayMode === 'visual') {
       thumb = makeThumbButtons(thumbHeight, thumbFrontWidth, thumbBackWidth, thumb, button);
-      thumb = thumb.rotateX(90);
       base = makeBaseBones(base, bone);
-
+      thumb = makeThumbBones(thumb, bone);
+      thumb = thumb.rotateX(90);
+      
       if (hand === 'left') {
         thumb = thumb.rotateZ(180);
         base = base.rotateZ(180);
