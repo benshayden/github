@@ -400,10 +400,10 @@ function main(params) {
       if (left) {
         thumb = thumb.rotateZ(180);
         base = base.rotateZ(180);
-        thumb = thumb.translate([-BUTTON_SIDE, BUTTON_SIDE, BASE_HEIGHT + BUTTON_SIDE]);
+        thumb = thumb.translate([-BUTTON_SIDE, BUTTON_SIDE, BUTTON_SIDE + (BASE_WIDTH / 2)]);
         base = base.translate([-2 * BUTTON_SIDE, BASE_WIDTH]);
       } else {
-        thumb = thumb.translate([BUTTON_SIDE, 2 * BUTTON_SIDE, BASE_HEIGHT + BUTTON_SIDE]);
+        thumb = thumb.translate([BUTTON_SIDE, 2 * BUTTON_SIDE, BUTTON_SIDE + (BASE_WIDTH / 2)]);
         base = base.translate([2 * BUTTON_SIDE, 0]);
       }
       world.push(makeThumbConnectionBone(left, base, thumb, bone));
@@ -435,7 +435,7 @@ function main(params) {
         finger = finger.translate([
               (left ? -1 : 1) * (thumbBounds[1].x + BUTTON_SIDE * (2 * digit + !left)),
               fingerBounds[1].x - fingerBounds[0].x,
-              BASE_HEIGHT + BUTTON_SIDE]);
+              BUTTON_SIDE + (BASE_WIDTH / 2)]);
         world.push(makeFingerConnectionBone(left, digit, base, finger, bone));
       } else {
         finger = finger.rotateZ(((digit % 2) ? -1 : 1) * 90);
