@@ -157,7 +157,7 @@ function makeBaseBones(base, bone) {
   piece = piece.translate([(BASE_WIDTH / 2) + BONE_RADIUS, BASE_WIDTH / 2, 0]);
   base = base.union(piece);
   piece = piece.translate([BASE_LENGTH - BONE_DIAMETER, 0, 0]);
-  if ((BASE_BONES % 2) == 0) {
+  if ((BASE_BONES % 2) === 0) {
     piece = piece.translate([0, -BASE_WIDTH / 3, 0]);
   }
   base = base.union(piece);
@@ -326,16 +326,13 @@ function makeConnectionBone(start, end, bone) {
   bone = bone.scale([1, boneLength, 1]);
   bone = bone.translate([0, boneLength / 2, 0]);
   bone = bone.rotateX(90);
-  var yAngle = rad2deg(Math.acos((end[2] - start[2]) / boneLength));
+  bone = bone.rotateY(rad2deg(Math.acos((end[2] - start[2]) / boneLength)));
   var zAngle = 0;
   if (start[0] === end[0]) {
-    zAngle = Math.sign(end[1] - start[1]) * 90;
-  } else if (end[0] > start[0]) {
-    zAngle = rad2deg(Math.atan((end[1] - start[1]) / (end[0] - start[0])));
+    bone = bone.rotateZ(Math.sign(end[1] - start[1]) * 90);
   } else {
-    zAngle = rad2deg(Math.atan((end[1] - start[1]) / (end[0] - start[0]))) + 180;
+    bone = bone.rotateZ(rad2deg(Math.atan2((end[1] - start[1]), (end[0] - start[0]))));
   }
-  bone = rotate([0, yAngle, zAngle], bone);
   bone = bone.translate(start);
   var bend = sphere({r: BONE_RADIUS, center: true}).setColor(BONE_COLOR);
   bone = bone.union(bend.translate(start));
@@ -373,7 +370,6 @@ function makeFingerConnectionBone(left, digit, base, finger, bone) {
       baseBounds[1].z
   ];
   return makeConnectionBone(baseBone, fingerBone, bone);
-  return bone;
 }
 
 function main(params) {
