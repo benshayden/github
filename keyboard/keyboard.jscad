@@ -330,10 +330,10 @@ function main(params) {
         thumb = thumb.rotateZ(180);
         base = base.rotateZ(180);
         thumb = thumb.translate([-BUTTON_SIDE, 0, BASE_HEIGHT + BUTTON_SIDE]);
-        base = base.translate([-BUTTON_SIDE - (thumbBounds[1].x / 2), BASE_WIDTH]);
+        base = base.translate([-2 * BUTTON_SIDE, BASE_WIDTH]);
       } else {
         thumb = thumb.translate([BUTTON_SIDE, BUTTON_SIDE, BASE_HEIGHT + BUTTON_SIDE]);
-        base = base.translate([BUTTON_SIDE + (thumbBounds[1].x / 2), 0]);
+        base = base.translate([2 * BUTTON_SIDE, 0]);
       }
     } else {
       thumb = thumb.rotateZ(90);
