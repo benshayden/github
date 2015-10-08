@@ -412,9 +412,9 @@ function main(params) {
       thumb = thumb.translate([thumbBounds[1].y, BASE_WIDTH + 1, 0]);
       if (!left) {
         thumb = thumb.rotateZ(180);
-        thumb = thumb.translate([-2, 0]);
+        thumb = thumb.translate([-1, thumbBounds[1].y - BUTTON_SIDE]);
         base = base.rotateZ(180);
-        base = base.translate([-2, 0]);
+        base = base.translate([-1, thumbBounds[1].y - BUTTON_SIDE]);
       }
     }
     world.push(thumb);
@@ -440,17 +440,17 @@ function main(params) {
       } else {
         finger = finger.rotateZ(((digit % 2) ? -1 : 1) * 90);
         if (digit === 1) {
-          finger = finger.translate([0, -2]);
+          finger = finger.translate([0, -1]);
         } else if (digit === 2) {
           finger = finger.translate([37, -47]);
         } else if (digit === 3) {
-          finger = finger.translate([39, -2]);
+          finger = finger.translate([39, -1]);
         } else if (digit === 4) {
           finger = finger.translate([76, -47]);
         }
         if (!left) {
           finger = finger.rotateZ(180);
-          finger = finger.translate([-2, 0]);
+          finger = finger.translate([-1, thumbBounds[1].y - BUTTON_SIDE]);
         }
       }
       world.push(finger);
