@@ -14,7 +14,7 @@ var HANDS = {left: 1, right: 1};
 var BONE_RADIUS = BONE_DIAMETER / 2;
 var BASE_HEIGHT = BASE_WIDTH / Math.sqrt(2);
 var BASE_LENGTH = (BASE_BONES + 0.5) * 2 * BONE_DIAMETER;
-var cylinder, cube, linear_extrude, union, polygon;
+var cylinder, cube, sphere, linear_extrude, union, polygon;
 
 function getParameterDefinitions() {
   var params = [];
@@ -287,11 +287,13 @@ function makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finge
 
 function makeFingerBones(fingerWidth, bone) {
   bone = bone.setColor(BONE_COLOR);
+  var bend = sphere({r: BONE_RADIUS, center: true}).setColor(BONE_COLOR);
   var piece = bone.rotateZ(90);
   piece = piece.translate([1, -BUTTON_SIDE / 2, 0]);
   piece = piece.scale([(BUTTON_SIDE * 1.5) + fingerWidth, 1, 1]);
   piece = piece.translate([BUTTON_SIDE, 0, 0]);
-  piece = piece.union(piece.rotateZ(90).translate([fingerWidth + (BUTTON_SIDE * 2.5), -BUTTON_SIDE - BONE_RADIUS, 0]));
+  piece = piece.union(piece.rotateZ(90).translate([fingerWidth + (BUTTON_SIDE * 2.5), -BUTTON_SIDE, 0]));
+  piece = piece.union(bend.translate([fingerWidth + (2.5 * BUTTON_SIDE), 0, BUTTON_SIDE / 2]));
   return piece;
 }
 
@@ -304,13 +306,15 @@ function makeThumbBones(thumb, bone) {
   piece = bone.rotateZ(90);
   piece = piece.translate([1, height - BUTTON_SIDE, 0]);
   piece = piece.scale([2 * BUTTON_SIDE, 1, 1]);
-  piece = piece.translate([-BONE_RADIUS, 0, 0]);
+  thumb = thumb.union(piece);
+  piece = sphere({r: BONE_RADIUS, center: true}).setColor(BONE_COLOR);
+  piece = piece.translate([0, height - (BUTTON_SIDE / 2), BUTTON_SIDE / 2]);
   thumb = thumb.union(piece);
   return thumb;
 }
 
-function atan2deg(y, x) {
-  return Math.atan2(y, x) * 180 / Math.PI;
+function rad2deg(rad) {
+    return rad * 180 / Math.PI;
 }
 
 function makeConnectionBone(start, end, bone) {
@@ -321,10 +325,21 @@ function makeConnectionBone(start, end, bone) {
       Math.pow(end[2] - start[2], 2));
   bone = bone.scale([1, boneLength, 1]);
   bone = bone.translate([0, boneLength / 2, 0]);
-  bone = bone.rotateX(atan2deg(end[2] - start[2], end[1] - start[1]));
-  //bone = bone.rotateY(atan2deg(end[2] - start[2], end[0] - start[0]));
-  //bone = bone.rotateZ(atan2deg(end[1] - start[1], end[0] - start[0]));
+  bone = bone.rotateX(90);
+  var yAngle = rad2deg(Math.acos((end[2] - start[2]) / boneLength));
+  var zAngle = 0;
+  if (start[0] === end[0]) {
+    zAngle = Math.sign(end[1] - start[1]) * 90;
+  } else if (end[0] > start[0]) {
+    zAngle = rad2deg(Math.atan((end[1] - start[1]) / (end[0] - start[0])));
+  } else {
+    zAngle = rad2deg(Math.atan((end[1] - start[1]) / (end[0] - start[0]))) + 180;
+  }
+  bone = rotate([0, yAngle, zAngle], bone);
   bone = bone.translate(start);
+  var bend = sphere({r: BONE_RADIUS, center: true}).setColor(BONE_COLOR);
+  bone = bone.union(bend.translate(start));
+  bone = bone.union(bend.translate(end));
   return bone;
 }
 
@@ -342,6 +357,23 @@ function makeThumbConnectionBone(left, base, thumb, bone) {
       baseBounds[1].z
   ];
   return makeConnectionBone(baseBone, thumbBone, bone);
+}
+
+function makeFingerConnectionBone(left, digit, base, finger, bone) {
+  var fingerBounds = finger.getBounds();
+  var baseBounds = base.getBounds();
+  var fingerBone = [
+      fingerBounds[left ? 1 : 0].x + (BONE_DIAMETER * (left ? -1 : 1)),
+      fingerBounds[1].y - BUTTON_SIDE,
+      fingerBounds[0].z + BONE_RADIUS
+  ];
+  var baseBone = [
+      baseBounds[left ? 1 : 0].x + (1.5 * BONE_DIAMETER * (left ? -1 : 1)),
+      baseBounds[0].y + (baseBounds[1].y / 2) + BONE_DIAMETER * (left ? -1 : 1),
+      baseBounds[1].z
+  ];
+  return makeConnectionBone(baseBone, fingerBone, bone);
+  return bone;
 }
 
 function main(params) {
@@ -408,6 +440,7 @@ function main(params) {
               (left ? -1 : 1) * (thumbBounds[1].x + BUTTON_SIDE * (2 * digit + !left)),
               fingerBounds[1].x - fingerBounds[0].x,
               BASE_HEIGHT + BUTTON_SIDE]);
+        world.push(makeFingerConnectionBone(left, digit, base, finger, bone));
       } else {
         finger = finger.rotateZ(((digit % 2) ? -1 : 1) * 90);
         if (digit === 1) {
