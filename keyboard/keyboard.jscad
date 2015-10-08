@@ -1,13 +1,19 @@
 'use strict';
 // Everything is in mm.
 
-var HANDS = {left: 1, right: 1};
-var BONE_RADIUS = 1.4;
+var BONE_DIAMETER = 3;
 var BUTTON_SIDE = 8;
 var BUTTON_SEAT = [3, 1, 1.5];
 var LEAD_HEIGHT = 1.5;
 var COLOR = [0.6, 0.6, 0.9];
 var BONE_COLOR = [1, 1, 1];
+var BASE_BONES = 16;
+var BASE_WIDTH = 50;
+
+var HANDS = {left: 1, right: 1};
+var BONE_RADIUS = BONE_DIAMETER / 2;
+var BASE_HEIGHT = BASE_WIDTH / Math.sqrt(2);
+var BASE_LENGTH = (BASE_BONES + 0.5) * 2 * BONE_DIAMETER;
 
 function getParameterDefinitions() {
   var params = [];
@@ -109,44 +115,15 @@ function makeThumb(height, frontWidth, backWidth, wire, corner, bone) {
   return thumb;
 }
 
-var BASE_HEIGHT = 20;
-var BASE_WIDTH = 9 * 2 * BONE_RADIUS;
-var BASE_LENGTH = 10.5 * 4 * BONE_RADIUS;
-
 function makeBase(bone) {
-  var height = BASE_HEIGHT;
-  var width = BASE_WIDTH;
-  var length = BASE_LENGTH;
-  var base = cube({size: [length, width, height]});
-  
-  bone = bone.rotateX(90).scale([1, 1, height]);
-  
-  var piece = cube({size: [BONE_RADIUS * 2, BONE_RADIUS * 2, height]});
+  var base = cube({size: [BASE_LENGTH, BASE_HEIGHT, BASE_HEIGHT]});
+  base = base.rotateX(-45);
+  base = base.intersect(cube({size: [BASE_LENGTH, BASE_WIDTH, BASE_HEIGHT]}));
+  bone = bone.rotateX(90);
+  return bone;
+  var piece = cube({size: [BONE_DIAMETER, BONE_DIAMETER, height]});
   piece = piece.translate([0, width / 2 - BONE_RADIUS, 0]);
   base = base.subtract(piece);
-  
-  piece = piece.translate([length - (BONE_RADIUS * 2), 0, 0]);
-  base = base.subtract(piece);
-  
-  piece = cube({size: [length, BONE_RADIUS * 2, BONE_RADIUS * 2]});
-  piece = piece.translate([0, width / 2 - BONE_RADIUS, 0]);
-  base = base.subtract(piece);
-  
-  piece = piece.translate([0, 0, height - BONE_RADIUS * 2]);
-  base = base.subtract(piece);
-  
-  piece = bone.translate([BONE_RADIUS -BUTTON_SIDE / 2, BUTTON_SIDE / 2 + 3 * BONE_RADIUS, 0]);
-  piece = union(piece, piece.translate([0, width - BONE_RADIUS * 6, 0]));
-  var subpiece = cube({size: [BONE_RADIUS * 2, width, BONE_RADIUS * 4]});
-  subpiece = subpiece.translate([0, 0, height - BONE_RADIUS * 4]);
-  piece = union(piece, subpiece);
-  piece = piece.translate([BONE_RADIUS * 2, 0, 0]);
-  base = base.subtract(piece);
-  
-  for (var i = 0; i < 9; ++i) {
-    piece = piece.translate([BONE_RADIUS * 4, 0, 0]);
-    base = base.subtract(piece);
-  }
   
   return base.setColor(COLOR);
 }
@@ -296,6 +273,7 @@ function main(params) {
     var thumbBackWidth = params[hand + 'ThumbBackWidth'];
     var thumb = makeThumb(thumbHeight, thumbFrontWidth, thumbBackWidth, wire, corner, bone);
     var base = makeBase(bone);
+    return base;
     var thumbBounds = thumb.getBounds();
     var baseBounds = base.getBounds();
 
