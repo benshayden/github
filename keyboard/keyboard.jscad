@@ -137,7 +137,10 @@ function makeBase(bone) {
   piece = piece.translate([0, BASE_WIDTH / 2, 2 * BONE_DIAMETER]);
   base = base.subtract(piece);
   
-  piece = piece.translate([BASE_LENGTH - BONE_DIAMETER, -BASE_WIDTH / 2, 0]);
+  piece = piece.translate([BASE_LENGTH - BONE_DIAMETER, 0, 0]);
+  if ((BASE_BONES % 2) === 0) {
+      piece = piece.translate([0, -BASE_WIDTH / 2, 0]);
+  }
   base = base.subtract(piece);
 
   return base.setColor(COLOR);
@@ -153,7 +156,10 @@ function makeBaseBones(base, bone) {
   piece = piece.rotateZ(90);
   piece = piece.translate([(BASE_WIDTH / 2) + BONE_RADIUS, BASE_WIDTH / 2, 0]);
   base = base.union(piece);
-  piece = piece.translate([BASE_LENGTH - BONE_DIAMETER, -BASE_WIDTH / 3, 0]);
+  piece = piece.translate([BASE_LENGTH - BONE_DIAMETER, 0, 0]);
+  if ((BASE_BONES % 2) == 0) {
+    piece = piece.translate([0, -BASE_WIDTH / 3, 0]);
+  }
   base = base.union(piece);
   piece = bone.scale([1, (BASE_WIDTH / 2) + (1.5 * BONE_DIAMETER), 1]);
   piece = piece.translate([(1.5 * BONE_DIAMETER) - (BUTTON_SIDE / 2), 0, 0]);
@@ -338,7 +344,7 @@ function main(params) {
       }
     } else {
       thumb = thumb.rotateZ(90);
-      thumb = thumb.translate([3 * BUTTON_SIDE + thumbHeight, 20 * BONE_RADIUS, 0]);
+      thumb = thumb.translate([thumbBounds[1].y, BASE_WIDTH + 1, 0]);
       if (hand === 'right') {
         thumb = thumb.rotateZ(180);
         thumb = thumb.translate([-2, 0]);
