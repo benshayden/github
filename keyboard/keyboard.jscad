@@ -7,13 +7,14 @@ var BUTTON_SEAT = [3, 1, 1.5];
 var LEAD_HEIGHT = 1.5;
 var COLOR = [0.6, 0.6, 0.9];
 var BONE_COLOR = [1, 1, 1];
-var BASE_BONES = 16;
+var BASE_BONES = 14;
 var BASE_WIDTH = 50;
 
 var HANDS = {left: 1, right: 1};
 var BONE_RADIUS = BONE_DIAMETER / 2;
 var BASE_HEIGHT = BASE_WIDTH / Math.sqrt(2);
 var BASE_LENGTH = (BASE_BONES + 0.5) * 2 * BONE_DIAMETER;
+var cylinder, cube, linear_extrude, union, polygon;
 
 function getParameterDefinitions() {
   var params = [];
@@ -119,13 +120,51 @@ function makeBase(bone) {
   var base = cube({size: [BASE_LENGTH, BASE_HEIGHT, BASE_HEIGHT]});
   base = base.rotateX(-45);
   base = base.intersect(cube({size: [BASE_LENGTH, BASE_WIDTH, BASE_HEIGHT]}));
-  bone = bone.rotateX(90);
-  return bone;
-  var piece = cube({size: [BONE_DIAMETER, BONE_DIAMETER, height]});
-  piece = piece.translate([0, width / 2 - BONE_RADIUS, 0]);
+  var piece = bone.rotateZ(90);
+  piece = piece.translate([1, (BASE_WIDTH / 2) - (BUTTON_SIDE / 2), (BUTTON_SIDE / 2) - 0.5]);
+  piece = piece.scale([BASE_LENGTH, 1, 1]);
   base = base.subtract(piece);
   
+  piece = cube({size: [BONE_DIAMETER, (BASE_WIDTH / 2) + (1.5 * BONE_DIAMETER), BASE_HEIGHT]});
+  piece = piece.translate([BONE_DIAMETER, 0, BONE_DIAMETER]);
+  piece = piece.union(piece.translate([BONE_DIAMETER * 2, (BASE_WIDTH / 2) - (1.5 * BONE_DIAMETER), 0]));
+  for (var i = 0; i < Math.ceil(BASE_BONES / 2); ++i) {
+    base = base.subtract(piece);
+    piece = piece.translate([BONE_DIAMETER * 4, 0, 0]);
+  }
+  
+  piece = cube({size: [BONE_DIAMETER, BASE_WIDTH / 2, BONE_DIAMETER]});
+  piece = piece.translate([0, BASE_WIDTH / 2, 2 * BONE_DIAMETER]);
+  base = base.subtract(piece);
+  
+  piece = piece.translate([BASE_LENGTH - BONE_DIAMETER, -BASE_WIDTH / 2, 0]);
+  base = base.subtract(piece);
+
   return base.setColor(COLOR);
+}
+
+function makeBaseBones(base, bone) {
+  bone = bone.setColor(BONE_COLOR);
+  var piece = bone.rotateZ(90);
+  piece = piece.translate([1, (BASE_WIDTH / 2) - (BUTTON_SIDE / 2), (BUTTON_SIDE / 2) - 0.5]);
+  piece = piece.scale([BASE_LENGTH, 1, 1]);
+  base = base.union(piece);
+  piece = piece.scale([(BASE_WIDTH / 3) / BASE_LENGTH, 1, 1]);
+  piece = piece.rotateZ(90);
+  piece = piece.translate([(BASE_WIDTH / 2) + BONE_RADIUS, BASE_WIDTH / 2, 0]);
+  base = base.union(piece);
+  piece = piece.translate([BASE_LENGTH - BONE_DIAMETER, -BASE_WIDTH / 3, 0]);
+  base = base.union(piece);
+  piece = bone.scale([1, (BASE_WIDTH / 2) + (1.5 * BONE_DIAMETER), 1]);
+  piece = piece.translate([(1.5 * BONE_DIAMETER) - (BUTTON_SIDE / 2), 0, 0]);
+  piece = piece.union(piece.rotateX(90).translate([0, (2 * BONE_DIAMETER) + 1 + (BASE_WIDTH / 2), BONE_DIAMETER]));
+  piece = piece.union(piece.rotateX(-90).translate([2 * BONE_DIAMETER, (BASE_WIDTH / 2) - 1 - (2 * BONE_DIAMETER), (2.5 * BONE_DIAMETER) + (BASE_WIDTH / 2)]));
+  piece = piece.intersect(cube({size: [BONE_DIAMETER * 6, BASE_WIDTH, BASE_WIDTH / 2]}).setColor(BONE_COLOR));
+  for (var i = 0; i < Math.ceil(BASE_BONES / 2); ++i) {
+    base = base.union(piece);
+    piece = piece.translate([BONE_DIAMETER * 4, 0, 0]);
+  }
+  return base;
 }
 
 function makeButton() {
@@ -137,7 +176,7 @@ function makeButton() {
   piece = piece.translate([BUTTON_SIDE / 2, BUTTON_SIDE / 2, 2]);
   button.push(piece.setColor(0.5, 0.5, 0.5));
 
-  piece = cube({size: [1, .5, BUTTON_SIDE]});
+  piece = cube({size: [1, 0.5, BUTTON_SIDE]});
   piece = piece.translate([0, BUTTON_SIDE / 2, -BUTTON_SIDE]);
   piece = piece.setColor(1, 0.7, 0.1);
   button.push(piece);
@@ -239,23 +278,8 @@ function makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finge
   return finger;
 }
 
-function makeBaseBones(base, bone) {
-  bone = bone.setColor(BONE_COLOR);
-  var piece = bone.rotateZ(-90);
-  piece = piece.scale([BASE_LENGTH, 1, 1]);
-  piece = piece.translate([0, (BUTTON_SIDE / 2) + (BASE_WIDTH / 2), BONE_RADIUS - (BUTTON_SIDE / 2)]);
-  base = base.union(piece);
-  piece = piece.translate([0, 0, BASE_HEIGHT - 2 * BONE_RADIUS]);
-  base = base.union(piece);
-  
-  piece = bone.rotateX(90);
-  piece = piece.scale([1, 1, BASE_HEIGHT - BONE_RADIUS]);
-  piece = piece.translate([-(BUTTON_SIDE / 2) + BONE_RADIUS, (BUTTON_SIDE / 2) + (BASE_WIDTH / 2)]);
-  base = base.union(piece);
-  
-  piece = piece.translate([BASE_LENGTH - (2 * BONE_RADIUS), 0]);
-  base = base.union(piece);
-  return base;
+function makeFingerBones(bone) {
+  return bone;
 }
 
 function main(params) {
@@ -273,7 +297,6 @@ function main(params) {
     var thumbBackWidth = params[hand + 'ThumbBackWidth'];
     var thumb = makeThumb(thumbHeight, thumbFrontWidth, thumbBackWidth, wire, corner, bone);
     var base = makeBase(bone);
-    return base;
     var thumbBounds = thumb.getBounds();
     var baseBounds = base.getBounds();
 
@@ -286,10 +309,10 @@ function main(params) {
         thumb = thumb.rotateZ(180);
         base = base.rotateZ(180);
         thumb = thumb.translate([-BUTTON_SIDE, 0, BASE_HEIGHT + BUTTON_SIDE]);
-        base = base.translate([-BUTTON_SIDE - thumbBounds[1].x, BASE_WIDTH]);
+        base = base.translate([-BUTTON_SIDE - (thumbBounds[1].x / 2), BASE_WIDTH]);
       } else {
         thumb = thumb.translate([BUTTON_SIDE, BUTTON_SIDE, BASE_HEIGHT + BUTTON_SIDE]);
-        base = base.translate([BUTTON_SIDE + thumbBounds[1].x, 0]);
+        base = base.translate([BUTTON_SIDE + (thumbBounds[1].x / 2), 0]);
       }
     } else {
       thumb = thumb.rotateZ(90);
@@ -314,6 +337,7 @@ function main(params) {
 
       if (params.displayMode === 'visual') {
         finger = makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, finger, button);
+        finger = finger.union(makeFingerBones(bone));
         finger = finger.rotateX(90).rotateZ(-90);
         finger = finger.translate([
               ((hand === 'left') ? -1 : 1) * (thumbBounds[1].x + BUTTON_SIDE * (2 * digit + (hand === 'right'))),
