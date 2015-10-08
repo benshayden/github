@@ -5,9 +5,9 @@ var BONE_DIAMETER = 3;
 var BUTTON_SIDE = 8;
 var BUTTON_SEAT = [3, 1, 1.5];
 var LEAD_HEIGHT = 1.5;
-var COLOR = [0.6, 0.6, 0.9];
+var COLOR = [0.4, 0.5, 0.9];
 var BONE_COLOR = [1, 1, 1];
-var BASE_BONES = 14;
+var BASE_BONES = 11;
 var BASE_WIDTH = 50;
 
 var HANDS = {left: 1, right: 1};
@@ -164,6 +164,7 @@ function makeBaseBones(base, bone) {
     base = base.union(piece);
     piece = piece.translate([BONE_DIAMETER * 4, 0, 0]);
   }
+  base = base.intersect(cube({size: [BASE_LENGTH, BASE_WIDTH, BASE_WIDTH / 2]}).setColor(COLOR));
   return base;
 }
 
@@ -329,10 +330,10 @@ function main(params) {
       if (hand === 'left') {
         thumb = thumb.rotateZ(180);
         base = base.rotateZ(180);
-        thumb = thumb.translate([-BUTTON_SIDE, 0, BASE_HEIGHT + BUTTON_SIDE]);
+        thumb = thumb.translate([-BUTTON_SIDE, BUTTON_SIDE, BASE_HEIGHT + BUTTON_SIDE]);
         base = base.translate([-2 * BUTTON_SIDE, BASE_WIDTH]);
       } else {
-        thumb = thumb.translate([BUTTON_SIDE, BUTTON_SIDE, BASE_HEIGHT + BUTTON_SIDE]);
+        thumb = thumb.translate([BUTTON_SIDE, 2 * BUTTON_SIDE, BASE_HEIGHT + BUTTON_SIDE]);
         base = base.translate([2 * BUTTON_SIDE, 0]);
       }
     } else {
