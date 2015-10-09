@@ -302,10 +302,9 @@ function makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, butto
 
 function makeFingerBones(fingerWidth, buttonSide, boneDiameter, bone) {
   var bend = sphere({r: boneDiameter / 2, center: true});
-  var piece = bone.rotateZ(90);
-  piece = piece.translate([1, -buttonSide / 2, 0]);
+  var piece = bone.rotateY(90);
   piece = piece.scale([(buttonSide * 1.5) + fingerWidth, 1, 1]);
-  piece = piece.translate([buttonSide, 0, 0]);
+  piece = piece.translate([buttonSide, 0, buttonSide / 2]);
   piece = piece.union(piece.rotateZ(90).translate([fingerWidth + (buttonSide * 2.5), -buttonSide, 0]));
   piece = piece.union(bend.translate([fingerWidth + (2.5 * buttonSide), 0, buttonSide / 2]));
   return piece;
@@ -458,7 +457,7 @@ function main(params) {
 
       if (params.displayMode === 'visual') {
         finger = makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, params.buttonSide, finger, button);
-        finger = finger.union(makeFingerBones(frontWidth + backWidth, params.buttonSide, params.boneDiameter, bone).setColor(params.boneColor));
+        finger = finger.union(makeFingerBones(frontWidth + backWidth, params.buttonSide, params.boneDiameter, bone2).setColor(params.boneColor));
         finger = finger.rotateX(90).rotateZ(-90);
         finger = finger.translate([
               (left ? -1 : 1) * (thumbBounds[1].x + params.buttonSide * (2 * digit + !left)),
