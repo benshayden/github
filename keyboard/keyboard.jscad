@@ -168,29 +168,31 @@ function makeBase(baseWidth, baseBones, boneDiameter, bone) {
 function makeBaseBones(baseWidth, baseBones, boneDiameter, base, bone) {
   var piece = bone.rotateZ(90);
   var baseLength = getBaseLength(baseBones, boneDiameter);
+  var baseBonePieces = [];
   piece = piece.translate([1, (baseWidth / 2) - (BUTTON_SIDE / 2), (BUTTON_SIDE / 2) - 0.5]);
   piece = piece.scale([baseLength, 1, 1]);
-  base = base.union(piece);
+  baseBonePieces.push(piece);
   piece = piece.scale([(baseWidth / 3) / baseLength, 1, 1]);
   piece = piece.rotateZ(90);
   piece = piece.translate([(baseWidth / 2) + (boneDiameter / 2), baseWidth / 2, 0]);
-  base = base.union(piece);
+  baseBonePieces.push(piece);
   piece = piece.translate([baseLength - boneDiameter, 0, 0]);
   if ((baseBones % 2) === 0) {
     piece = piece.translate([0, -baseWidth / 3, 0]);
   }
-  base = base.union(piece);
+  baseBonePieces.push(piece);
   piece = bone.scale([1, (baseWidth / 2) + (1.5 * boneDiameter), 1]);
   piece = piece.translate([(1.5 * boneDiameter) - (BUTTON_SIDE / 2), 0, 0]);
   piece = piece.union(piece.rotateX(90).translate([0, (2 * boneDiameter) + 1 + (baseWidth / 2), boneDiameter]));
   piece = piece.union(piece.rotateX(-90).translate([2 * boneDiameter, (baseWidth / 2) - 1 - (2 * boneDiameter), (2.5 * boneDiameter) + (baseWidth / 2)]));
   piece = piece.intersect(cube({size: [boneDiameter * 6, baseWidth, baseWidth / 2]}));
   for (var i = 0; i < Math.ceil(baseBones / 2); ++i) {
-    base = base.union(piece);
+    baseBonePieces.push(piece);
     piece = piece.translate([boneDiameter * 4, 0, 0]);
   }
-  base = base.intersect(cube({size: [baseLength, baseWidth, baseWidth / 2]}));
-  return base;
+  baseBonePieces = union(baseBonePieces);
+  baseBonePieces = baseBonePieces.intersect(cube({size: [baseLength, baseWidth, baseWidth / 2]}));
+  return baseBonePieces;
 }
 
 function makeButton(buttonSide) {
@@ -417,7 +419,7 @@ function main(params) {
 
     if (params.displayMode === 'visual') {
       thumb = makeThumbButtons(thumbHeight, thumbFrontWidth, thumbBackWidth, params.buttonSide, thumb, button);
-      handBase = makeBaseBones(params.baseWidth, params.baseBones, params.boneDiameter, handBase, bone);
+      handBase = handBase.union(makeBaseBones(params.baseWidth, params.baseBones, params.boneDiameter, handBase, bone).setColor(params.boneColor));
       thumb = thumb.union(makeThumbBones(params.buttonSide, params.boneDiameter, thumb, bone).setColor(params.boneColor));
       thumb = thumb.rotateX(90);
       
