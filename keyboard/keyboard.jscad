@@ -313,12 +313,13 @@ function makeFingerBones(fingerWidth, buttonSide, boneDiameter, bone) {
 function makeThumbBones(buttonSide, boneDiameter, thumb, bone) {
   var height = thumb.getBounds()[1].y;
   var thumbBones = [];
-  var piece = bone.translate([-buttonSide / 2, 0, 0]);
-  piece = piece.scale([1, height - (buttonSide / 2), 1]);
+  var piece = bone.scale([1, 1, height - (buttonSide / 2)]);
+  piece = piece.rotateX(-90);
+  piece = piece.translate([0, 0, buttonSide / 2]);
   thumbBones.push(piece);
-  piece = bone.rotateZ(90);
-  piece = piece.translate([1, height - buttonSide, 0]);
-  piece = piece.scale([2 * buttonSide, 1, 1]);
+  piece = bone.scale([1, 1, 2 * buttonSide]);
+  piece = piece.rotateY(90);
+  piece = piece.translate([0, height - (buttonSide / 2), buttonSide / 2]);
   thumbBones.push(piece);
   piece = sphere({r: boneDiameter / 2, center: true});
   piece = piece.translate([0, height - (buttonSide / 2), buttonSide / 2]);
@@ -419,7 +420,7 @@ function main(params) {
     if (params.displayMode === 'visual') {
       thumb = makeThumbButtons(thumbHeight, thumbFrontWidth, thumbBackWidth, params.buttonSide, thumb, button);
       handBase = handBase.union(makeBaseBones(params.baseWidth, params.baseBones, params.boneDiameter, handBase, bone).setColor(params.boneColor));
-      thumb = thumb.union(makeThumbBones(params.buttonSide, params.boneDiameter, thumb, bone).setColor(params.boneColor));
+      thumb = thumb.union(makeThumbBones(params.buttonSide, params.boneDiameter, thumb, bone2).setColor(params.boneColor));
       thumb = thumb.rotateX(90);
       
       if (left) {
