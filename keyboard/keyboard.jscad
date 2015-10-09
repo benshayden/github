@@ -398,8 +398,8 @@ function main(params) {
 
   var world = [];
 
-  for (var hand in {left: 0, right: 0}) {
-    var left = hand === 'left';
+  for (var left = 0; left < 2; ++left) {
+    var hand = left ? 'left' : 'right';
     var thumbHeight = params[hand + 'ThumbHeight'];
     var thumbFrontWidth = params[hand + 'ThumbFrontWidth'];
     var thumbBackWidth = params[hand + 'ThumbBackWidth'];
