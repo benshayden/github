@@ -8,7 +8,6 @@ var LEAD_HEIGHT = 1.5;
 var COLOR = [0.4, 0.5, 0.9];
 var BONE_COLOR = [1, 1, 1];
 
-var HANDS = {left: 1, right: 1};
 var BONE_RADIUS = BONE_DIAMETER / 2;
 var cylinder, cube, sphere, linear_extrude, union, polygon;
 
@@ -20,7 +19,7 @@ function getParameterDefinitions() {
   params.push({name: 'baseWidth', type: 'float', initial: 50});
   params.push({name: 'boneDiameter', type: 'float', initial: 3});
   params.push({name: 'buttonSide', type: 'float', initial: 8});
-  for (var hand in {left: 1, right: 1}) {
+  ['left', 'right'].forEach(function(hand) {
     params.push({name: hand + 'ThumbHeight', type: 'float', initial: 20});
     params.push({name: hand + 'ThumbFrontWidth', type: 'float', initial: 5});
     params.push({name: hand + 'ThumbBackWidth', type: 'float', initial: 7});
@@ -30,7 +29,7 @@ function getParameterDefinitions() {
       params.push({name: hand + digit + 'FrontWidth', type: 'float', initial: 4});
       params.push({name: hand + digit + 'BackWidth', type: 'float', initial: 6});
     }
-  }
+  });
   return params;
 }
 
@@ -394,7 +393,7 @@ function main(params) {
 
   var world = [];
 
-  for (var hand in HANDS) {
+  for (var hand in {left: 0, right: 0}) {
     var left = hand === 'left';
     var thumbHeight = params[hand + 'ThumbHeight'];
     var thumbFrontWidth = params[hand + 'ThumbFrontWidth'];
