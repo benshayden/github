@@ -311,17 +311,18 @@ function makeFingerBones(fingerWidth, buttonSide, boneDiameter, bone) {
 
 function makeThumbBones(buttonSide, boneDiameter, thumb, bone) {
   var height = thumb.getBounds()[1].y;
+  var thumbBones = [];
   var piece = bone.translate([-buttonSide / 2, 0, 0]);
   piece = piece.scale([1, height - (buttonSide / 2), 1]);
-  thumb = thumb.union(piece);
+  thumbBones.push(piece);
   piece = bone.rotateZ(90);
   piece = piece.translate([1, height - buttonSide, 0]);
   piece = piece.scale([2 * buttonSide, 1, 1]);
-  thumb = thumb.union(piece);
+  thumbBones.push(piece);
   piece = sphere({r: boneDiameter / 2, center: true});
   piece = piece.translate([0, height - (buttonSide / 2), buttonSide / 2]);
-  thumb = thumb.union(piece);
-  return thumb;
+  thumbBones.push(piece);
+  return union(thumbBones);
 }
 
 function rad2deg(rad) {
@@ -417,7 +418,7 @@ function main(params) {
     if (params.displayMode === 'visual') {
       thumb = makeThumbButtons(thumbHeight, thumbFrontWidth, thumbBackWidth, params.buttonSide, thumb, button);
       handBase = makeBaseBones(params.baseWidth, params.baseBones, params.boneDiameter, handBase, bone);
-      thumb = makeThumbBones(params.buttonSide, params.boneDiameter, thumb, bone);
+      thumb = thumb.union(makeThumbBones(params.buttonSide, params.boneDiameter, thumb, bone).setColor(params.boneColor));
       thumb = thumb.rotateX(90);
       
       if (left) {
@@ -429,7 +430,7 @@ function main(params) {
         thumb = thumb.translate([params.buttonSide, 2 * params.buttonSide, params.buttonSide + (params.baseWidth / 2)]);
         handBase = handBase.translate([2 * params.buttonSide, 0]);
       }
-      world.push(makeThumbConnectionBone(left, params.buttonSide, params.boneDiameter, handBase, thumb, bone));
+      world.push(makeThumbConnectionBone(left, params.buttonSide, params.boneDiameter, handBase, thumb, bone).setColor(params.boneColor));
     } else {
       thumb = thumb.rotateZ(90);
       thumb = thumb.translate([thumbBounds[1].y, params.baseWidth + 1, 0]);
@@ -463,7 +464,7 @@ function main(params) {
               (left ? -1 : 1) * (thumbBounds[1].x + params.buttonSide * (2 * digit + !left)),
               fingerBounds[1].x - fingerBounds[0].x,
               params.buttonSide + (params.baseWidth / 2)]);
-        world.push(makeFingerConnectionBone(left, digit, params.buttonSide, params.boneDiameter, handBase, finger, bone));
+        world.push(makeFingerConnectionBone(left, digit, params.buttonSide, params.boneDiameter, handBase, finger, bone).setColor(params.boneColor));
       } else {
         finger = finger.rotateZ(((digit % 2) ? -1 : 1) * 90);
         if (digit === 1) {
