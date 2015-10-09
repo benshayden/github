@@ -461,13 +461,13 @@ function main(params) {
       } else {
         finger = finger.rotateZ(((digit % 2) ? -1 : 1) * 90);
         if (digit === 1) {
-          finger = finger.translate([0, -1]);
+          finger = finger.translate([0, -10]);
         } else if (digit === 2) {
-          finger = finger.translate([37, -47]);
+          finger = finger.translate([3.5 * params.buttonSide + frontHeight + 1, -1 - fingerBounds[1].x]);
         } else if (digit === 3) {
-          finger = finger.translate([39, -1]);
+          finger = finger.translate([3.5 * params.buttonSide + frontHeight + 2, -10]);
         } else if (digit === 4) {
-          finger = finger.translate([76, -47]);
+          finger = finger.translate([8 * params.buttonSide + frontHeight, -1 - fingerBounds[1].x]);
         }
         if (!left) {
           finger = finger.rotateZ(180);
