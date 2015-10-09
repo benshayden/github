@@ -46,7 +46,7 @@ function makeDome(buttonSide) {
 }
 
 function makeWire(buttonSide) {
-  var wire = [[0.5, 0], [0, 0.5], [0, 1.5 + 0.5], [0.5, 1.5 + 1], [1, 1.5 + 0.5], [1, 0.5]];
+  var wire = [[0.5, 0], [0, 0.5], [0, 2], [0.5, 2.5], [1, 2], [1, 0.5]];
   wire = linear_extrude({height: buttonSide}, polygon(wire)).rotateX(90).translate([0,buttonSide, -0.5]);
   wire = union(wire, wire.translate([0, 0, buttonSide - 1.5]));
   return wire;
