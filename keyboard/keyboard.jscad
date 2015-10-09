@@ -62,8 +62,7 @@ function makeCorner(buttonSide) {
 }
 
 function makeBone(boneDiameter, len) {
-  var bone = cylinder({r: boneDiameter / 2, h: len || 1});
-  return bone;
+  return cylinder({r: boneDiameter / 2, h: len || 1});
 }
 
 function makeBend(boneDiameter) {
@@ -182,8 +181,8 @@ function makeBaseBones(baseWidth, baseBones, boneDiameter, base, bone) {
   piece = bone.scale([1, 1, (baseWidth / 2) + (1.5 * boneDiameter)]);
   piece = piece.rotateX(-90);
   piece = piece.translate([(1.5 * boneDiameter), 0, 1.5 * boneDiameter]);
-  piece = piece.union(piece.rotateX(90).translate([0, (2 * boneDiameter) + 1 + (baseWidth / 2), boneDiameter]));
-  piece = piece.union(piece.rotateX(-90).translate([2 * boneDiameter, (baseWidth / 2) - 1 - (2 * boneDiameter), (2.5 * boneDiameter) + (baseWidth / 2)]));
+  piece = piece.union(piece.rotateX(90).translate([0, (2.5 * boneDiameter) + (baseWidth / 2), boneDiameter]));
+  piece = piece.union(piece.rotateX(-90).translate([2 * boneDiameter, (baseWidth / 2) - (2.5 * boneDiameter), (2.5 * boneDiameter) + (baseWidth / 2)]));
   piece = piece.intersect(cube({size: [boneDiameter * 6, baseWidth, baseWidth / 2]}));
   for (var i = 0; i < Math.ceil(baseBones / 2); ++i) {
     baseBonePieces.push(piece);
