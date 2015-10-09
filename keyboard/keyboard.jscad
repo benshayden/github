@@ -1,8 +1,6 @@
 'use strict';
 // Everything is in mm.
-// TODO boneColor
 // TODO bone2
-// TODO leave room for buttons
 
 var BUTTON_SIDE = 8;
 var BUTTON_SEAT = [3, 1, 1.5];
