@@ -115,13 +115,14 @@ function makeThumb(height, frontWidth, backWidth, buttonSide, wire, corner, bone
 
   thumb = union(thumb);
   
-  piece = bone.scale([1, buttonSide + height + buttonSide + (buttonSide / 2), 1]);
-  piece = piece.translate([-buttonSide / 2, 0]);
+  piece = bone.scale([1, 1, buttonSide + height + buttonSide + (buttonSide / 2)]);
+  piece = piece.rotateX(-90);
+  piece = piece.translate([0, 0, buttonSide / 2]);
   thumb = thumb.subtract(piece);
 
-  piece = bone.rotateZ(-90);
-  piece = piece.scale([buttonSide + width, 1, 1]);
-  piece = piece.translate([0, height + (3 * buttonSide)]);
+  piece = bone.scale([1, 1, buttonSide + width]);
+  piece = piece.rotateY(90);
+  piece = piece.translate([0, height + (2.5 * buttonSide), buttonSide / 2]);
   thumb = thumb.subtract(piece);
 
   return thumb;
@@ -407,7 +408,7 @@ function main(params) {
     var thumbHeight = params[hand + 'ThumbHeight'];
     var thumbFrontWidth = params[hand + 'ThumbFrontWidth'];
     var thumbBackWidth = params[hand + 'ThumbBackWidth'];
-    var thumb = makeThumb(thumbHeight, thumbFrontWidth, thumbBackWidth, params.buttonSide, wire, corner, bone);
+    var thumb = makeThumb(thumbHeight, thumbFrontWidth, thumbBackWidth, params.buttonSide, wire, corner, bone2);
     thumb = thumb.setColor(params.color);
     if (params.part === 'thumb') {
       return thumb;
