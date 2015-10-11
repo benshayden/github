@@ -1,17 +1,21 @@
 #include <Keypad.h>
 
-const char ROW_PINS[] = {};
-const char COLUMN_PINS[] = {};
+const char ROW_PINS[] = {0, 1, 2, 3, 4, 5};
+const char COLUMN_PINS[] = {16, 17, 18, 19, 20, 21};
 #define ROWS sizeof(ROW_PINS)
 #define COLUMNS sizeof(COLUMN_PINS)
-const char KEYMAP[3][ROWS][COLUMNS] = {
-  {},
+const char KEYMAP[][ROWS][COLUMNS] = {
+  { // 26(a-z) + 1(;) + 5(space+backspace+shift+ctrl+mode)
+    {},
+  },
+  { // 10(0-9) + 10(`-=[]\',./) + 4(arrows) + 8(shift+alt+ctrl+gui+mode+volup+voldn+macro)
+    {},
+  },
 };
 
 Keypad KEYPADS[] = {
   Keypad(makeKeymap(KEYMAP[0]), ROW_PINS, COLUMN_PINS, ROWS, COLUMNS),
   Keypad(makeKeymap(KEYMAP[1]), ROW_PINS, COLUMN_PINS, ROWS, COLUMNS),
-  Keypad(makeKeymap(KEYMAP[2]), ROW_PINS, COLUMN_PINS, ROWS, COLUMNS),
 };
 
 // bitmasks for keyboard_report_data[1]
