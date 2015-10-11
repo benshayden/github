@@ -1,38 +1,18 @@
-#include <avr/pgmspace.h>
-#include <CapacitiveSensor.h>
+#include <Keypad.h>
 
-// You may need to change this next line if you don't use a Teensy
-// microcontroller in order to allow direct access to `keyboard_report_data`.
-#include "../usb_hid/usb_private.h"
+const char ROW_PINS[] = {};
+const char COLUMN_PINS[] = {};
+#define ROWS sizeof(ROW_PINS)
+#define COLUMNS sizeof(COLUMN_PINS)
+const char KEYMAP[3][ROWS][COLUMNS] = {
+  {},
+};
 
-// SETTINGS
-
-// This firmware cannot support more than 16 button pins (240 buttons). In order
-// to support >240 buttons, `current_button` would need to be changed to
-// uint16_t.
-#define LED_PINS 4, 5, 6, 7
-#define BUTTON_PINS 12, 13, 14, 15, 16, 17, 18
-
-#define NUM_MACROS 10
-#define MAX_MACRO_LEN 100
-
-#define SHIFT_LED           0
-#define CONTROL_LED         1
-#define ALT_LED             2
-#define GUI_LED             6
-#define MODE0_LED           4
-#define MODE1_LED           5
-#define LOCK_NEXT_LED       3
-#define RECORDING_MACRO_LED 7
-#define NUM_LOCK_LED        8
-#define CAPS_LOCK_LED       9
-#define SCROLL_LOCK_LED     10
-#define COMPOSE_LED         11
-#define KANA_LED            12
-
-// END SETTINGS
-
-#define ARRAYSIZE(a) ((sizeof(a) == 0) ? 0 : (sizeof(a) / sizeof(a[0])))
+Keypad KEYPADS[] = {
+  Keypad(makeKeymap(KEYMAP[0]), ROW_PINS, COLUMN_PINS, ROWS, COLUMNS),
+  Keypad(makeKeymap(KEYMAP[1]), ROW_PINS, COLUMN_PINS, ROWS, COLUMNS),
+  Keypad(makeKeymap(KEYMAP[2]), ROW_PINS, COLUMN_PINS, ROWS, COLUMNS),
+};
 
 // bitmasks for keyboard_report_data[1]
 #define MEDIA_VOLUME_UP   0x01
@@ -43,37 +23,7 @@
 #define MEDIA_PREV        0x20
 #define MEDIA_STOP        0x40
 #define MEDIA_EJECT       0x80
-
-#define MACRO_PRESS 0x8000
-
-CapacitiveSensor capsens0(0, 1);
-CapacitiveSensor capsens1(0, 2);
-
-typedef struct { uint8_t x; uint8_t y; } uint8_pair_t;
-typedef struct { uint8_t* bytes; const uint16_t size; } array8_t;
-typedef struct { uint16_t* shorts; const uint16_t size; } array16_t;
-
-const uint8_t button_pin_bytes[] = {BUTTON_PINS};
-const array8_t button_pins = {(uint8_t*)button_pin_bytes, ARRAYSIZE(button_pin_bytes)};
-const uint16_t num_buttons = ARRAYSIZE(button_pin_bytes) * (ARRAYSIZE(button_pin_bytes) - 1);
-uint16_t button_shorts[(num_buttons + 15) / 16];
-const array16_t buttons = {button_shorts, ARRAYSIZE(button_shorts)};
-const uint8_t led_pin_bytes[] = {LED_PINS};
-const array8_t led_pins = {(uint8_t*)led_pin_bytes, ARRAYSIZE(led_pin_bytes)};
-const uint16_t num_leds = ARRAYSIZE(led_pin_bytes) * (ARRAYSIZE(led_pin_bytes) - 1);
-uint16_t led_shorts[(num_leds + 15) / 16];
-const array16_t leds = {led_shorts, ARRAYSIZE(led_shorts)};
-#include "keycodes.h"
-#include "keymap"
-const uint16_t mode_0_keys[] PROGMEM = {MODE_NEITHER_KEYS};
-const uint16_t mode_1_keys[] PROGMEM = {MODE_0_KEYS};
-const uint16_t mode_2_keys[] PROGMEM = {MODE_1_KEYS};
-const uint16_t mode_3_keys[] PROGMEM = {MODE_BOTH_KEYS};
-const array16_t keymaps[] = {
-  {(uint16_t*) mode_0_keys, ARRAYSIZE(mode_0_keys)},
-  {(uint16_t*) mode_1_keys, ARRAYSIZE(mode_1_keys)},
-  {(uint16_t*) mode_2_keys, ARRAYSIZE(mode_2_keys)},
-  {(uint16_t*) mode_3_keys, ARRAYSIZE(mode_3_keys)}};
+#define MACRO_PRESS     0x8000
 
 uint16_t macro_keys[NUM_MACROS][MAX_MACRO_LEN];
 
@@ -86,71 +36,6 @@ uint8_t current_button_pin = 0;
 uint8_t current_led_row = 0;
 uint8_t record_macro = 0xff;
 uint8_t record_macro_keyi = 0;
-
-void mode_write(uint8_t pin, uint8_t mode, uint8_t state) {
-  pinMode(pin, mode);
-  digitalWrite(pin, state);
-}
-
-void mode_write_all(const array8_t& pins, uint8_t mode, uint8_t state) {
-  for (uint16_t i = 0; i < pins.size; ++i) {
-    mode_write(pins.bytes[i], mode, state);
-  }
-}
-
-bool read_bit(uint8_t bit, const array16_t& shorts) {
-  if ((bit / 16) >= shorts.size) return 0;
-  return (shorts.shorts[bit / 16] >> (bit % 16)) & 1;
-}
-
-void write_bit(uint8_t bit, bool value, const array16_t& shorts) {
-  if ((bit / 16) >= shorts.size) return;
-  uint8_t shorti = bit / 16;
-  uint16_t bit16 = (bit % 16);
-  if (value) {
-    shorts.shorts[shorti] |= (1 << bit16);
-  } else {
-    shorts.shorts[shorti] &= ~(1 << bit16);
-  }
-}
-
-void set_led(uint8_t led, bool state) {
-  write_bit(led, state, leds);
-}
-
-uint8_pair_t get_pair(uint8_t charlie, uint8_t num_pins) {
-  uint8_pair_t result = {charlie % num_pins, charlie / num_pins};
-  if (result.y >= result.x) ++result.y;
-  return result;
-}
-
-uint8_t get_charlie(uint8_t x, uint8_t y, uint8_t num_pins) {
-  if (y >= x) --y;
-  return (y * num_pins) + x;
-}
-
-uint8_pair_t get_pin_pair(uint8_t charlie, const array8_t& pins) {
-  uint8_pair_t pair = get_pair(charlie, pins.size);
-  pair.x = pins.bytes[pair.x];
-  pair.y = pins.bytes[pair.y];
-  return pair;
-}
-
-void paint_led_row() {
-  mode_write_all(led_pins, INPUT, LOW);
-  bool any = false;
-  for (uint8_t d_row = 0; d_row < led_pins.size && !any; ++d_row) {
-    current_led_row = (current_led_row + 1) % led_pins.size;
-    for (uint8_t x = 0; x < led_pins.size; ++x) {
-      if ((x != current_led_row) &&
-          read_bit(get_charlie(x, current_led_row, led_pins.size), leds)) {
-        mode_write(led_pins.bytes[current_led_row], OUTPUT, HIGH);
-        mode_write(led_pins.bytes[x], OUTPUT, LOW);
-        any = true;
-      }
-    }
-  }
-}
 
 bool is_reserved(uint8_t k) {
   // These keycodes are never sent to the host though they may be used
@@ -481,20 +366,6 @@ void setup() {
 }
 
 void loop() {
-  paint_led_row();
-
-  bool state = digitalRead(current_button_pin);
-  current_button = (current_button + 1) % num_buttons;
-  mode_write_all(button_pins, OUTPUT, LOW);
-  uint8_pair_t charlie = get_pin_pair(current_button, button_pins);
-  mode_write(charlie.x, INPUT, LOW);
-  mode_write(charlie.y, OUTPUT, HIGH);
-  current_button_pin = charlie.x;
-
-  if (current_button == 0) {
-    Keyboard.send_now();
-  }
-
   bool pressed = read_bit(current_button, buttons);
   if (state == pressed) {
     return;
@@ -521,32 +392,4 @@ void loop() {
   } else {
     release(k);
   }
-  if (false) {
-    long mousex = capsens0.capacitiveSensor(30);
-    long mousey = capsens1.capacitiveSensor(30);
-    Mouse.move(mousex, mousey, 0);
-  }
-
-  set_led(CONTROL_LED,
-      ((keyboard_report_data[0] & MODIFIERKEY_LEFT_CTRL) != 0) ||
-      ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_CTRL) != 0));
-  set_led(SHIFT_LED,
-      ((keyboard_report_data[0] & MODIFIERKEY_LEFT_SHIFT) != 0) ||
-      ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_SHIFT) != 0));
-  set_led(ALT_LED,
-      ((keyboard_report_data[0] & MODIFIERKEY_LEFT_ALT) != 0) ||
-      ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_ALT) != 0));
-  set_led(GUI_LED,
-      ((keyboard_report_data[0] & MODIFIERKEY_LEFT_GUI) != 0) ||
-      ((keyboard_report_data[0] & MODIFIERKEY_RIGHT_GUI) != 0));
-  set_led(MODE0_LED, (mode & 1) != 0);
-  set_led(MODE1_LED, (mode & 2) != 0);
-  set_led(LOCK_NEXT_LED, lock_next);
-  set_led(RECORDING_MACRO_LED, record_macro < NUM_MACROS);
-  // keyboard_leds is sent from the host asynchronously from button presses.
-  set_led(NUM_LOCK_LED, (keyboard_leds & 1) != 0);
-  set_led(CAPS_LOCK_LED, (keyboard_leds & 2) != 0);
-  set_led(SCROLL_LOCK_LED, (keyboard_leds & 4) != 0);
-  set_led(COMPOSE_LED, (keyboard_leds & 8) != 0);
-  set_led(KANA_LED, (keyboard_leds & 0x10) != 0);
 }
