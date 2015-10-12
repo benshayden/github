@@ -9,7 +9,7 @@ function getParameterDefinitions() {
   params.push({name: 'part', type: 'choice', values: ['all', 'base', 'thumb', 'finger']});
   params.push({name: 'baseBones', type: 'float', initial: 11});
   params.push({name: 'baseWidth', type: 'float', initial: 50});
-  params.push({name: 'boneDiameter', type: 'float', initial: 3});
+  params.push({name: 'boneDiameter', type: 'float', initial: 3.5});
   params.push({name: 'buttonSide', type: 'float', initial: 8});
   params.push({name: 'color', type: 'text', initial: '667fe5'});
   params.push({name: 'boneColor', type: 'text', initial: 'ffffff'});
