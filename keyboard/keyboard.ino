@@ -6,10 +6,10 @@ const char ROW_PINS[] = {0, 1, 2, 3, 4, 5};
 const char COLUMN_PINS[] = {16, 17, 18, 19, 20, 21};
 const char KEYMAP[][sizeof(ROW_PINS)][sizeof(COLUMN_PINS)] = {
 #define KEY_MODE 1
-  { // 26(a-z) + 1(;) + 5(space+backspace+shift+ctrl+mode)
+  { // 26(a-z) + 1(;) + 5(space+backspace+enter+shift+mode)
     {},
   },
-  { // 10(0-9) + 10(`-=[]\',./) + 4(arrows) + 8(shift+ctrl+gui+mode+tab+volup+voldn)
+  { // 10(0-9) + 10(`-=[]\',./) + 4(arrows) + 3(shift+ctrl+mode) + 4(tab+volup+voldn+macro) + 1()
     {},
   },
 };
