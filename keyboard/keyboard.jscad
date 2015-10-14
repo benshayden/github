@@ -7,7 +7,7 @@ function getParameterDefinitions() {
   var params = [];
   params.push({name: 'displayMode', type: 'choice', values: ['visual', 'printable']});
   params.push({name: 'part', type: 'choice', values: ['all', 'base', 'thumb', 'finger']});
-  params.push({name: 'baseBones', type: 'float', initial: 11});
+  params.push({name: 'baseBones', type: 'float', initial: 12});
   params.push({name: 'baseWidth', type: 'float', initial: 50});
   params.push({name: 'boneDiameter', type: 'float', initial: 3.5});
   params.push({name: 'buttonSide', type: 'float', initial: 8});
@@ -155,24 +155,33 @@ function makeBase(baseWidth, baseBones, boneDiameter, bone) {
   return base;
 }
 
-function makeBaseBones(baseWidth, baseBones, boneDiameter, base, bone) {
+function makeBaseBones(baseWidth, baseBones, boneDiameter, base, bone, bend) {
   var baseLength = getBaseLength(baseBones, boneDiameter);
   var baseBonePieces = [];
 
-  var piece = bone.scale([1, 1, baseLength]);
+  // the long piece all the way through
+  var piece = bone.scale([1, 1, baseLength - boneDiameter]);
   piece = piece.rotateY(90);
-  piece = piece.translate([0, (baseWidth / 2), 2.5 * boneDiameter]);
+  piece = piece.translate([boneDiameter / 2, baseWidth / 2, 2.5 * boneDiameter]);
   baseBonePieces.push(piece);
   
+  // the shorter piece on the side
   piece = piece.scale([(baseWidth / 3) / baseLength, 1, 1]);
   piece = piece.rotateZ(90);
   piece = piece.translate([(baseWidth / 2) + (boneDiameter / 2), baseWidth / 2, 0]);
   baseBonePieces.push(piece);
   
+  // the shorter piece on the other side
   piece = piece.translate([baseLength - boneDiameter, 0, 0]);
   if ((baseBones % 2) === 0) {
     piece = piece.translate([0, -baseWidth / 3, 0]);
   }
+  baseBonePieces.push(piece);
+  
+  piece = bend.translate([boneDiameter / 2, baseWidth / 2, 2.5 * boneDiameter]);
+  baseBonePieces.push(piece);
+
+  piece = piece.translate([baseLength - boneDiameter, 0, 0]);
   baseBonePieces.push(piece);
   
   piece = bone.scale([1, 1, (baseWidth / 2) + (1.5 * boneDiameter)]);
@@ -361,7 +370,7 @@ function makeThumbConnectionBone(left, buttonSide, boneDiameter, base, thumb, bo
   return makeConnectionBone(baseBone, thumbBone, boneDiameter, bone, bend);
 }
 
-function makeFingerConnectionBone(left, digit, buttonSide, boneDiameter, base, finger, bone, bend) {
+function makeFingerConnectionBone(left, digit, buttonSide, boneDiameter, baseBones, base, finger, bone, bend) {
   var fingerBounds = finger.getBounds();
   var baseBounds = base.getBounds();
   var fingerBone = [
@@ -371,7 +380,7 @@ function makeFingerConnectionBone(left, digit, buttonSide, boneDiameter, base, f
   ];
   var baseBone = [
       baseBounds[left ? 0 : 1].x + (((4 * boneDiameter * (4 - digit)) + (1.5 * boneDiameter)) * (left ? 1 : -1)),
-      baseBounds[0].y + (baseBounds[1].y / 2) + boneDiameter * (left ? -1 : 1),
+      baseBounds[0].y + (baseBounds[1].y / 2) + boneDiameter * (left ? -1 : 1) * (((baseBones % 2) === 0) ? -1 : 1),
       baseBounds[1].z
   ];
   return makeConnectionBone(baseBone, fingerBone, boneDiameter, bone, bend);
@@ -410,7 +419,7 @@ function main(params) {
 
     if (params.displayMode === 'visual') {
       thumb = makeThumbButtons(thumbHeight, thumbFrontWidth, thumbBackWidth, params.buttonSide, thumb, button);
-      handBase = handBase.union(makeBaseBones(params.baseWidth, params.baseBones, params.boneDiameter, handBase, bone).setColor(params.boneColor));
+      handBase = handBase.union(makeBaseBones(params.baseWidth, params.baseBones, params.boneDiameter, handBase, bone, bend).setColor(params.boneColor));
       thumb = thumb.union(makeThumbBones(params.buttonSide, params.boneDiameter, thumb, bone, bend).setColor(params.boneColor));
       thumb = thumb.rotateX(90);
       
@@ -457,7 +466,7 @@ function main(params) {
               (left ? -1 : 1) * (thumbBounds[1].x + params.buttonSide * (2 * digit + !left)),
               fingerBounds[1].x - fingerBounds[0].x,
               params.buttonSide + (params.baseWidth / 2)]);
-        world.push(makeFingerConnectionBone(left, digit, params.buttonSide, params.boneDiameter, handBase, finger, bone, bend).setColor(params.boneColor));
+        world.push(makeFingerConnectionBone(left, digit, params.buttonSide, params.boneDiameter, params.baseBones, handBase, finger, bone, bend).setColor(params.boneColor));
       } else {
         finger = finger.rotateZ(((digit % 2) ? -1 : 1) * 90);
         if (digit === 1) {
