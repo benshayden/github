@@ -7,7 +7,7 @@ function getParameterDefinitions() {
   var params = [];
   params.push({name: 'displayMode', type: 'choice', values: ['visual', 'printable']});
   params.push({name: 'part', type: 'choice', values: ['all', 'base', 'thumb', 'finger']});
-  params.push({name: 'baseBones', type: 'float', initial: 12});
+  params.push({name: 'baseBones', type: 'float', initial: 13});
   params.push({name: 'baseWidth', type: 'float', initial: 50});
   params.push({name: 'boneDiameter', type: 'float', initial: 3.5});
   params.push({name: 'buttonSide', type: 'float', initial: 8});
@@ -427,10 +427,10 @@ function main(params) {
         thumb = thumb.rotateZ(180);
         handBase = handBase.rotateZ(180);
         thumb = thumb.translate([-params.buttonSide, params.buttonSide, params.buttonSide + (params.baseWidth / 2)]);
-        handBase = handBase.translate([-2 * params.buttonSide, params.baseWidth]);
+        handBase = handBase.translate([-params.buttonSide, params.baseWidth]);
       } else {
         thumb = thumb.translate([params.buttonSide, 2 * params.buttonSide, params.buttonSide + (params.baseWidth / 2)]);
-        handBase = handBase.translate([2 * params.buttonSide, 0]);
+        handBase = handBase.translate([params.buttonSide, 0]);
       }
       world.push(makeThumbConnectionBone(left, params.buttonSide, params.boneDiameter, handBase, thumb, bone, bend).setColor(params.boneColor));
     } else {
