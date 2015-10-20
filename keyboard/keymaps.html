@@ -302,7 +302,7 @@ qSA('input').forEach(function(input) {
 function save() {
   var inputs = qSA('input');
   try {
-    localStorage[location.path] = JSON.stringify(inputs.map(function(input) {
+    localStorage[location.pathname] = JSON.stringify(inputs.map(function(input) {
       return input.value;
     }));
   } catch (e) {
@@ -310,7 +310,7 @@ function save() {
 }
 function restore() {
   try {
-    var saved = localStorage[location.path];
+    var saved = localStorage[location.pathname];
   } catch (e) {
     return;
   }
