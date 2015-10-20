@@ -261,6 +261,12 @@ function buildkeymaps() {
   var pinsmap = {};
   var keysmap = {};
   var hadError = false;
+  for (var rowi = 0; rowi < rowpinnums.length; ++rowi) {
+    for (var coli = 0; coli < colpinnums.length; ++coli) {
+      keymapkeys[0][rowi][coli] = 0;
+      keymapkeys[1][rowi][coli] = 0;
+    }
+  }
   qSA('td', pinmap).forEach(function(td) {
     var inputs = td.querySelectorAll('input');
     if (inputs.length === 0) return;
@@ -296,7 +302,9 @@ function buildkeymaps() {
   keymaps.value = '{' + keymapkeys.map(function(keymap) {
     return keymap.map(function(row) {
       return row.map(function(key) {
-        if (key.length > 1) {
+        if (typeof key === 'number') {
+          return '' + key;
+        } else if (key.length > 1) {
           return 'KEY_' + key;
         } else if (key === "'") {
           return "'\\''";
