@@ -39,7 +39,6 @@ data:text/html,<!doctype html>
     <td>right pinky</td>
   </tr>
   <!--
-  et aoinsh rdlcum wfgypb vkjxqz ; space backspace enter shift mode
   0123456789`-=[]\',./ up down left right shift ctrl mode tab volup voldn macro
   -->
   <tr>
@@ -262,6 +261,7 @@ function buildkeymaps() {
     colpinnums.push(input.value);
   });
   var keymapkeys = [[[], [], [], [], [], []], [[], [], [], [], [], []]];
+  var keysmap = {};
   var hadError = false;
   qSA('td', pinmap).forEach(function(td) {
     var inputs = td.querySelectorAll('input');
@@ -274,11 +274,19 @@ function buildkeymaps() {
     var colpini = colpinnums.indexOf(colpin);
     inputs[0].className = (rowpini < 0) ? 'error' : 'rowpin';
     inputs[1].className = (colpini < 0) ? 'error' : 'colpin';
-    inputs[2].className = key0 ? '' : 'error';
-    inputs[3].className = key1 ? '' : 'error';
-    hadError = hadError || (rowpini < 0) || (colpini < 0) || !key0 || !key1;
+    inputs[2].className = (key0 && !keysmap[key0]) ? '' : 'error';
+    inputs[3].className = (key1 && !keysmap[key1]) ? '' : 'error';
+    hadError = hadError || (rowpini < 0) || (colpini < 0) || !key0 || !key1 || keysmap[key0] || keysmap[key1];
     keymapkeys[0][rowpini][colpini] = key0;
     keymapkeys[1][rowpini][colpini] = key1;
+    if (keysmap[key0]) {
+      keysmap[key0].className = 'error';
+    }
+    if (keysmap[key1]) {
+      keysmap[key1].className = 'error';
+    }
+    keysmap[key0] = inputs[2];
+    keysmap[key1] = inputs[3];
   });
   if (hadError)
     return;
