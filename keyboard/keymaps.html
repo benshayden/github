@@ -55,7 +55,7 @@
       <input class=rowpin size=1 value=0>
       <input class=colpin size=1 value=18>
       <input size=1 value='m'>
-      <input size=1 value='\''>
+      <input size=1 value="'">
     </td>
     <td>
       <input class=rowpin size=1 value=0>
@@ -67,7 +67,7 @@
       <input class=rowpin size=1 value=0>
       <input class=colpin size=1 value=20>
       <input size=1 value='BACKSPACE'>
-      <input size=1 value='EQUAL'>
+      <input size=1 value='='>
     </td>
     <td>
       <input class=rowpin size=1 value=3>
@@ -167,7 +167,7 @@
       <input class=rowpin size=1 value=2>
       <input class=colpin size=1 value=16>
       <input size=1 value='k'>
-      <input size=1 value='\\'>
+      <input size=1 value='\'>
     </td>
     <td>
       <input class=rowpin size=1 value=2>
@@ -290,7 +290,15 @@ function buildkeymaps() {
   keymaps.value = '{' + keymapkeys.map(function(keymap) {
     return keymap.map(function(row) {
       return row.map(function(key) {
-        return (key.length === 1) ? ("'" + key + "'") : ('KEY_' + key);
+        if (key.length > 1) {
+          return 'KEY_' + key;
+        } else if (key === "'") {
+          return "'\\''";
+        } else if (key === '\\') {
+          return "'\\\\'";
+        } else {
+          return "'" + key + "'";
+        }
       }).join(', ');
     }).join(', ');
   }).join('},\n{') + '}';
