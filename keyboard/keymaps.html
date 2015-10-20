@@ -1,67 +1,280 @@
-<!doctype html>
+data:text/html,<!doctype html>
 <style>
-.rowpin, .colpin, .mode0, .mode1 {
-  display: block;
-}
+.rowpin { border: 2px solid green; }
+.colpin { border: 2px solid blue; }
+.error { border: 2px solid red; }
 </style>
 <table>
-<tr id=rowpins><td>Row pins:</td></tr>
-<tr id=colpins><td>Column pins:</td></tr>
+<tr id=rowpins>
+  <td>Row pins:</td>
+  <td><input class=rowpin size=1 value=0></td>
+  <td><input class=rowpin size=1 value=1></td>
+  <td><input class=rowpin size=1 value=2></td>
+  <td><input class=rowpin size=1 value=3></td>
+  <td><input class=rowpin size=1 value=4></td>
+  <td><input class=rowpin size=1 value=5></td>
+</tr>
+<tr id=colpins>
+  <td>Column pins:</td>
+  <td><input class=colpin size=1 value=16></td>
+  <td><input class=colpin size=1 value=17></td>
+  <td><input class=colpin size=1 value=18></td>
+  <td><input class=colpin size=1 value=19></td>
+  <td><input class=colpin size=1 value=20></td>
+  <td><input class=colpin size=1 value=21></td>
+</tr>
 </table>
-<table id=pinmap></table>
-<textarea id=keymaps cols=80 rows=10></textarea>
+<table id=pinmap>
+  <tr>
+    <td>left pinky</td>
+    <td>left ring</td>
+    <td>left middle</td>
+    <td>left index</td>
+    <td>left thumb</td>
+    <td>right thumb</td>
+    <td>right index</td>
+    <td>right middle</td>
+    <td>right ring</td>
+    <td>right pinky</td>
+  </tr>
+  <tr>
+    <td>
+      <input class=rowpin size=1 value=0>
+      <input class=colpin size=1 value=16>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=0>
+      <input class=colpin size=1 value=17>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=0>
+      <input class=colpin size=1 value=18>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=0>
+      <input class=colpin size=1 value=19>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=0>
+      <input class=colpin size=1 value=20>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=3>
+      <input class=colpin size=1 value=20>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=3>
+      <input class=colpin size=1 value=19>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=3>
+      <input class=colpin size=1 value=18>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=3>
+      <input class=colpin size=1 value=17>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=3>
+      <input class=colpin size=1 value=16>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <input class=rowpin size=1 value=1>
+      <input class=colpin size=1 value=16>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=1>
+      <input class=colpin size=1 value=17>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=1>
+      <input class=colpin size=1 value=18>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=1>
+      <input class=colpin size=1 value=19>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=1>
+      <input class=colpin size=1 value=20>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=4>
+      <input class=colpin size=1 value=20>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=4>
+      <input class=colpin size=1 value=19>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=4>
+      <input class=colpin size=1 value=18>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=4>
+      <input class=colpin size=1 value=17>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=4>
+      <input class=colpin size=1 value=16>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <input class=rowpin size=1 value=2>
+      <input class=colpin size=1 value=16>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=2>
+      <input class=colpin size=1 value=17>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=2>
+      <input class=colpin size=1 value=18>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=2>
+      <input class=colpin size=1 value=19>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=2>
+      <input class=colpin size=1 value=20>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=5>
+      <input class=colpin size=1 value=20>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=5>
+      <input class=colpin size=1 value=19>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=5>
+      <input class=colpin size=1 value=18>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=5>
+      <input class=colpin size=1 value=17>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=5>
+      <input class=colpin size=1 value=16>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+  </tr>
+  <tr>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>
+      <input class=rowpin size=1 value=0>
+      <input class=colpin size=1 value=21>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+    <td>
+      <input class=rowpin size=1 value=3>
+      <input class=colpin size=1 value=21>
+      <input size=1 value=a>
+      <input size=1 value=,>
+    </td>
+  </tr>
+</table>
+<textarea id=keymaps cols=100 rows=10></textarea>
 <script>
+function qSA(s, p) {
+  return Array.prototype.slice.apply((p || document).querySelectorAll(s));
+}
 function buildkeymaps() {
   console.debug('buildkeymaps');
+  var rowpinnums = [];
+  var colpinnums = [];
+  qSA('input', rowpins).forEach(function(input) {
+    rowpinnums.push(input.value);
+  });
+  qSA('input', colpins).forEach(function(input) {
+    colpinnums.push(input.value);
+  });
+  var keymapkeys = [[[], [], [], [], [], []], [[], [], [], [], [], []]];
+  qSA('td', pinmap).forEach(function(td) {
+    var inputs = td.querySelectorAll('input');
+    if (inputs.length === 0) return;
+    var rowpin = inputs[0].value;
+    var colpin = inputs[1].value;
+    var key0 = inputs[2].value;
+    var key1 = inputs[3].value;
+    var rowpini = rowpinnums.indexOf(rowpin);
+    var colpini = colpinnums.indexOf(colpin);
+    inputs[0].className = (rowpini < 0) ? 'error' : 'rowpin';
+    inputs[1].className = (colpini < 0) ? 'error' : 'colpin';
+  });
+  keymaps.value = '' + keymapkeys.map(function(x) {
+    return x;
+  }).join(', ');
 }
-for (var i = 0; i < 6; ++i) {
-  var input = document.createElement('input');
-  input.size = 1;
-  input.value = i + 1;
-  var td = document.createElement('td');
-  td.appendChild(input);
-  rowpins.appendChild(td);
-  var input = document.createElement('input');
-  input.size = 1;
-  input.value = i + 7;
-  td = document.createElement('td');
-  td.appendChild(input);
-  colpins.appendChild(td);
-}
-for (var rowi = 0; rowi < 4; ++rowi) {
-  var tr = document.createElement('tr');
-  pinmap.appendChild(tr);
-  for (var coli = 0; coli < 10; ++coli) {
-    var td = document.createElement('td');
-    tr.appendChild(td);
-    if ((rowi === 3) && ((coli < 4) || (coli > 5))) {
-      td.appendChild(document.createTextNode(' '));
-      continue;
-    }
-    var rowpin = document.createElement('input');
-    var colpin = document.createElement('input');
-    var mode0 = document.createElement('input');
-    var mode1 = document.createElement('input');
-    rowpin.className = 'rowpin';
-    colpin.className = 'colpin';
-    mode0.className = 'mode0';
-    mode1.className = 'mode1';
-    rowpin.placeholder = 'rowpin';
-    colpin.placeholder = 'colpin';
-    mode0.placeholder = 'key0';
-    mode1.placeholder = 'key1';
-    rowpin.size = 1;
-    colpin.size = 1;
-    mode0.size = 1;
-    mode1.size = 1;
-    td.appendChild(rowpin);
-    td.appendChild(colpin);
-    td.appendChild(mode0);
-    td.appendChild(mode1);
-    rowpin.addEventListener('keyup', buildkeymaps);
-    colpin.addEventListener('keyup', buildkeymaps);
-    mode0.addEventListener('keyup', buildkeymaps);
-    mode1.addEventListener('keyup', buildkeymaps);
-  }
-}
+qSA('input').forEach(function(input) {
+  input.addEventListener('keyup', buildkeymaps);
+});
 </script>
