@@ -9,7 +9,7 @@
 const char ROW_PINS[] = {0, 1, 2, 3, 4, 5};
 const char COLUMN_PINS[] = {16, 17, 18, 19, 20, 21};
 const char KEYMAPS[][sizeof(ROW_PINS) * sizeof(COLUMN_PINS)] = {
-  // https://cdn.rawgit.com/benshayden/github/f04a56/keyboard/keymaps.html
+  // https://cdn.rawgit.com/benshayden/github/da6ea8e/keyboard/keymaps.html
   {'z', 'b', 'm', 'h', KEY_BACKSPACE, 't', 'x', 'y', 'c', 'n', ' ', 'k', 'f', 'd', 'o', 'e', 'q', 'p', 'u', 's', KEY_ENTER, KEY_SHIFT, 'v', 'g', 'l', 'i', KEY_MODE, 'j', 'w', 'r', 'a', ';'},
   {'`', '[', '\'', KEY_UP, '=', '-', '|', '/', KEY_LEFT, KEY_RIGHT, KEY_CTRL, '\\', ']', '.', KEY_DOWN, ',', KEY_VOLDN, '9', '8', '7', KEY_TAB, KEY_SHIFT, KEY_VOLUP, '6', '5', '4', KEY_MODE, KEY_MACRO, '3', '2', '1', '0'}
 };
