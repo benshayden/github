@@ -196,7 +196,7 @@
     <td>
       <input class=rowpin size=1 value=5>
       <input class=colpin size=1 value=20>
-      <input size=1 value='t'>
+      <input size=1 value=';'>
       <input size=1 value='0'>
     </td>
     <td>
@@ -232,7 +232,7 @@
     <td>
       <input class=rowpin size=1 value=0>
       <input class=colpin size=1 value=21>
-      <input size=1 value=';'>
+      <input size=1 value='t'>
       <input size=1 value='-'>
     </td>
     <td>
@@ -294,9 +294,37 @@ function buildkeymaps() {
       }).join(', ');
     }).join(', ');
   }).join('},\n{') + '}';
+  save();
 }
 qSA('input').forEach(function(input) {
   input.addEventListener('keyup', buildkeymaps);
 });
+function save() {
+  var inputs = qSA('input');
+  try {
+    localStorage[location.path] = JSON.stringify(inputs.map(function(input) {
+      return input.value;
+    }));
+  } catch (e) {
+  }
+}
+function restore() {
+  try {
+    var saved = localStorage[location.path];
+  } catch (e) {
+    return;
+  }
+  if (!saved) return;
+  try {
+    saved = JSON.parse(saved);
+  } catch (e) {
+    return;
+  }
+  var inputs = qSA('input');
+  saved.forEach(function(value, index) {
+    inputs[index].value = value;
+  });
+}
+restore();
 buildkeymaps();
 </script>
