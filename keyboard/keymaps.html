@@ -277,11 +277,15 @@ function buildkeymaps() {
     keymapkeys[0][rowpini][colpini] = key0;
     keymapkeys[1][rowpini][colpini] = key1;
   });
-  if (!hadError) {
-    keymaps.value = '{' + keymapkeys.map(function(x) {
-      return x;
-    }).join('},\n{') + '}';
-  }
+  if (hadError)
+    return;
+  keymaps.value = '{' + keymapkeys.map(function(keymap) {
+    return keymap.map(function(row) {
+      return row.map(function(key) {
+        return (key.length === 1) ? "'" + key + "'" : key;
+      }).join(', ');
+    }).join(', ');
+  }).join('},\n{') + '}';
 }
 qSA('input').forEach(function(input) {
   input.addEventListener('keyup', buildkeymaps);
