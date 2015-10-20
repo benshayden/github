@@ -1,4 +1,5 @@
 data:text/html,<!doctype html>
+<title>Keypad matrix keymaps</title>
 <style>
 .rowpin { border: 2px solid green; }
 .colpin { border: 2px solid blue; }
@@ -258,6 +259,7 @@ function buildkeymaps() {
     colpinnums.push(input.value);
   });
   var keymapkeys = [[[], [], [], [], [], []], [[], [], [], [], [], []]];
+  var hadError = false;
   qSA('td', pinmap).forEach(function(td) {
     var inputs = td.querySelectorAll('input');
     if (inputs.length === 0) return;
@@ -269,12 +271,20 @@ function buildkeymaps() {
     var colpini = colpinnums.indexOf(colpin);
     inputs[0].className = (rowpini < 0) ? 'error' : 'rowpin';
     inputs[1].className = (colpini < 0) ? 'error' : 'colpin';
+    inputs[2].className = key0 ? '' : 'error';
+    inputs[3].className = key1 ? '' : 'error';
+    hadError = hadError || (rowpini < 0) || (colpini < 0) || !key0 || !key1;
+    keymapkeys[0][rowpini][colpini] = key0;
+    keymapkeys[1][rowpini][colpini] = key1;
   });
-  keymaps.value = '' + keymapkeys.map(function(x) {
-    return x;
-  }).join(', ');
+  if (!hadError) {
+    keymaps.value = '{' + keymapkeys.map(function(x) {
+      return x;
+    }).join('},\n{') + '}';
+  }
 }
 qSA('input').forEach(function(input) {
   input.addEventListener('keyup', buildkeymaps);
 });
+buildkeymaps();
 </script>
