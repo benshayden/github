@@ -6,15 +6,4 @@ It's easy to measure your fingers, but it can be difficult to know in advance ho
 
 [buttons](http://www.digikey.com/product-detail/en/EVQ-QJJ05Q/P8029SCT-ND/165317), [diodes](http://www.digikey.com/product-detail/en/1N914BTR/1N914BCT-ND/458919)
 
-matrix key:
-```
-row 012345
-col abcdef
-5a 4a 3a 2a 1a 1d 2d 3d 4d 5d
-5b 4b 3b 2b 1b 1e 2e 3e 4e 5e
-5c 4c 3c 2c 1c 1f 2f 3f 4f 5f
-            0c 0d
-left hand wires: 012345abc
-right hand wires: 012345def
-```
 TODO mm rulers
