@@ -258,6 +258,7 @@ function buildkeymaps() {
     colpinnums.push(input.value);
   });
   var keymapkeys = [[[], [], [], [], [], []], [[], [], [], [], [], []]];
+  var pinsmap = {};
   var keysmap = {};
   var hadError = false;
   qSA('td', pinmap).forEach(function(td) {
@@ -269,11 +270,11 @@ function buildkeymaps() {
     var key1 = inputs[3].value;
     var rowpini = rowpinnums.indexOf(rowpin);
     var colpini = colpinnums.indexOf(colpin);
-    inputs[0].className = (rowpini < 0) ? 'error' : 'rowpin';
-    inputs[1].className = (colpini < 0) ? 'error' : 'colpin';
+    inputs[0].className = ((rowpini < 0) || pinsmap[rowpini + ',' + colpini]) ? 'error' : 'rowpin';
+    inputs[1].className = ((colpini < 0) || pinsmap[rowpini + ',' + colpini]) ? 'error' : 'colpin';
     inputs[2].className = (key0 && !keysmap[key0]) ? '' : 'error';
     inputs[3].className = (key1 && !keysmap[key1]) ? '' : 'error';
-    hadError = hadError || (rowpini < 0) || (colpini < 0) || !key0 || !key1 || keysmap[key0] || keysmap[key1];
+    hadError = hadError || (rowpini < 0) || (colpini < 0) || !key0 || !key1 || keysmap[key0] || keysmap[key1] || pinsmap[rowpini + ',' + colpini];
     keymapkeys[0][rowpini][colpini] = key0;
     keymapkeys[1][rowpini][colpini] = key1;
     if (keysmap[key0]) {
@@ -282,8 +283,13 @@ function buildkeymaps() {
     if (keysmap[key1]) {
       keysmap[key1].className = 'error';
     }
+    if (pinsmap[rowpini + ',' + colpini]) {
+      pinsmap[rowpini + ',' + colpini][0].className = 'error';
+      pinsmap[rowpini + ',' + colpini][1].className = 'error';
+    }
     keysmap[key0] = inputs[2];
     keysmap[key1] = inputs[3];
+    pinsmap[rowpini + ',' + colpini] = [inputs[0], inputs[1]];
   });
   if (hadError)
     return;
