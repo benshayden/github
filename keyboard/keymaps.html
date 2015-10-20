@@ -1,0 +1,67 @@
+<!doctype html>
+<style>
+.rowpin, .colpin, .mode0, .mode1 {
+  display: block;
+}
+</style>
+<table>
+<tr id=rowpins><td>Row pins:</td></tr>
+<tr id=colpins><td>Column pins:</td></tr>
+</table>
+<table id=pinmap></table>
+<textarea id=keymaps cols=80 rows=10></textarea>
+<script>
+function buildkeymaps() {
+  console.debug('buildkeymaps');
+}
+for (var i = 0; i < 6; ++i) {
+  var input = document.createElement('input');
+  input.size = 1;
+  input.value = i + 1;
+  var td = document.createElement('td');
+  td.appendChild(input);
+  rowpins.appendChild(td);
+  var input = document.createElement('input');
+  input.size = 1;
+  input.value = i + 7;
+  td = document.createElement('td');
+  td.appendChild(input);
+  colpins.appendChild(td);
+}
+for (var rowi = 0; rowi < 4; ++rowi) {
+  var tr = document.createElement('tr');
+  pinmap.appendChild(tr);
+  for (var coli = 0; coli < 10; ++coli) {
+    var td = document.createElement('td');
+    tr.appendChild(td);
+    if ((rowi === 3) && ((coli < 4) || (coli > 5))) {
+      td.appendChild(document.createTextNode(' '));
+      continue;
+    }
+    var rowpin = document.createElement('input');
+    var colpin = document.createElement('input');
+    var mode0 = document.createElement('input');
+    var mode1 = document.createElement('input');
+    rowpin.className = 'rowpin';
+    colpin.className = 'colpin';
+    mode0.className = 'mode0';
+    mode1.className = 'mode1';
+    rowpin.placeholder = 'rowpin';
+    colpin.placeholder = 'colpin';
+    mode0.placeholder = 'key0';
+    mode1.placeholder = 'key1';
+    rowpin.size = 1;
+    colpin.size = 1;
+    mode0.size = 1;
+    mode1.size = 1;
+    td.appendChild(rowpin);
+    td.appendChild(colpin);
+    td.appendChild(mode0);
+    td.appendChild(mode1);
+    rowpin.addEventListener('keyup', buildkeymaps);
+    colpin.addEventListener('keyup', buildkeymaps);
+    mode0.addEventListener('keyup', buildkeymaps);
+    mode1.addEventListener('keyup', buildkeymaps);
+  }
+}
+</script>
