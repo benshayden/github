@@ -1,4 +1,4 @@
-Flat keyboards require fingers to reach a long way. 3d-printing allows custom tailoring a keyboard so all of the buttons are literally right at your fingertips, reducing travel distance to zero.
+Flat keyboards require fingers to reach a long way. 3D Printing allows custom tailoring a keyboard to reduce travel distance to zero by placing all of the buttons literally right at your fingertips.
 
 It's easy to measure your fingers, but it can be difficult to know in advance how to space and angle the buttons between fingers for optimal comfort. A stiff but malleable wire such as a coat hanger can keep the buttons in place while typing, and still allow remodelling without waiting for a 3d-printer to reprint the entire keyboard and waste material.
 
