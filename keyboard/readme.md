@@ -10,5 +10,6 @@ Required Materials:
  * [diodes](http://www.digikey.com/product-detail/en/1N914BTR/1N914BCT-ND/458919)
  * current-limiting resistors
  * jumper wire
+ * soldering iron, solder
 
 TODO mm rulers
