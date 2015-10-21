@@ -6,24 +6,27 @@ var cylinder, cube, sphere, linear_extrude, union, polygon;
 function getParameterDefinitions() {
   var params = [];
   params.push({name: 'displayMode', type: 'choice', values: ['visual', 'printable']});
-  params.push({name: 'part', type: 'choice', values: ['all', 'base', 'thumb', 'finger']});
   params.push({name: 'baseBones', type: 'float', initial: 13});
   params.push({name: 'baseWidth', type: 'float', initial: 50});
   params.push({name: 'boneDiameter', type: 'float', initial: 3.5});
   params.push({name: 'buttonSide', type: 'float', initial: 8});
   params.push({name: 'color', type: 'text', initial: '667fe5'});
   params.push({name: 'boneColor', type: 'text', initial: 'ffffff'});
+  var parts = ['all', 'base'];
   ['left', 'right'].forEach(function(hand) {
+    parts.push(hand + 'Thumb');
     params.push({name: hand + 'ThumbHeight', type: 'float', initial: 20});
     params.push({name: hand + 'ThumbFrontWidth', type: 'float', initial: 5});
     params.push({name: hand + 'ThumbBackWidth', type: 'float', initial: 7});
     for (var digit = 1; digit < 5; ++digit) {
+      parts.push(hand + digit);
       params.push({name: hand + digit + 'FrontHeight', type: 'float', initial: 4});
       params.push({name: hand + digit + 'BackHeight', type: 'float', initial: 7});
       params.push({name: hand + digit + 'FrontWidth', type: 'float', initial: 4});
       params.push({name: hand + digit + 'BackWidth', type: 'float', initial: 6});
     }
   });
+  params.unshift({name: 'part', type: 'choice', values: parts});
   return params;
 }
 
