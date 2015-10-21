@@ -5,7 +5,6 @@ var cylinder, cube, sphere, linear_extrude, union, polygon;
 
 function getParameterDefinitions() {
   var params = [];
-  params.push({name: 'displayMode', type: 'choice', values: ['visual', 'printable']});
   params.push({name: 'baseBones', type: 'float', initial: 13});
   params.push({name: 'baseWidth', type: 'float', initial: 50});
   params.push({name: 'boneDiameter', type: 'float', initial: 3.5});
@@ -408,6 +407,9 @@ function main(params) {
   var world = [];
 
   for (var left = 0; left < 2; ++left) {
+    if (params.part.indexOf('left') === 0) {
+      left = 1;
+    }
     var hand = left ? 'left' : 'right';
     var thumbHeight = params[hand + 'ThumbHeight'];
     var thumbFrontWidth = params[hand + 'ThumbFrontWidth'];
@@ -419,37 +421,29 @@ function main(params) {
     }
     var thumbBounds = thumb.getBounds();
     var handBase = base;
-
-    if (params.displayMode === 'visual') {
-      thumb = makeThumbButtons(thumbHeight, thumbFrontWidth, thumbBackWidth, params.buttonSide, thumb, button);
-      handBase = handBase.union(makeBaseBones(params.baseWidth, params.baseBones, params.boneDiameter, handBase, bone, bend).setColor(params.boneColor));
-      thumb = thumb.union(makeThumbBones(params.buttonSide, params.boneDiameter, thumb, bone, bend).setColor(params.boneColor));
-      thumb = thumb.rotateX(90);
+    thumb = makeThumbButtons(thumbHeight, thumbFrontWidth, thumbBackWidth, params.buttonSide, thumb, button);
+    handBase = handBase.union(makeBaseBones(params.baseWidth, params.baseBones, params.boneDiameter, handBase, bone, bend).setColor(params.boneColor));
+    thumb = thumb.union(makeThumbBones(params.buttonSide, params.boneDiameter, thumb, bone, bend).setColor(params.boneColor));
+    thumb = thumb.rotateX(90);
       
-      if (left) {
-        thumb = thumb.rotateZ(180);
-        handBase = handBase.rotateZ(180);
-        thumb = thumb.translate([-params.buttonSide, params.buttonSide, params.buttonSide + (params.baseWidth / 2)]);
-        handBase = handBase.translate([-params.buttonSide, params.baseWidth]);
-      } else {
-        thumb = thumb.translate([params.buttonSide, 2 * params.buttonSide, params.buttonSide + (params.baseWidth / 2)]);
-        handBase = handBase.translate([params.buttonSide, 0]);
-      }
-      world.push(makeThumbConnectionBone(left, params.buttonSide, params.boneDiameter, handBase, thumb, bone, bend).setColor(params.boneColor));
+    if (left) {
+      thumb = thumb.rotateZ(180);
+      handBase = handBase.rotateZ(180);
+      thumb = thumb.translate([-params.buttonSide, params.buttonSide, params.buttonSide + (params.baseWidth / 2)]);
+      handBase = handBase.translate([-params.buttonSide, params.baseWidth]);
     } else {
-      thumb = thumb.rotateZ(90);
-      thumb = thumb.translate([thumbBounds[1].y, params.baseWidth + 1, 0]);
-      if (!left) {
-        thumb = thumb.rotateZ(180);
-        thumb = thumb.translate([-1, thumbBounds[1].y - params.buttonSide]);
-        handBase = handBase.rotateZ(180);
-        handBase = handBase.translate([-1, thumbBounds[1].y - params.buttonSide]);
-      }
+      thumb = thumb.translate([params.buttonSide, 2 * params.buttonSide, params.buttonSide + (params.baseWidth / 2)]);
+      handBase = handBase.translate([params.buttonSide, 0]);
     }
+    world.push(makeThumbConnectionBone(left, params.buttonSide, params.boneDiameter, handBase, thumb, bone, bend).setColor(params.boneColor));
     world.push(thumb);
     world.push(handBase);
 
-    for (var digit = 1; digit < 5; ++digit) {
+    var digit = 1;
+    if (params.part.indexOf(hand) === 0) {
+      digit = parseInt(params.substr(hand.length));
+    }
+    for (; digit < 5; ++digit) {
       var frontHeight = params[hand + digit + 'FrontHeight'];
       var backHeight = params[hand + digit + 'BackHeight'];
       var frontWidth = params[hand + digit + 'FrontWidth'];
@@ -460,32 +454,14 @@ function main(params) {
         return finger;
       }
       var fingerBounds = finger.getBounds();
-
-      if (params.displayMode === 'visual') {
-        finger = makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, params.buttonSide, finger, button);
-        finger = finger.union(makeFingerBones(frontWidth + backWidth, params.buttonSide, params.boneDiameter, bone, bend).setColor(params.boneColor));
-        finger = finger.rotateX(90).rotateZ(-90);
-        finger = finger.translate([
-              (left ? -1 : 1) * (thumbBounds[1].x + params.buttonSide * (2 * digit + !left)),
-              fingerBounds[1].x - fingerBounds[0].x,
-              params.buttonSide + (params.baseWidth / 2)]);
-        world.push(makeFingerConnectionBone(left, digit, params.buttonSide, params.boneDiameter, params.baseBones, handBase, finger, bone, bend).setColor(params.boneColor));
-      } else {
-        finger = finger.rotateZ(((digit % 2) ? -1 : 1) * 90);
-        if (digit === 1) {
-          finger = finger.translate([0, -10]);
-        } else if (digit === 2) {
-          finger = finger.translate([3.5 * params.buttonSide + frontHeight + 1, -1 - fingerBounds[1].x]);
-        } else if (digit === 3) {
-          finger = finger.translate([3.5 * params.buttonSide + frontHeight + 2, -10]);
-        } else if (digit === 4) {
-          finger = finger.translate([8 * params.buttonSide + frontHeight, -1 - fingerBounds[1].x]);
-        }
-        if (!left) {
-          finger = finger.rotateZ(180);
-          finger = finger.translate([-1, thumbBounds[1].y - params.buttonSide]);
-        }
-      }
+      finger = makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, params.buttonSide, finger, button);
+      finger = finger.union(makeFingerBones(frontWidth + backWidth, params.buttonSide, params.boneDiameter, bone, bend).setColor(params.boneColor));
+      finger = finger.rotateX(90).rotateZ(-90);
+      finger = finger.translate([
+            (left ? -1 : 1) * (thumbBounds[1].x + params.buttonSide * (2 * digit + !left)),
+            fingerBounds[1].x - fingerBounds[0].x,
+            params.buttonSide + (params.baseWidth / 2)]);
+      world.push(makeFingerConnectionBone(left, digit, params.buttonSide, params.boneDiameter, params.baseBones, handBase, finger, bone, bend).setColor(params.boneColor));
       world.push(finger);
     }
   }
