@@ -414,7 +414,7 @@ function main(params) {
     var thumbBackWidth = params[hand + 'ThumbBackWidth'];
     var thumb = makeThumb(thumbHeight, thumbFrontWidth, thumbBackWidth, params.buttonSide, wire, corner, bone);
     thumb = thumb.setColor(params.color);
-    if (params.part === 'thumb') {
+    if (params.part === hand + 'Thumb') {
       return thumb;
     }
     var thumbBounds = thumb.getBounds();
@@ -456,7 +456,7 @@ function main(params) {
       var backWidth = params[hand + digit + 'BackWidth'];
       var finger = makeFinger(frontHeight, backHeight, frontWidth, backWidth, params.buttonSide, wire, dome, corner, bone);
       finger = finger.setColor(params.color);
-      if (params.part === 'finger') {
+      if (params.part === hand + digit) {
         return finger;
       }
       var fingerBounds = finger.getBounds();
