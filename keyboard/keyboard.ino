@@ -23,10 +23,10 @@ char KEYMAPS[][sizeof(ROW_PINS) * sizeof(COLUMN_PINS)] = {
 #define ARRAYSIZE(a) (sizeof(a) / sizeof((a)[0]))
 char mode = 0;
 Keypad keypad(KEYMAPS[mode], ROW_PINS, COLUMN_PINS, sizeof(ROW_PINS), sizeof(COLUMN_PINS));
-keypad.setDebounceTime(DEBOUNCE_MS);
-keypad.setHoldTime(HOLD_MS);
 
 void setup() {
+  keypad.setDebounceTime(DEBOUNCE_MS);
+  keypad.setHoldTime(HOLD_MS);
   Keyboard.begin();
 }
 
