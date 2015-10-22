@@ -237,6 +237,9 @@ function makeFinger(frontHeight, backHeight, frontWidth, backWidth, buttonSide, 
   piece = piece.subtract(wire.rotateZ(-90).translate([0, (1.5 * buttonSide) + frontHeight]));
   finger.push(piece);
   
+  piece = seat.rotateZ(-90).translate([buttonSide, (1.5 * buttonSide) + frontHeight - 1, 0]);
+  finger.push(piece);
+  
   piece = corner.rotateZ(180);
   piece = piece.translate([buttonSide, buttonSide]);
   finger.push(piece);
@@ -404,7 +407,6 @@ function main(params) {
   var bend = makeBend(params.boneDiameter);
   var button = makeButton(params.buttonSide);
   var seat = makeSeat(params.buttonSide);
-  return seat;
   var base = makeBase(params.baseWidth, params.baseBones, params.boneDiameter, bone);
   base = base.setColor(params.color);
   if (params.part === 'base') {
@@ -449,7 +451,7 @@ function main(params) {
 
     var digit = 1;
     if (params.part.indexOf(hand) === 0) {
-      digit = parseInt(params.substr(hand.length));
+      digit = parseInt(params.part.substr(hand.length));
     }
     for (; digit < 5; ++digit) {
       var frontHeight = params[hand + digit + 'FrontHeight'];
