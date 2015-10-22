@@ -216,7 +216,9 @@ function makeBaseBones(baseWidth, baseBones, boneDiameter, base, bone, bend) {
 
 function makeButton(buttonSide) {
   var button = [];
-  var piece = cube({size: [buttonSide, buttonSide, 2]});
+  var piece = cube({size: [buttonSide, buttonSide, 1]});
+  piece = piece.translate([0, 0, 1]);
+  piece = piece.union(cube({size: [buttonSide / 2, buttonSide, 1]}));
   button.push(piece.setColor(0, 0, 0));
 
   piece = cylinder({r: 2, h: 2});
