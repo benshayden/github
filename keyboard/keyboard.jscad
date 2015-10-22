@@ -252,6 +252,9 @@ function makeFinger(frontHeight, backHeight, frontWidth, backWidth, buttonSide, 
   piece = piece.subtract(wire.translate([frontWidth + (1.5 * buttonSide), 0]));
   finger.push(piece);
   
+  piece = seat.translate([frontWidth + (1.5 * buttonSide) + 1, buttonSide, 0]);
+  finger.push(piece);
+  
   piece = corner.rotateZ(-90);
   piece = piece.translate([buttonSide + frontWidth + buttonSide + backWidth, buttonSide]);
   finger.push(piece);
@@ -260,6 +263,9 @@ function makeFinger(frontHeight, backHeight, frontWidth, backWidth, buttonSide, 
   piece = cube({size: [buttonSide, buttonSide + backHeight, buttonSide]});
   piece = piece.translate([backX, buttonSide]);
   piece = piece.subtract(wire.rotateZ(-90).translate([backX, (1.5 * buttonSide) + backHeight]));
+  finger.push(piece);
+  
+  piece = seat.rotateZ(-90).translate([backX - 1, (1.5 * buttonSide) + backHeight - 1, 0]);
   finger.push(piece);
   
   piece = dome.translate([backX, 2 * buttonSide + backHeight]);
