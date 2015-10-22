@@ -3,7 +3,7 @@
 <style>
 .rowpin { border: 2px solid green; width: 1.5em; }
 .colpin { border: 2px solid blue; width: 1.5em; }
-.error { border: 2px solid red; }
+.error { border: 2px solid red; width: 1.5em; }
 .modekey { display: block; width: 4em; }
 </style>
 <table>
@@ -279,8 +279,8 @@ function buildkeymaps() {
     var colpini = colpinnums.indexOf(colpin);
     inputs[0].className = ((rowpini < 0) || pinsmap[rowpini + ',' + colpini]) ? 'error' : 'rowpin';
     inputs[1].className = ((colpini < 0) || pinsmap[rowpini + ',' + colpini]) ? 'error' : 'colpin';
-    inputs[2].className = (key0 && !keysmap[key0]) ? '' : 'error';
-    inputs[3].className = (key1 && !keysmap[key1]) ? '' : 'error';
+    inputs[2].className = 'modekey ' + ((key0 && !keysmap[key0]) ? '' : 'error');
+    inputs[3].className = 'modekey ' + ((key1 && !keysmap[key1]) ? '' : 'error');
     hadError = hadError || (rowpini < 0) || (colpini < 0) || !key0 || !key1 || keysmap[key0] || keysmap[key1] || pinsmap[rowpini + ',' + colpini];
     keymapkeys[0][rowpini][colpini] = key0;
     keymapkeys[1][rowpini][colpini] = key1;
