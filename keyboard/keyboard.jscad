@@ -218,7 +218,8 @@ function makeButton(buttonSide) {
   var button = [];
   var piece = cube({size: [buttonSide, buttonSide, 1]});
   piece = piece.translate([0, 0, 1]);
-  piece = piece.union(cube({size: [buttonSide / 2, buttonSide, 1]}));
+  piece = piece.union(cube({size: [buttonSide, buttonSide / 2, 1]}));
+  piece = piece.union(cube({size: [buttonSide - 4, buttonSide / 2, 1]}).translate([2, buttonSide / 2, 0]));
   button.push(piece.setColor(0, 0, 0));
 
   piece = cylinder({r: 2, h: 2});
@@ -233,8 +234,7 @@ function makeButton(buttonSide) {
   piece = piece.translate([buttonSide - 1, 0, 0]);
   button.push(piece);
 
-  button = union(button);
-  return button;
+  return union(button);
 }
 
 function makeFinger(frontHeight, backHeight, frontWidth, backWidth, buttonSide, wire, dome, corner, bone, seat) {
@@ -251,67 +251,68 @@ function makeFinger(frontHeight, backHeight, frontWidth, backWidth, buttonSide, 
   piece = corner.rotateZ(180);
   piece = piece.translate([buttonSide, buttonSide]);
   finger.push(piece);
-  
+
   piece = dome.translate([0, 2 * buttonSide + frontHeight]);
   finger.push(piece);
-  
+
   piece = cube({size: [frontWidth + buttonSide + backWidth, buttonSide, buttonSide]}).translate([0, 0, 0]);
   piece = piece.translate([buttonSide, 0]);
   piece = piece.subtract(wire.translate([frontWidth + (1.5 * buttonSide), 0]));
   finger.push(piece);
-  
+
   piece = seat.translate([frontWidth + (1.5 * buttonSide) + 1, buttonSide, 0]);
   finger.push(piece);
-  
+
   piece = corner.rotateZ(-90);
   piece = piece.translate([buttonSide + frontWidth + buttonSide + backWidth, buttonSide]);
   finger.push(piece);
-  
+
   var backX = buttonSide + frontWidth + buttonSide + backWidth;
   piece = cube({size: [buttonSide, buttonSide + backHeight, buttonSide]});
   piece = piece.translate([backX, buttonSide]);
   piece = piece.subtract(wire.rotateZ(-90).translate([backX, (1.5 * buttonSide) + backHeight]));
   finger.push(piece);
-  
+
   piece = seat.rotateZ(-90).translate([backX - 1, (1.5 * buttonSide) + backHeight - 1, 0]);
   finger.push(piece);
-  
+
   piece = dome.translate([backX, 2 * buttonSide + backHeight]);
   finger.push(piece);
 
   finger = union(finger);
-  
+
   piece = bone.scale([1, 1, 2 * buttonSide + backHeight]);
   piece = piece.rotateX(-90);
   piece = piece.translate([backX + buttonSide / 2, 0, buttonSide / 2]);
   finger = finger.subtract(piece);
-  
+
   piece = bone.scale([1, 1, backX + buttonSide / 2]);
   piece = piece.rotateY(90);
   piece = piece.translate([0, 0, buttonSide / 2]);
   finger = finger.subtract(piece);
-  
+
   return finger;
 }
 
 function makeThumbButtons(height, frontWidth, backWidth, buttonSide, thumb, button) {
+  button = button.rotateZ(180).translate([buttonSide, buttonSide, 0]);
   var piece = button.rotateX(-90).rotateY(90);
-  piece = piece.translate([2 * buttonSide + frontWidth + 0.7, buttonSide, buttonSide]);
+  piece = piece.translate([2 * buttonSide + frontWidth, buttonSide, buttonSide]);
   thumb = thumb.union(piece);
-  
+
   piece = button.rotateY(90);
-  piece = piece.translate([buttonSide, buttonSide + height / 2 - 0.7, buttonSide]);
+  piece = piece.translate([buttonSide, buttonSide + height / 2, buttonSide]);
   thumb = thumb.union(piece);
-  
+
   piece = button.rotateX(90).rotateY(-90);
-  piece = piece.translate([2 * buttonSide + frontWidth + 0.7, 2 * buttonSide + height]);
+  piece = piece.translate([2 * buttonSide + frontWidth, 2 * buttonSide + height]);
   thumb = thumb.union(piece);
-  
+
   piece = cube({size: [buttonSide, buttonSide, buttonSide]});
   piece = piece.translate([0, 0, -2]);
   piece = button.intersect(piece);
   piece = piece.rotateY(-90);
-  piece = piece.translate([2 * buttonSide + frontWidth + backWidth, buttonSide + height / 2 - 0.7]);
+  piece = piece.translate([2 * buttonSide + frontWidth + backWidth, buttonSide + height / 2]);
   thumb = thumb.union(piece);
   return thumb;
 }
@@ -320,13 +321,13 @@ function makeFingerButtons(frontHeight, backHeight, frontWidth, backWidth, butto
   var piece = button.rotateX(-90).rotateY(-90);
   piece = piece.translate([buttonSide + frontWidth, buttonSide]);
   finger = finger.union(piece);
-  
+
   piece = button.rotateY(90).rotateX(180);
   piece = piece.translate([buttonSide, 2 * buttonSide + frontHeight]);
   finger = finger.union(piece);
-  
-  piece = button.rotateY(-90);
-  piece = piece.translate([2 * buttonSide + frontWidth + backWidth, buttonSide + backHeight - 0.7]);
+
+  piece = button.rotateZ(180).translate([buttonSide, buttonSide, 0]).rotateY(-90);
+  piece = piece.translate([2 * buttonSide + frontWidth + backWidth, buttonSide + backHeight]);
   finger = finger.union(piece);
   return finger;
 }
@@ -449,7 +450,7 @@ function main(params) {
     handBase = handBase.union(makeBaseBones(params.baseWidth, params.baseBones, params.boneDiameter, handBase, bone, bend).setColor(params.boneColor));
     thumb = thumb.union(makeThumbBones(params.buttonSide, params.boneDiameter, thumb, bone, bend).setColor(params.boneColor));
     thumb = thumb.rotateX(90);
-      
+
     if (left) {
       thumb = thumb.rotateZ(180);
       handBase = handBase.rotateZ(180);
