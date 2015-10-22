@@ -55,8 +55,8 @@ function makeWire(buttonSide) {
 }
 
 function makeSeat(buttonSide) {
-  var seat = cube({size: [3, 1.5, 1]});
-  seat = seat.union(seat.translate([0, buttonSide - 1.5, 0]));
+  var seat = cube({size: [3, 1, 1.5]});
+  seat = seat.union(seat.translate([0, 0, buttonSide - 1.5]));
   return seat;
 }
 
@@ -74,7 +74,7 @@ function makeBend(boneDiameter) {
   return sphere({r: boneDiameter / 2, center: true});
 }
 
-function makeThumb(height, frontWidth, backWidth, buttonSide, wire, corner, bone) {
+function makeThumb(height, frontWidth, backWidth, buttonSide, wire, corner, bone, seat) {
   var width = frontWidth + backWidth;
   var thumb = [];
   
@@ -229,7 +229,7 @@ function makeButton(buttonSide) {
   return button;
 }
 
-function makeFinger(frontHeight, backHeight, frontWidth, backWidth, buttonSide, wire, dome, corner, bone) {
+function makeFinger(frontHeight, backHeight, frontWidth, backWidth, buttonSide, wire, dome, corner, bone, seat) {
   var finger = [];
   
   var piece = cube({size: [buttonSide, buttonSide + frontHeight, buttonSide]});
@@ -422,7 +422,7 @@ function main(params) {
     var thumbHeight = params[hand + 'ThumbHeight'];
     var thumbFrontWidth = params[hand + 'ThumbFrontWidth'];
     var thumbBackWidth = params[hand + 'ThumbBackWidth'];
-    var thumb = makeThumb(thumbHeight, thumbFrontWidth, thumbBackWidth, params.buttonSide, wire, corner, bone);
+    var thumb = makeThumb(thumbHeight, thumbFrontWidth, thumbBackWidth, params.buttonSide, wire, corner, bone, seat);
     thumb = thumb.setColor(params.color);
     if (params.part === hand + 'Thumb') {
       return thumb;
@@ -456,7 +456,7 @@ function main(params) {
       var backHeight = params[hand + digit + 'BackHeight'];
       var frontWidth = params[hand + digit + 'FrontWidth'];
       var backWidth = params[hand + digit + 'BackWidth'];
-      var finger = makeFinger(frontHeight, backHeight, frontWidth, backWidth, params.buttonSide, wire, dome, corner, bone);
+      var finger = makeFinger(frontHeight, backHeight, frontWidth, backWidth, params.buttonSide, wire, dome, corner, bone, seat);
       finger = finger.setColor(params.color);
       if (params.part === hand + digit) {
         return finger;
