@@ -54,6 +54,12 @@ function makeWire(buttonSide) {
   return wire;
 }
 
+function makeSeat(buttonSide) {
+  var seat = cube({size: [3, 1.5, 1]});
+  seat = seat.union(seat.translate([0, buttonSide - 1.5, 0]));
+  return seat;
+}
+
 function makeCorner(buttonSide) {
   var corner = cylinder({r: buttonSide, h: buttonSide});
   corner = corner.intersect(cube({size:[buttonSide, buttonSide, buttonSide]}));
@@ -397,6 +403,8 @@ function main(params) {
   var bone = makeBone(params.boneDiameter);
   var bend = makeBend(params.boneDiameter);
   var button = makeButton(params.buttonSide);
+  var seat = makeSeat(params.buttonSide);
+  return seat;
   var base = makeBase(params.baseWidth, params.baseBones, params.boneDiameter, bone);
   base = base.setColor(params.color);
   if (params.part === 'base') {
