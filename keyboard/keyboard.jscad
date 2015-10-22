@@ -77,43 +77,49 @@ function makeBend(boneDiameter) {
 function makeThumb(height, frontWidth, backWidth, buttonSide, wire, corner, bone, seat) {
   var width = frontWidth + backWidth;
   var thumb = [];
-  
+
   var piece = cube({size: [buttonSide, buttonSide + height, buttonSide]});
   piece = piece.subtract(wire.rotateZ(-90).translate([0, (buttonSide + height) / 2, 0]));
   piece = piece.translate([0, buttonSide, 0]);
   thumb.push(piece);
-  
+
   piece = piece.translate([buttonSide + width + buttonSide, 0]);
   piece = piece.subtract(piece.translate([2, 0]));
   thumb.push(piece);
+
+  thumb.push(seat.rotateZ(-90).translate([buttonSide, buttonSide + ((buttonSide + height) / 2) - 1, 0]));
+  thumb.push(seat.rotateZ(-90).translate([buttonSide + width + buttonSide - 1, buttonSide + ((buttonSide + height) / 2) - 1, 0]));
 
   piece = cube({size: [buttonSide + width, buttonSide, buttonSide]});
   piece = piece.subtract(wire.translate([(buttonSide / 2) + frontWidth, 0, 0]));
   piece = piece.translate([buttonSide, 0, 0]);
   thumb.push(piece);
-  
+
   piece = piece.translate([0, buttonSide + height + buttonSide]);
   thumb.push(piece);
-  
+
+  thumb.push(seat.translate([(1.5 * buttonSide) + frontWidth + 1, buttonSide, 0]));
+  thumb.push(seat.translate([(1.5 * buttonSide) + frontWidth + 1, buttonSide + height + buttonSide - 1, 0]));
+
   piece = corner.rotateZ(180);
   piece = piece.translate([buttonSide, buttonSide, 0]);
   thumb.push(piece);
-  
+
   piece = corner.rotateZ(90);
   piece = piece.translate([buttonSide, buttonSide + height + buttonSide]);
   thumb.push(piece);
-  
+
   piece = corner.scale([1 / 4, 1, 1]);
   piece = piece.translate([buttonSide + width + buttonSide, buttonSide + height + buttonSide]);
   thumb.push(piece);
-  
+
   piece = corner.rotateZ(-90);
   piece = piece.scale([1 / 4, 1, 1]);
   piece = piece.translate([buttonSide + width + buttonSide, buttonSide]);
   thumb.push(piece);
 
   thumb = union(thumb);
-  
+
   piece = bone.scale([1, 1, buttonSide + height + buttonSide + (buttonSide / 2)]);
   piece = piece.rotateX(-90);
   piece = piece.translate([0, 0, buttonSide / 2]);
