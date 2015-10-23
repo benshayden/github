@@ -1,6 +1,10 @@
 Flat keyboards require fingers to reach a long way. 3D Printing allows custom tailoring a keyboard to reduce travel distance to zero by placing all of the buttons literally right at your fingertips.
 
+[](TODO picture)
+
 It's easy to measure fingertips, but more difficult to know in advance the best way to position the fingers relative to each other. A stiff but malleable wire such as a coat hanger can keep the buttons in place while typing, and still allow remodelling without waiting for a 3d-printer to reprint the entire keyboard and waste material.
+
+[](TODO picture)
 
 Materials:
  * [3D-printed parts](http://openjscad.org/#https://raw.githubusercontent.com/benshayden/github/master/keyboard/keyboard.jscad). Configure the parameters to fit your fingers. When it looks right, select each part and download the STL files for each part. [Clean up the STL files](https://netfabb.azurewebsites.net/). Print them at [fictiv](https://www.fictiv.com/) or [Shapeways](http://www.shapeways.com/) or [i.materialise](http://i.materialise.com/) or [UPS](http://www.theupsstore.com/small-business-solutions/Pages/3d-printing-locations.aspx) or a [local hackerspace](http://hackerspaces.org/wiki/List_of_Hacker_Spaces) or your own printer.
@@ -12,3 +16,5 @@ Materials:
  * jumper wire
  * soldering iron, solder
  * optional [optical motion sensor](https://www.tindie.com/products/jkicklighter/adns-9800-optical-laser-sensor/)
+
+[](http://www.digikey.com/product-search/en?vendor=0&keywords=MX1A-C1NN&stock=1)
