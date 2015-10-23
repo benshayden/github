@@ -22,11 +22,11 @@ function getParameterDefinitions() {
       params.push({name: hand + digit + 'FrontHeight', type: 'float',
                    initial: [[6, 5, 5, 5], [7, 7, 7, 6]][handi][digit - 1]});
       params.push({name: hand + digit + 'BackHeight', type: 'float',
-                   initial: [[9, 10, 9, 7], [10, 10, 8, 7]][handi][digit]});
+                   initial: [[9, 10, 9, 7], [10, 10, 8, 7]][handi][digit - 1]});
       params.push({name: hand + digit + 'FrontWidth', type: 'float',
-                   initial: [[6, 6, 6, 4], [5, 5, 6.5, 5]][handi][digit]});
+                   initial: [[6, 6, 6, 4], [5, 5, 6.5, 5]][handi][digit - 1]});
       params.push({name: hand + digit + 'BackWidth', type: 'float',
-                   initial: [[7, 8, 8, 7], [8, 9, 8, 7]][handi][digit]});
+                   initial: [[7, 8, 8, 7], [8, 9, 8, 7]][handi][digit - 1]});
     }
   });
   params.unshift({name: 'part', type: 'choice', values: parts});
