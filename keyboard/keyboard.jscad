@@ -51,6 +51,15 @@ function makeDome(buttonSide) {
    return dome;
 }
 
+function makeLabel(text) {
+  var label = [];
+  var s = 0.16;
+  vector_text(0, 0, text).forEach(function(s) {
+    label.push(rectangular_extrude(s, {w: 3, h: 1 / s}));
+  });
+  return union(label).scale(s);
+}
+
 function makeWire(buttonSide) {
   var wire = [[0.5, 0], [0, 0.5], [0, 2], [0.5, 2.5], [1, 2], [1, 0.5]];
   wire = linear_extrude({height: buttonSide}, polygon(wire)).rotateX(90).translate([0,buttonSide, -0.5]);
@@ -241,7 +250,7 @@ function makeButton(buttonSide) {
   return union(button);
 }
 
-function makeFinger(frontHeight, backHeight, frontWidth, backWidth, buttonSide, wire, dome, corner, bone, seat) {
+function makeFinger(frontHeight, backHeight, frontWidth, backWidth, buttonSide, wire, dome, corner, bone, seat, label) {
   var finger = [];
   
   var piece = cube({size: [buttonSide, buttonSide + frontHeight, buttonSide]});
@@ -477,7 +486,8 @@ function main(params) {
       var backHeight = params[hand + digit + 'BackHeight'];
       var frontWidth = params[hand + digit + 'FrontWidth'];
       var backWidth = params[hand + digit + 'BackWidth'];
-      var finger = makeFinger(frontHeight, backHeight, frontWidth, backWidth, params.buttonSide, wire, dome, corner, bone, seat);
+      var label = makeLabel(hand[0].toUpperCase() + digit);
+      var finger = makeFinger(frontHeight, backHeight, frontWidth, backWidth, params.buttonSide, wire, dome, corner, bone, seat, label);
       finger = finger.setColor(params.color);
       if (params.part === hand + digit) {
         return finger;
