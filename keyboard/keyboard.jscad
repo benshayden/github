@@ -12,17 +12,21 @@ function getParameterDefinitions() {
   params.push({name: 'color', type: 'text', initial: '667fe5'});
   params.push({name: 'boneColor', type: 'text', initial: 'ffffff'});
   var parts = ['all', 'base'];
-  ['left', 'right'].forEach(function(hand) {
+  ['left', 'right'].forEach(function(hand, handi) {
     parts.push(hand + 'Thumb');
     params.push({name: hand + 'ThumbHeight', type: 'float', initial: 22});
     params.push({name: hand + 'ThumbFrontWidth', type: 'float', initial: 6});
     params.push({name: hand + 'ThumbBackWidth', type: 'float', initial: 9});
     for (var digit = 1; digit < 5; ++digit) {
       parts.push(hand + digit);
-      params.push({name: hand + digit + 'FrontHeight', type: 'float', initial: 4});
-      params.push({name: hand + digit + 'BackHeight', type: 'float', initial: 7});
-      params.push({name: hand + digit + 'FrontWidth', type: 'float', initial: 4});
-      params.push({name: hand + digit + 'BackWidth', type: 'float', initial: 6});
+      params.push({name: hand + digit + 'FrontHeight', type: 'float',
+                   initial: [[6, 5, 5, 5], [7, 7, 7, 6]][handi][digit - 1]});
+      params.push({name: hand + digit + 'BackHeight', type: 'float',
+                   initial: [[9, 10, 9, 7], [10, 10, 8, 7]][handi][digit]});
+      params.push({name: hand + digit + 'FrontWidth', type: 'float',
+                   initial: [[6, 6, 6, 4], [5, 5, 6.5, 5]][handi][digit]});
+      params.push({name: hand + digit + 'BackWidth', type: 'float',
+                   initial: [[7, 8, 8, 7], [8, 9, 8, 7]][handi][digit]});
     }
   });
   params.unshift({name: 'part', type: 'choice', values: parts});
