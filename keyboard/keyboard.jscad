@@ -53,11 +53,11 @@ function makeDome(buttonSide) {
 
 function makeLabel(text) {
   var label = [];
-  var s = 0.16;
   vector_text(0, 0, text).forEach(function(s) {
-    label.push(rectangular_extrude(s, {w: 3, h: 1 / s}));
+    label.push(rectangular_extrude(s, {w: 3}));
   });
-  return union(label).scale(s);
+  var s = 0.16;
+  return union(label).scale([s, s, 1]);
 }
 
 function makeWire(buttonSide) {
@@ -291,6 +291,8 @@ function makeFinger(frontHeight, backHeight, frontWidth, backWidth, buttonSide, 
 
   piece = dome.translate([backX, 2 * buttonSide + backHeight]);
   finger.push(piece);
+  
+  finger.push(label.rotateY(-90).translate([0, buttonSide + 2, 0]));
 
   finger = union(finger);
 
