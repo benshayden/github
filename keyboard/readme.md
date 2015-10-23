@@ -17,4 +17,4 @@ Materials:
  * soldering iron, solder
  * optional [optical motion sensor](https://www.tindie.com/products/jkicklighter/adns-9800-optical-laser-sensor/)
 
-[](http://www.digikey.com/product-search/en?keywords=MX1A-C1NN)
+If you use other switches such as [Cherry MX](http://www.digikey.com/product-search/en?keywords=MX1A-C1NN), then you can still use the 3d-printed triangular base, but you'll need to redesign the button mounts, or use [thermoplastic](http://www.adafruit.com/products/2504).
