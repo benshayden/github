@@ -17,4 +17,4 @@ Materials:
  * soldering iron, solder
  * optional [optical motion sensor](https://www.tindie.com/products/jkicklighter/adns-9800-optical-laser-sensor/)
 
-[](http://www.digikey.com/product-search/en?vendor=0&keywords=MX1A-C1NN&stock=1)
+[](http://www.digikey.com/product-search/en?keywords=MX1A-C1NN)
