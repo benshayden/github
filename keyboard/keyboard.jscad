@@ -14,9 +14,9 @@ function getParameterDefinitions() {
   var parts = ['all', 'base'];
   ['left', 'right'].forEach(function(hand) {
     parts.push(hand + 'Thumb');
-    params.push({name: hand + 'ThumbHeight', type: 'float', initial: 20});
-    params.push({name: hand + 'ThumbFrontWidth', type: 'float', initial: 5});
-    params.push({name: hand + 'ThumbBackWidth', type: 'float', initial: 7});
+    params.push({name: hand + 'ThumbHeight', type: 'float', initial: 22});
+    params.push({name: hand + 'ThumbFrontWidth', type: 'float', initial: 6});
+    params.push({name: hand + 'ThumbBackWidth', type: 'float', initial: 9});
     for (var digit = 1; digit < 5; ++digit) {
       parts.push(hand + digit);
       params.push({name: hand + digit + 'FrontHeight', type: 'float', initial: 4});
