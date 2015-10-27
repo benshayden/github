@@ -381,4 +381,13 @@ qSA('input').forEach(function(input) {
   input.addEventListener('keyup', buildkeymaps);
 });
 buildkeymaps();
+function assignByStrength(keys) {
+  var strengths = qSA('input.strength');
+  strengths.sort(function(a, b) {
+    return parseFloat(a.value) - parseFloat(b.value);
+  });
+  strengths.forEach(function(strengthinput, i) {
+    strengthinput.parentNode.querySelector('.modekey').value = keys[i];
+  });
+}
 </script>
