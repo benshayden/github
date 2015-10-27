@@ -1,11 +1,11 @@
 <!doctype html>
 <title>Keymaps</title>
 <style>
-.rowpin { border: 2px solid green; width: 1.5em; }
-.colpin { border: 2px solid blue; width: 1.5em; }
-.error { border: 2px solid red; width: 1.5em; }
-.strength { border: 2px solid black; width: 2em; }
-.modekey { display: block; width: 4em; }
+.rowpin { border: 2px solid green; width: 1.2em; text-align: right; padding: 1px; }
+.colpin { border: 2px solid blue; width: 1.2em; text-align: right; padding: 1px; }
+.error { border: 2px solid red; }
+.strength { border: 2px solid black; width: 1.2em; text-align: right; padding: 1px; }
+.modekey { display: block; width: 5em; }
 </style>
 <table>
 <tr id=rowpins>
@@ -70,14 +70,14 @@
       <input class=modekey value='UP'>
     </td>
     <td>
-      <input class=strength value=100>
+      <input class=strength value=90>
       <input class=rowpin value=0>
       <input class=colpin value=20>
       <input class=modekey value='BACKSPACE'>
       <input class=modekey value='='>
     </td>
     <td>
-      <input class=strength value=100>
+      <input class=strength value=90>
       <input class=rowpin value=3>
       <input class=colpin value=20>
       <input class=modekey value='ENTER'>
@@ -142,14 +142,14 @@
       <input class=modekey value='RIGHT'>
     </td>
     <td>
-      <input class=strength value=100>
+      <input class=strength value=90>
       <input class=rowpin value=1>
       <input class=colpin value=20>
       <input class=modekey value=' '>
       <input class=modekey value='CTRL'>
     </td>
     <td>
-      <input class=strength value=100>
+      <input class=strength value=90>
       <input class=rowpin value=4>
       <input class=colpin value=20>
       <input class=modekey value='MODE'>
@@ -214,14 +214,14 @@
       <input class=modekey value='DOWN'>
     </td>
     <td>
-      <input class=strength value=100>
+      <input class=strength value=90>
       <input class=rowpin value=2>
       <input class=colpin value=20>
       <input class=modekey value='e'>
       <input class=modekey value=','>
     </td>
     <td>
-      <input class=strength value=100>
+      <input class=strength value=90>
       <input class=rowpin value=5>
       <input class=colpin value=20>
       <input class=modekey value=';'>
@@ -262,14 +262,14 @@
     <td>&nbsp;</td>
     <td>&nbsp;</td>
     <td>
-      <input class=strength value=100>
+      <input class=strength value=90>
       <input class=rowpin value=0>
       <input class=colpin value=21>
       <input class=modekey value='t'>
       <input class=modekey value='-'>
     </td>
     <td>
-      <input class=strength value=100>
+      <input class=strength value=90>
       <input class=rowpin value=3>
       <input class=colpin value=21>
       <input class=modekey value='SHIFT'>
@@ -382,13 +382,13 @@ qSA('input').forEach(function(input) {
   input.addEventListener('keyup', buildkeymaps);
 });
 buildkeymaps();
-function assignByStrength(keys) {
+function assignByStrength(keys, mode) {
   var strengths = qSA('input.strength');
   strengths.sort(function(a, b) {
     return parseFloat(a.value) - parseFloat(b.value);
   });
   strengths.forEach(function(strengthinput, i) {
-    strengthinput.parentNode.querySelector('.modekey').value = keys[i];
+    strengthinput.parentNode.querySelectorAll('.modekey')[mode || 0].value = keys[i];
   });
 }
 </script>
