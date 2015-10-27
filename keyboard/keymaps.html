@@ -1,4 +1,4 @@
-<!doctype html>
+data:text/html,<!doctype html>
 <title>Keymaps</title>
 <style>
 .rowpin { border: 2px solid green; width: 1.5em; }
@@ -269,34 +269,61 @@ function buildkeymaps() {
     }
   }
   qSA('td', pinmap).forEach(function(td) {
-    var inputs = td.querySelectorAll('input');
-    if (inputs.length === 0) return;
-    var rowpin = inputs[0].value;
-    var colpin = inputs[1].value;
-    var key0 = inputs[2].value;
-    var key1 = inputs[3].value;
+    var strengthinput = td.querySelector('.strength');
+    var rowpininput = td.querySelector('.rowpin');
+    var colpininput = td.querySelector('.colpin');
+    var keyinputs = td.querySelectorAll('.modekey');
+    if (!rowpininput || !colpininput || !keyinputs) {
+      return;
+    }
+    var rowpin = rowpininput.value;
+    var colpin = colpininput.value;
+    var key0 = keyinputs[0].value;
+    var key1 = keyinputs[1].value;
     var rowpini = rowpinnums.indexOf(rowpin);
     var colpini = colpinnums.indexOf(colpin);
-    inputs[0].className = ((rowpini < 0) || pinsmap[rowpini + ',' + colpini]) ? 'error' : 'rowpin';
-    inputs[1].className = ((colpini < 0) || pinsmap[rowpini + ',' + colpini]) ? 'error' : 'colpin';
-    inputs[2].className = 'modekey ' + ((key0 && !keysmap[key0]) ? '' : 'error');
-    inputs[3].className = 'modekey ' + ((key1 && !keysmap[key1]) ? '' : 'error');
-    hadError = hadError || (rowpini < 0) || (colpini < 0) || !key0 || !key1 || keysmap[key0] || keysmap[key1] || pinsmap[rowpini + ',' + colpini];
+    if ((rowpini < 0) || pinsmap[rowpini + ',' + colpini]) {
+      rowpininput.classList.add('error');
+      hadError = true;
+    } else {
+      rowpininput.classList.remove('error');
+    }
+    if ((colpini < 0) || pinsmap[rowpini + ',' + colpini]) {
+      colpininput.classList.add('error');
+      hadError = true;
+    } else {
+      colpininput.classList.remove('error');
+    }
+    if (!key0 || keysmap[key0]) {
+      keyinputs[0].classList.add('error');
+      hadError = true;
+    } else {
+      keyinputs[0].classList.remove('error');
+    }
+    if (!key1 || keysmap[key1]) {
+      keyinputs[1].classList.add('error');
+      hadError = true;
+    } else {
+      keyinputs[1].classList.remove('error');
+    }
     keymapkeys[0][rowpini][colpini] = key0;
     keymapkeys[1][rowpini][colpini] = key1;
     if (keysmap[key0]) {
-      keysmap[key0].className = 'error';
+      keysmap[key0].classList.add('error');
+      hadError = true;
     }
     if (keysmap[key1]) {
-      keysmap[key1].className = 'error';
+      keysmap[key1].className.add('error');
+      hadError = true;
     }
     if (pinsmap[rowpini + ',' + colpini]) {
-      pinsmap[rowpini + ',' + colpini][0].className = 'error';
-      pinsmap[rowpini + ',' + colpini][1].className = 'error';
+      pinsmap[rowpini + ',' + colpini][0].classList.add('error');
+      pinsmap[rowpini + ',' + colpini][1].classList.add('error');
+      hadError = true;
     }
-    keysmap[key0] = inputs[2];
-    keysmap[key1] = inputs[3];
-    pinsmap[rowpini + ',' + colpini] = [inputs[0], inputs[1]];
+    keysmap[key0] = keyinputs[0];
+    keysmap[key1] = keyinputs[1];
+    pinsmap[rowpini + ',' + colpini] = [rowpininput, colpininput];
   });
   if (hadError)
     return;
@@ -317,37 +344,9 @@ function buildkeymaps() {
       }).join(', ');
     }).join(', ');
   }).join('},\n{') + '}';
-  save();
 }
 qSA('input').forEach(function(input) {
   input.addEventListener('keyup', buildkeymaps);
 });
-function save() {
-  var inputs = qSA('input');
-  try {
-    localStorage[location.pathname] = JSON.stringify(inputs.map(function(input) {
-      return input.value;
-    }));
-  } catch (e) {
-  }
-}
-function restore() {
-  try {
-    var saved = localStorage[location.pathname];
-  } catch (e) {
-    return;
-  }
-  if (!saved) return;
-  try {
-    saved = JSON.parse(saved);
-  } catch (e) {
-    return;
-  }
-  var inputs = qSA('input');
-  saved.forEach(function(value, index) {
-    inputs[index].value = value;
-  });
-}
-restore();
 buildkeymaps();
 </script>
