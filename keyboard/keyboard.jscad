@@ -1,7 +1,7 @@
 'use strict';
 // Everything is in mm.
 
-var cylinder, cube, sphere, linear_extrude, union, polygon;
+var cylinder, cube, sphere, linear_extrude, union, polygon, vector_text, rectangular_extrude;
 
 function getParameterDefinitions() {
   var params = [];
