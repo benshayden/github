@@ -100,6 +100,7 @@ function recordInteraction(flavor, delayMs, wording, wasBad) {
           '&wasBad=' + wasBad);
   if ((INTERACTIONS.length - 1) === INTERACTIONS.indexOf(flavor)) {
     // That was the last interaction flavor. Display a pretty graph.
+    $('survey').style.display = 'none';
     $('what').style.display = 'block';
   } else {
     // Start the next flavor of interaction.
