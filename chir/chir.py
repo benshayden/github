@@ -11,9 +11,9 @@ class Record(webapp2.RequestHandler):
   def post(self):
     interaction = Interaction(
       flavor=self.request.get('flavor'),
-      delayMs=self.request.get('delayMs'),
+      delayMs=int(self.request.get('delayMs')),
       wording=self.request.get('wording'),
-      wasBad=self.request.get('wasBad'))
+      wasBad=(self.request.get('wasBad') == 'true'))
     interaction.put()
 
 class Graph(webapp2.RequestHandler):
