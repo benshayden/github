@@ -16,5 +16,8 @@ handlers:
   secure: always
   upload: index\.html
 
-- url: /report
+- url: /record
+  script: chir.app
+
+- url: /graph
   script: chir.app
