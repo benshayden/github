@@ -1,4 +1,4 @@
-=Computer-Human Interaction Research=
+Computer-Human Interaction Research
 
 This is a simple web app that asks the user to perform interactions
 such as clicking, scrolling, or loading,
