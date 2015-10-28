@@ -17,7 +17,7 @@ class Interaction(ndb.Model):
   wording = ndb.StringProperty(indexed=False)
   wasBad = ndb.BooleanProperty()
 
-class Report(webapp2.RequestHandler):
+class Record(webapp2.RequestHandler):
   def post(self):
     interaction = Interaction(
       flavor=self.request.get('flavor'),
@@ -43,6 +43,6 @@ class Graph(webapp2.RequestHandler):
     return repr(histogram.items())
 
 app = webapp2.WSGIApplication([
-  ('/report', Report),
+  ('/record', Record),
   ('/graph', Graph),
 ], debug=True)
