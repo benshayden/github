@@ -48,13 +48,15 @@ $('click').addEventListener('click', function() {
 });
 
 var scrolled = false;
-$('scroll').addEventListener('scroll', function(event) {
+$('scroll').addEventListener('mousewheel', delayScroll);
+$('scroll').addEventListener('touchmove', delayScroll);
+function delayScroll(event) {
   event.preventDefault();
   if (scrolled)
     return;
   scrolled = true;
   scheduleSurvey('scroll');
-});
+}
 
 $('load').addEventListener('load', function(event) {
   event.preventDefault();
