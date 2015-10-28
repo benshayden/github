@@ -1,7 +1,7 @@
 <!doctype html>
 <title>Interactionator</title>
 <style>
-#scroll, #load, #survey {
+#scroll, #load, #survey, #what {
   display: none;
 }
 #click {
@@ -22,7 +22,7 @@
 
 <div id=survey>
   Thanks for waiting!
-  <br>Was that delay <span id=wordingSpan></span>?
+  <br>Was that delay <span id=wording></span>?
   <br><button id=no>No</button>
   <button id=yes>Yes</button>
 </div>
@@ -100,6 +100,7 @@ function recordInteraction(flavor, delayMs, wording, wasBad) {
           '&wasBad=' + wasBad);
   if ((INTERACTIONS.length - 1) === INTERACTIONS.indexOf(flavor)) {
     // That was the last interaction flavor. Display a pretty graph.
+    $('what').style.display = 'block';
   } else {
     // Start the next flavor of interaction.
     startInteraction(INTERACTIONS[1 + INTERACTIONS.indexOf(flavor)]);
