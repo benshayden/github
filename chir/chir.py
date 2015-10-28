@@ -29,7 +29,7 @@ class Graph(webapp2.RequestHandler):
     for interaction in interactions:
       bucket = histogram.setdefault(interaction.delayMs // 10, [0, 0])
       bucket[interaction.wasBad] += 1
-    return repr(histogram.items())
+    self.response.out.write(repr(histogram.items()))
 
 app = webapp2.WSGIApplication([
   ('/record', Record),
