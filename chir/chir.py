@@ -27,7 +27,7 @@ class Graph(webapp2.RequestHandler):
     if flavor:
       interactions = interactions.filter(Interaction.flavor == flavor)
     for interaction in interactions:
-      bucket = histogram.setdefault(interaction.delayMs // 10, [0.0, 0.0])
+      bucket = histogram.setdefault(interaction.delayMs // 10, [0, 0])
       bucket[interaction.wasBad] += 1
     return repr(histogram.items())
 
