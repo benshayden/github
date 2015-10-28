@@ -1,9 +1,108 @@
 <!doctype html>
+<title>Interactionator</title>
+<style>
+#scroll, #load, #survey {
+  display: none;
+}
+#click {
+  width: 80%;
+  height: 3em;
+}
+#scroll {
+  height: 200%;
+  text-align: center;
+}
+</style>
+
+<button id=click>Click the Button!</button>
+
+<div id=scroll>Scroll the Page!</div>
+
+<a href="/" id=load>Load a New Page!</a>
+
+<div id=survey>
+  Thanks for waiting!
+  <br>Was that delay <span id=wordingSpan></span>?
+  <br><button id=no>No</button>
+  <button id=yes>Yes</button>
+</div>
+
+<div id=what>
+  What is this?
+  <p>The Interactionator simulates various types of user interactions with random delay.
+</div>
+
 <script>
-// click
-// scroll
-// load
-// delay
-// xhr record
-// xhr graph
+var MAX_DELAY_MS = 5000;
+var WORDINGS = ['painful', 'uncomfortable', 'annoying', 'frustrating', 'intolerable'];
+var INTERACTIONS = ['click', 'scroll', 'load'];
+
+var $ = function(id) { return document.getElementById(id); }
+
+$('click').addEventListener('click', function() {
+  $('click').disabled = true;
+  scheduleSurvey('click');
+});
+
+var scrolled = false;
+$('scroll').addEventListener('scroll', function(event) {
+  event.preventDefault();
+  if (scrolled)
+    return;
+  scrolled = true;
+  scheduleSurvey('scroll');
+});
+
+$('load').addEventListener('load', function(event) {
+  event.preventDefault();
+  $('load').style.display = 'none';
+  scheduleSurvey('load');
+});
+
+function startInteraction(flavor) {
+  scrolled = false;
+  $('survey').style.display = 'none';
+  INTERACTIONS.forEach(function(i) {
+    $(i).style.display = (flavor === i) ? 'block' : 'none';
+  });
+}
+
+var startMs = undefined;
+var currentFlavor = undefined;
+function scheduleSurvey(flavor) {
+  currentFlavor = flavor;
+  startMs = new Date().getTime();
+  var delayMs = Math.round(Math.random() * MAX_DELAY_MS);
+  window.setTimeout(showSurvey, delayMs);
+}
+
+function showSurvey() {
+  var wording = WORDINGS[Math.floor(Math.random() * WORDINGS.length)];
+  var delayMs = new Date().getTime() - startMs;
+  $('wording').textContent = wording;
+  $(currentFlavor).style.display = 'none';
+  $('survey').style.display = 'block';
+  $('yes').addEventListener('click', function() {
+    recordInteraction(currentFlavor, delayMs, wording, true);
+  });
+  $('no').addEventListener('click', function() {
+    recordInteraction(currentFlavor, delayMs, wording, false);
+  });
+}
+
+function recordInteraction(flavor, delayMs, wording, wasBad) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/record', true);
+  xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+  xhr.send('flavor=' + flavor +
+          '&delayMs=' + delayMs +
+          '&wording=' + wording +
+          '&wasBad=' + wasBad);
+  if ((INTERACTIONS.length - 1) === INTERACTIONS.indexOf(flavor)) {
+    // That was the last interaction flavor. Display a pretty graph.
+  } else {
+    // Start the next flavor of interaction.
+    startInteraction(INTERACTIONS[1 + INTERACTIONS.indexOf(flavor)]);
+  }
+}
 </script>
