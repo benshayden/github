@@ -1,5 +1,6 @@
 <!doctype html>
 <title>Interactionator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <style>
 html * {
   max-height: 1000000px;
@@ -122,6 +123,18 @@ $('slowness').addEventListener('touchdown', enableSubmit);
 function enableSubmit() {
   $('submit').disabled = false;
   $('submit').textContent = 'That slow!';
+}
+$('slowness').previousElementSibling.addEventListener('mousedown', setTooSlow);
+$('slowness').previousElementSibling.addEventListener('touchdown', setTooSlow);
+function setTooSlow() {
+  $('slowness').value = 0;
+  enableSubmit();
+}
+$('slowness').nextElementSibling.addEventListener('mousedown', setFastEnough);
+$('slowness').nextElementSibling.addEventListener('touchdown', setFastEnough);
+function setFastEnough() {
+  $('slowness').value = 100;
+  enableSubmit();
 }
 
 function showSurvey(interactionType, startMs) {
