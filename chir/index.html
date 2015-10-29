@@ -30,7 +30,6 @@ body {
   text-align: center;
 }
 #load {
-  display: block;
   margin: 0 auto;
 }
 .slowness {
@@ -228,6 +227,7 @@ function getHistograms() {
         prevAvgSlowness = avgSlowness;
       });
     });
+  };
   xhr.send();
 }
 </script>
