@@ -1,3 +1,4 @@
+import json
 import webapp2
 from google.appengine.ext import ndb
 from google.appengine.api import memcache
@@ -36,7 +37,7 @@ class Graph(webapp2.RequestHandler):
     memcacheKey = 'histogram'
     histogram = memcache.get(memcacheKey)
     if histogram is None:
-      histogram = repr(Interaction.histogram().items())
+      histogram = json.dumps(Interaction.histogram().items())
       memcache.add(memcacheKey, histogram, time=10)
     self.response.out.write(histogram)
 
