@@ -12,7 +12,7 @@ body {
   max-width: 600px;
   margin: 1em auto 0 auto;
 }
-#scroll, #load, #survey, #graph {
+#scroll, #load, #survey, #thanks {
   display: none;
 }
 #what {
@@ -28,6 +28,9 @@ body {
   height: 200%;
   text-align: center;
 }
+#load {
+  margin: 0 auto;
+}
 .slowness {
   display: flex;
   flex-direction: row;
@@ -41,6 +44,9 @@ body {
   margin: 0 auto;
   width: 80%;
   height: 2em;
+}
+#thanks {
+  margin: 0 auto;
 }
 </style>
 
@@ -70,7 +76,7 @@ body {
   <button id=submit></button>
 </div>
 
-<div id=graph>
+<div id=thanks>
   Thanks for your help!
   <br>TODO graph results
 </div>
@@ -119,19 +125,19 @@ function scheduleSurvey(interactionType, max_ms) {
 }
 
 $('slowness').addEventListener('mousedown', enableSubmit);
-$('slowness').addEventListener('touchdown', enableSubmit);
+$('slowness').addEventListener('touchstart', enableSubmit);
 function enableSubmit() {
   $('submit').disabled = false;
   $('submit').textContent = 'That slow!';
 }
 $('slowness').previousElementSibling.addEventListener('mousedown', setTooSlow);
-$('slowness').previousElementSibling.addEventListener('touchdown', setTooSlow);
+$('slowness').previousElementSibling.addEventListener('touchstart', setTooSlow);
 function setTooSlow() {
   $('slowness').value = 0;
   enableSubmit();
 }
 $('slowness').nextElementSibling.addEventListener('mousedown', setFastEnough);
-$('slowness').nextElementSibling.addEventListener('touchdown', setFastEnough);
+$('slowness').nextElementSibling.addEventListener('touchstart', setFastEnough);
 function setFastEnough() {
   $('slowness').value = 100;
   enableSubmit();
