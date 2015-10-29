@@ -48,6 +48,10 @@ body {
 }
 #thanks {
   margin: 0 auto;
+  text-align: center;
+}
+canvas {
+  display: block;
 }
 </style>
 
@@ -202,6 +206,8 @@ function getHistograms() {
       var interactionType = histogram[0];
       var interactionSampleCount = histogram[1];
       var canvas = document.createElement('canvas');
+      $('thanks').appendChild(document.createTextElement(interactionType));
+      $('thanks').appendChild(canvas);
       var context = canvas.getContext('2d');
       var prevX = 0;
       var prevAvgSlowness = undefined;
