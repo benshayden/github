@@ -12,6 +12,8 @@ class Interaction(ndb.Model):
     histogram = {}
     interactions = cls.query()
     for interaction in interactions:
+      if interaction.delayMs is None or interaction.slowness is None or interaction.interactionType is None:
+        continue
       subhist = histogram.setdefault(interaction.interactionType, {})
       subhist = subhist.setdefault(interaction.delayMs // 10, {})
       bucket = interaction.slowness // 10
