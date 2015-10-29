@@ -3,10 +3,16 @@
 <style>
 html, body {
   height: 100%;
-  margin-bottom: -20px;
 }
-#scroll, #load, #survey, #what {
+body {
+  max-width: 600px;
+  margin: 1em auto 0 auto;
+}
+#scroll, #load, #survey, #graph {
   display: none;
+}
+#what {
+  margin-bottom: 5em;
 }
 #click {
   display: block;
@@ -18,39 +24,55 @@ html, body {
   height: 200%;
   text-align: center;
 }
-#wording {
-  font-weight: bold;
+.slowness {
+  display: flex;
+  flex-direction: row;
+  margin: 1em;
+}
+.slowness > input {
+  flex-grow: 1;
 }
 </style>
 
-<button id=click>Click the Button!</button>
-
-<div id=scroll>Scroll the Page!</div>
-
-<a href="/" id=load>Load a New Page!</a>
-
-<div id=survey>
-  Thanks for waiting!
-  <br>Was that delay <span id=wording></span>?
-  <br><button id=no>No</button>
-  <button id=yes>Yes</button>
+<div id=what>
+  This Interaction Research Assistant will ask you to interact with the computer in a few different ways,
+  then ask you how slow the computer felt:
+  <div class=slowness>
+    <div>too slow</div>
+    <input type=range>
+    <div>fast enough</div>
+  </div>
 </div>
 
-<div id=what>
-  What is this?
-  <p>The Interactionator simulates various types of user interactions with random delay.
+<button id=click>Click to begin!</button>
+
+<div id=scroll>Scroll!</div>
+
+<a href="/" id=load>Load a new page!</a>
+
+<div id=survey>
+  How slow was that delay?
+  <div class=slowness>
+    <div>too slow</div>
+    <input type=range id=slowness>
+    <div>fast enough</div>
+  </div>
+  <button id=submit></button>
+</div>
+
+<div id=graph>
+  Thanks for your help!
+  <br>TODO graph results
 </div>
 
 <script>
-var MAX_DELAY_MS = 5000;
-var WORDINGS = ['painful', 'uncomfortable', 'annoying', 'frustrating', 'intolerable'];
 var INTERACTIONS = ['click', 'scroll', 'load'];
 
 var $ = function(id) { return document.getElementById(id); }
 
 $('click').addEventListener('click', function() {
   $('click').disabled = true;
-  scheduleSurvey('click');
+  scheduleSurvey('click', 5e3);
 });
 
 var scrolled = false;
@@ -61,13 +83,13 @@ function delayScroll(event) {
   if (scrolled)
     return;
   scrolled = true;
-  scheduleSurvey('scroll');
+  scheduleSurvey('scroll', 1e3);
 }
 
 $('load').addEventListener('click', function(event) {
   event.preventDefault();
   $('load').style.display = 'none';
-  scheduleSurvey('load');
+  scheduleSurvey('load', 1e4);
 });
 
 function startInteraction(flavor) {
@@ -80,42 +102,54 @@ function startInteraction(flavor) {
 
 var startMs = undefined;
 var currentFlavor = undefined;
-function scheduleSurvey(flavor) {
+
+function scheduleSurvey(flavor, max_ms) {
   currentFlavor = flavor;
   startMs = new Date().getTime();
-  var delayMs = Math.round(Math.random() * MAX_DELAY_MS);
+  var delayMs = Math.round(Math.random() * max_ms);
   window.setTimeout(showSurvey, delayMs);
 }
 
+$('slowness').addEventListener('click', function() {
+  $('submit').disabled = false;
+  $('submit').textContent = 'That slow!';
+});
+
 function showSurvey() {
-  var wording = WORDINGS[Math.floor(Math.random() * WORDINGS.length)];
   var delayMs = new Date().getTime() - startMs;
-  $('wording').textContent = wording;
   $(currentFlavor).style.display = 'none';
+  $('submit').textContent = 'How slow was that delay?';
+  $('submit').disabled = true;
   $('survey').style.display = 'block';
-  $('yes').addEventListener('click', function() {
-    recordInteraction(currentFlavor, delayMs, wording, true);
-  });
-  $('no').addEventListener('click', function() {
-    recordInteraction(currentFlavor, delayMs, wording, false);
+  $('submit').addEventListener('click', function() {
+    recordInteraction(currentFlavor, delayMs, 100 - parseInt($('slowness').value));
   });
 }
 
-function recordInteraction(flavor, delayMs, wording, wasBad) {
+function recordInteraction(flavor, delayMs, slowness) {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/record', true);
   xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
   xhr.send('flavor=' + flavor +
           '&delayMs=' + delayMs +
-          '&wording=' + wording +
-          '&wasBad=' + wasBad);
+          '&slowness=' + slowness);
   if ((INTERACTIONS.length - 1) === INTERACTIONS.indexOf(flavor)) {
     // That was the last interaction flavor. Display a pretty graph.
     $('survey').style.display = 'none';
-    $('what').style.display = 'block';
+    $('graph').style.display = 'block';
+    getHistograms();
   } else {
     // Start the next flavor of interaction.
     startInteraction(INTERACTIONS[1 + INTERACTIONS.indexOf(flavor)]);
   }
+}
+
+function getHistograms() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/graph', true);
+  xhr.onload = function() {
+    // TODO
+  };
+  xhr.send();
 }
 </script>
