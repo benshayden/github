@@ -37,7 +37,7 @@ class Graph(webapp2.RequestHandler):
     memcacheKey = 'histogram'
     histogram = memcache.get(memcacheKey)
     if histogram is None:
-      histogram = json.dumps(Interaction.histogram().items())
+      histogram = json.dumps(Interaction.histogram())
       memcache.add(memcacheKey, histogram, time=10)
     self.response.out.write(histogram)
 
