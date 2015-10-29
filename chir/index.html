@@ -89,11 +89,10 @@ canvas {
   <span class=legend>fast enough</span>
   <span class=legend>====</span>
   <span class=legend>====</span>
+  <span class=legend>a bit slow</span>
   <span class=legend>====</span>
   <span class=legend>====</span>
-  <span class=legend>somewhat slow</span>
-  <span class=legend>====</span>
-  <span class=legend>====</span>
+  <span class=legend>pretty slow</span>
   <span class=legend>====</span>
   <span class=legend>====</span>
   <span class=legend>too slow</span>
@@ -107,8 +106,8 @@ var SLOWNESS_COLORS = [];
 
 var legends = document.querySelectorAll('span.legend');
 for (var i = 0; i < 10; ++i) {
-  var green = Math.floor(255 * i / 10);
-  var color = 'rgb(' + (255 - green) + ',' + green + ',0)';
+  var red = Math.floor(255 * i / 10);
+  var color = 'rgb(' + red + ',' + (255 - red) + ',0)';
   SLOWNESS_COLORS.push(color);
   legends[i].style.color = color;
 }
