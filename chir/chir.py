@@ -9,6 +9,15 @@ class Interaction(ndb.Model):
   slowness = ndb.IntegerProperty()
   
   @classmethod
+  def initialize(cls):
+    for interactionType in ['click', 'scroll', 'load']:
+      for delayBucket in xrange(dict(click=500, scroll=100, load=1000)[interactionType):
+        delayMs = (delayBucket * 10) + 5
+        for slownessBucket in xrange(10):
+          slowness = (slownessBucket * 10) + 5
+          Interaction(interactionType=interactionType, delayMs=delayMs, slowness=slowness).put()
+  
+  @classmethod
   def histograms(cls):
     # returns [(interactionType, sampleCount, sorted[
     #             (delayMs/10, sampleCount, sorted[
@@ -56,7 +65,7 @@ class Graph(webapp2.RequestHandler):
     histograms = memcache.get(memcacheKey)
     if histograms is None:
       histograms = json.dumps(Interaction.histograms())
-      memcache.add(memcacheKey, histograms, time=10)
+      memcache.add(memcacheKey, histograms, time=60)
     self.response.out.write(histograms)
 
 app = webapp2.WSGIApplication([
