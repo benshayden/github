@@ -3,7 +3,7 @@ from google.appengine.ext import ndb
 from google.appengine.api import memcache
 
 class Interaction(ndb.Model):
-  flavor = ndb.StringProperty(indexed=False)
+  interactionType = ndb.StringProperty(indexed=False)
   delayMs = ndb.IntegerProperty()
   slowness = ndb.IntegerProperty()
   
@@ -12,7 +12,7 @@ class Interaction(ndb.Model):
     histogram = {}
     interactions = cls.query()
     for interaction in interactions:
-      subhist = histogram.setdefault(interaction.flavor, {})
+      subhist = histogram.setdefault(interaction.interactionType, {})
       subhist = subhist.setdefault(interaction.delayMs // 10, {})
       bucket = interaction.slowness // 10
       if bucket in subhist:
@@ -24,7 +24,7 @@ class Interaction(ndb.Model):
 class Record(webapp2.RequestHandler):
   def post(self):
     interaction = Interaction(
-      flavor=self.request.get('flavor'),
+      interactionType=self.request.get('interactionType'),
       delayMs=int(self.request.get('delayMs')),
       slowness=int(self.request.get('slowness')))
     interaction.put()
