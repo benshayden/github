@@ -211,18 +211,6 @@ function recordInteraction(interactionType, delayMs, slowness) {
           '&slowness=' + slowness);
 }
 
-function initializeDatabase() {
-  INTERACTIONS.forEach(function(interactionType) {
-    for (var delayBucket = 0; delayBucket < MAX_DELAY_MS[interactionType] / 10; ++delayBucket) {
-      var delayMs = (delayBucket * 10) + 5;
-      for (var slownessBucket = 0; slownessBucket < 10; ++slownessBucket) {
-        var slowness = (slownessBucket * 10) + 5;
-        recordInteraction(interactionType, delayMs, slowness);
-      }
-    }
-  });
-}
-
 function getHistograms() {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', '/graph', true);
