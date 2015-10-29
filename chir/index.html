@@ -98,19 +98,19 @@ $('load').addEventListener('click', function(event) {
   scheduleSurvey('load', 1e4);
 });
 
-function startInteraction(flavor) {
+function startInteraction(interactionType) {
   scrolled = false;
   $('survey').style.display = 'none';
   INTERACTIONS.forEach(function(i) {
-    $(i).style.display = (flavor === i) ? 'block' : 'none';
+    $(i).style.display = (interactionType === i) ? 'block' : 'none';
   });
 }
 
-function scheduleSurvey(flavor, max_ms) {
+function scheduleSurvey(interactionType, max_ms) {
   var startMs = new Date().getTime();
   var delayMs = Math.round(Math.random() * max_ms);
   window.setTimeout(function() {
-    showSurvey(flavor, startMs);
+    showSurvey(interactionType, startMs);
     }, delayMs);
 }
 
@@ -121,9 +121,9 @@ function enableSubmit() {
   $('submit').textContent = 'That slow!';
 }
 
-function showSurvey(flavor, startMs) {
+function showSurvey(interactionType, startMs) {
   // TODO if scroll then animate survey upwards to simulate scrolling
-  $(flavor).style.display = 'none';
+  $(interactionType).style.display = 'none';
   $('what').style.display = 'none';
   $('slowness').value = 50;
   $('submit').textContent = 'How slow was that delay?';
@@ -134,27 +134,27 @@ function showSurvey(flavor, startMs) {
     event.preventDefault();
     $('submit').removeEventListener('click', $('submit').clickHandler);
     $('submit').clickHandler = undefined;
-    recordInteraction(flavor, delayMs, 100 - parseInt($('slowness').value));
+    recordInteraction(interactionType, delayMs, 100 - parseInt($('slowness').value));
   };
   $('submit').addEventListener('click', $('submit').clickHandler);
 }
 
-function recordInteraction(flavor, delayMs, slowness) {
+function recordInteraction(interactionType, delayMs, slowness) {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/record', true);
   xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-  xhr.send('flavor=' + flavor +
+  xhr.send('interactionType=' + interactionType +
           '&delayMs=' + delayMs +
           '&slowness=' + slowness);
-  console.debug('recordInteraction', flavor, INTERACTIONS.indexOf(flavor));
-  if ((INTERACTIONS.length - 1) === INTERACTIONS.indexOf(flavor)) {
-    // That was the last interaction flavor. Display a pretty graph.
+
+  if ((INTERACTIONS.length - 1) === INTERACTIONS.indexOf(interactionType)) {
+    // That was the last interaction interactionType. Display a pretty graph.
     $('survey').style.display = 'none';
     $('graph').style.display = 'block';
     getHistograms();
   } else {
-    // Start the next flavor of interaction.
-    startInteraction(INTERACTIONS[1 + INTERACTIONS.indexOf(flavor)]);
+    // Start the next interaction.
+    startInteraction(INTERACTIONS[1 + INTERACTIONS.indexOf(interactionType)]);
   }
 }
 
