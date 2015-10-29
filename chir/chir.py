@@ -35,7 +35,7 @@ class Graph(webapp2.RequestHandler):
     histogram = memcache.get(memcacheKey)
     if histogram is None:
       histogram = repr(Interaction.histogram().items())
-      memcache.add(memcacheKey, histogram, time=3600)
+      memcache.add(memcacheKey, histogram, time=10)
     self.response.out.write(histogram)
 
 app = webapp2.WSGIApplication([
