@@ -84,12 +84,19 @@ body {
 
 <script>
 var INTERACTIONS = ['click', 'scroll', 'load'];
+var MAX_DELAY_MS = {click: 5e3, scroll: 1e3, load: 1e4};
+var SLOWNESS_COLORS = [];
+
+for (var i = 0; i < 10; ++i) {
+  var red = Math.floor(255 * i / 10);
+  SLOWNESS_COLORS.push('rgb(' + red + ',' + (255 - red) + ',0)');
+}
 
 var $ = function(id) { return document.getElementById(id); }
 
 $('click').addEventListener('click', function() {
   $('click').disabled = true;
-  scheduleSurvey('click', 5e3);
+  scheduleSurvey('click');
 });
 
 var scrolled = false;
@@ -100,13 +107,13 @@ function delayScroll(event) {
   if (scrolled)
     return;
   scrolled = true;
-  scheduleSurvey('scroll', 1e3);
+  scheduleSurvey('scroll');
 }
 
 $('load').addEventListener('click', function(event) {
   event.preventDefault();
   $('load').style.display = 'none';
-  scheduleSurvey('load', 1e4);
+  scheduleSurvey('load');
 });
 
 function startInteraction(interactionType) {
@@ -117,9 +124,9 @@ function startInteraction(interactionType) {
   });
 }
 
-function scheduleSurvey(interactionType, max_ms) {
+function scheduleSurvey(interactionType) {
   var startMs = new Date().getTime();
-  var delayMs = Math.round(Math.random() * max_ms);
+  var delayMs = Math.round(Math.random() * MAX_DELAY_MS[interactionType]);
   window.setTimeout(function() {
     showSurvey(interactionType, startMs);
     }, delayMs);
@@ -185,8 +192,40 @@ function getHistograms() {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', '/graph', true);
   xhr.onload = function() {
-    console.debug(JSON.parse(xhr.responseText));
-  };
+    var histograms = JSON.parse(xhr.responseText);
+    /* [(interactionType, sampleCount, sorted[
+          (delayMs/10, sampleCount, sorted[
+             (slowness/10, count)])]]
+    */
+    histograms.forEach(function(histogram) {
+      var interactionType = histogram[0];
+      var interactionSampleCount = histogram[1];
+      var canvas = document.createElement('canvas');
+      var context = canvas.getContext('2d');
+      var prevX = 0;
+      var prevAvgSlowness = undefined;
+      histogram[2].forEach(function(delayHistogram) {
+        var delayMs = delayHistogram[0] * 10;
+        var delaySampleCount = delayHistogram[1];
+        var x = TODO(delayMs);
+        var prevY = canvas.height;
+        var avgSlowness = 0;
+        delayHistogram[2].forEach(function(slownessBucket) {
+          var slowness = slownessBucket[0] * 10;
+          var count = slownessBucket[1];
+          avgSlowness += slowness * count / delaySampleCount;
+          context.fillStyle = SLOWNESS_COLORS[slownessBucket[0]];
+          var y = TODO(count / delaySampleCount);
+          context.fillRect(x, y, x - prevX, prevY - y);
+          prevY = y;
+        });
+        if (prevAvgSlowness) {
+          // TODO draw a line from (prevX, prevAvgSlowness) to (x, avgSlowness)
+        }
+        prevX = x;
+        prevAvgSlowness = avgSlowness;
+      });
+    });
   xhr.send();
 }
 </script>
