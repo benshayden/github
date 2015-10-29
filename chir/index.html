@@ -32,6 +32,11 @@ body {
 .slowness > input {
   flex-grow: 1;
 }
+#submit {
+  margin: 0 auto;
+  width: 80%;
+  height: 2em;
+}
 </style>
 
 <div id=what>
@@ -118,6 +123,7 @@ $('slowness').addEventListener('click', function() {
 function showSurvey() {
   var delayMs = new Date().getTime() - startMs;
   $(currentFlavor).style.display = 'none';
+  $('what').style.display = 'none';
   $('submit').textContent = 'How slow was that delay?';
   $('submit').disabled = true;
   $('survey').style.display = 'block';
