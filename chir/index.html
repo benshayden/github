@@ -207,11 +207,13 @@ function getHistograms() {
       var interactionType = histogram[0];
       var interactionSampleCount = histogram[1];
       var canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 600;
       $('thanks').appendChild(document.createTextNode(interactionType));
       $('thanks').appendChild(canvas);
       var context = canvas.getContext('2d');
       var prevX = 0;
-      var prevAvgSlowness = undefined;
+      var slownessMeans = [];
       histogram[2].forEach(function(delayHistogram) {
         var delayMs = delayHistogram[0] * 10;
         var delaySampleCount = delayHistogram[1];
@@ -224,6 +226,7 @@ function getHistograms() {
           avgSlowness += slowness * count / delaySampleCount;
           context.fillStyle = SLOWNESS_COLORS[slownessBucket[0]];
           var height = canvas.height * count / delaySampleCount;
+          console.debug(interactionType, 'delayMs', delayMs, 'slowness', slowness, 'count', count, 'prevX', prevX, 'x', x, 'prevY', prevY, 'y', prevY - height, 'height', height, 'width', x - prevX);
           context.fillRect(x, prevY - height, x - prevX, height);
           prevY -= height;
         });
