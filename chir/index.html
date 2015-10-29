@@ -230,6 +230,7 @@ function getHistograms() {
           context.fillRect(prevX, prevY - height, x - prevX, height);
           prevY -= height;
         });
+        prevX = x;
         slownessMeans.push([((x + prevX) / 2), canvas.height * avgSlowness / 100]);
       });
       context.beginPath();
