@@ -171,7 +171,7 @@ function recordInteraction(interactionType, delayMs, slowness) {
           '&slowness=' + slowness);
 
   if ((INTERACTIONS.length - 1) === INTERACTIONS.indexOf(interactionType)) {
-    // That was the last interaction interactionType. Display a pretty graph.
+    // That was the last interactionType. Display a pretty graph.
     $('survey').style.display = 'none';
     $('thanks').style.display = 'block';
     getHistograms();
