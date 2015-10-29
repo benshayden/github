@@ -86,17 +86,17 @@ canvas {
 <div id=thanks>
   Thanks for your help!
   <br>&nbsp;<br>
-  <span style="color:#ff0000">too slow</span>
-  <span style="color:#e61900">====</span>
-  <span style="color:#cc3300">====</span>
-  <span style="color:#b34c00">====</span>
-  <span style="color:#996600">====</span>
-  <span style="color:#7f7f00">somewhat slow</span>
-  <span style="color:#669900">====</span>
-  <span style="color:#4cb300">====</span>
-  <span style="color:#33cc00">====</span>
-  <span style="color:#19e600">====</span>
-  <span style="color:#00ff00">fast enough</span>
+  <span class=legend>fast enough</span>
+  <span class=legend>====</span>
+  <span class=legend>====</span>
+  <span class=legend>====</span>
+  <span class=legend>====</span>
+  <span class=legend>somewhat slow</span>
+  <span class=legend>====</span>
+  <span class=legend>====</span>
+  <span class=legend>====</span>
+  <span class=legend>====</span>
+  <span class=legend>too slow</span>
   <br>&nbsp;<br>
 </div>
 
@@ -105,9 +105,12 @@ var INTERACTIONS = ['click', 'scroll', 'load'];
 var MAX_DELAY_MS = {click: 5e3, scroll: 1e3, load: 1e4};
 var SLOWNESS_COLORS = [];
 
+var legends = document.querySelectorAll('span.legend');
 for (var i = 0; i < 10; ++i) {
-  var red = Math.floor(255 * i / 10);
-  SLOWNESS_COLORS.push('rgb(' + red + ',' + (255 - red) + ',0)');
+  var green = Math.floor(255 * i / 10);
+  var color = 'rgb(' + (255 - green) + ',' + green + ',0)';
+  SLOWNESS_COLORS.push(color);
+  legends[i].style.color = color;
 }
 
 var $ = function(id) { return document.getElementById(id); }
