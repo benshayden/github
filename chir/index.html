@@ -206,7 +206,7 @@ function getHistograms() {
       var interactionType = histogram[0];
       var interactionSampleCount = histogram[1];
       var canvas = document.createElement('canvas');
-      $('thanks').appendChild(document.createTextElement(interactionType));
+      $('thanks').appendChild(document.createTextNode(interactionType));
       $('thanks').appendChild(canvas);
       var context = canvas.getContext('2d');
       var prevX = 0;
