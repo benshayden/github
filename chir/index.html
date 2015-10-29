@@ -208,7 +208,7 @@ function getHistograms() {
       histogram[2].forEach(function(delayHistogram) {
         var delayMs = delayHistogram[0] * 10;
         var delaySampleCount = delayHistogram[1];
-        var x = TODO(delayMs);
+        var x = canvas.width * delayMs / MAX_DELAY_MS[interactionType];
         var prevY = canvas.height;
         var avgSlowness = 0;
         delayHistogram[2].forEach(function(slownessBucket) {
@@ -216,12 +216,15 @@ function getHistograms() {
           var count = slownessBucket[1];
           avgSlowness += slowness * count / delaySampleCount;
           context.fillStyle = SLOWNESS_COLORS[slownessBucket[0]];
-          var y = TODO(count / delaySampleCount);
-          context.fillRect(x, y, x - prevX, prevY - y);
-          prevY = y;
+          var height = canvas.height * count / delaySampleCount;
+          context.fillRect(x, prevY - height, x - prevX, height);
+          prevY -= height;
         });
         if (prevAvgSlowness) {
-          // TODO draw a line from (prevX, prevAvgSlowness) to (x, avgSlowness)
+          context.beginPath();
+          context.moveTo(prevX, canvas.height * prevAvgSlowness / 100);
+          context.lineTo(x, canvas.height * avgSlowness / 100);
+          context.stroke();
         }
         prevX = x;
         prevAvgSlowness = avgSlowness;
