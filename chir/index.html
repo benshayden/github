@@ -106,14 +106,12 @@ function startInteraction(flavor) {
   });
 }
 
-var startMs = undefined;
-var currentFlavor = undefined;
-
 function scheduleSurvey(flavor, max_ms) {
-  currentFlavor = flavor;
-  startMs = new Date().getTime();
+  var startMs = new Date().getTime();
   var delayMs = Math.round(Math.random() * max_ms);
-  window.setTimeout(showSurvey, delayMs);
+  window.setTimeout(function() {
+    showSurvey(flavor, startMs);
+    }, delayMs);
 }
 
 $('slowness').addEventListener('click', function() {
@@ -121,15 +119,17 @@ $('slowness').addEventListener('click', function() {
   $('submit').textContent = 'That slow!';
 });
 
-function showSurvey() {
-  var delayMs = new Date().getTime() - startMs;
-  $(currentFlavor).style.display = 'none';
+function showSurvey(flavor, startMs) {
+  // TODO if scroll then animate survey upwards to simulate scrolling
+  $(flavor).style.display = 'none';
   $('what').style.display = 'none';
+  $('slowness').value = 50;
   $('submit').textContent = 'How slow was that delay?';
   $('submit').disabled = true;
   $('survey').style.display = 'block';
+  var delayMs = new Date().getTime() - startMs;
   $('submit').addEventListener('click', function() {
-    recordInteraction(currentFlavor, delayMs, 100 - parseInt($('slowness').value));
+    recordInteraction(flavor, delayMs, 100 - parseInt($('slowness').value));
   });
 }
 
