@@ -211,48 +211,46 @@ function getHistograms() {
   xhr.open('GET', '/graph', true);
   xhr.onload = function() {
     var histograms = JSON.parse(xhr.responseText);
-    /* [(interactionType, sampleCount, sorted[
-          (delayMs/10, sampleCount, sorted[
-             (slowness/10, count)])]]
-    */
-    histograms.forEach(function(histogram) {
-      var interactionType = histogram[0];
-      var interactionSampleCount = histogram[1];
-      var canvas = document.createElement('canvas');
-      canvas.width = 600;
-      canvas.height = 600;
-      $('thanks').appendChild(document.createTextNode(interactionType));
-      $('thanks').appendChild(canvas);
-      var context = canvas.getContext('2d');
-      var prevX = 0;
-      var slownessMeans = [];
-      histogram[2].forEach(function(delayHistogram) {
-        var delayMs = delayHistogram[0] * 10;
-        var delaySampleCount = delayHistogram[1];
-        var x = canvas.width * delayMs / MAX_DELAY_MS[interactionType];
-        var prevY = canvas.height;
-        var avgSlowness = 0;
-        delayHistogram[2].forEach(function(slownessBucket) {
-          var slowness = slownessBucket[0] * 10;
-          var count = slownessBucket[1];
-          avgSlowness += slowness * count / delaySampleCount;
-          context.fillStyle = SLOWNESS_COLORS[slownessBucket[0]];
-          var height = canvas.height * count / delaySampleCount;
-          console.debug(interactionType, 'delayMs', delayMs, 'slowness', slowness, 'count', count, 'prevX', prevX, 'x', x, 'prevY', prevY, 'y', prevY - height, 'height', height, 'width', x - prevX);
-          context.fillRect(prevX, prevY - height, x - prevX, height);
-          prevY -= height;
-        });
-        slownessMeans.push([(prevX + (x - prevX) / 2), canvas.height * avgSlowness / 100]);
-        prevX = x;
-      });
-      context.beginPath();
-      context.moveTo(slownessMeans[0][0], slownessMeans[0][1]);
-      slownessMeans.slice(1).forEach(function(point) {
-        context.lineTo(point[0], point[1]);
-      });
-      context.stroke();
-    });
+    histograms.forEach(chartHistogram);
   };
   xhr.send();
+}
+
+function chartHistogram(histogram) {
+  var interactionType = histogram[0];
+  var interactionSampleCount = histogram[1];
+  var canvas = document.createElement('canvas');
+  canvas.width = 600;
+  canvas.height = 600;
+  $('thanks').appendChild(document.createTextNode(interactionType));
+  $('thanks').appendChild(canvas);
+  var context = canvas.getContext('2d');
+  var prevX = 0;
+  var slownessMeans = [];
+  histogram[2].forEach(function(delayHistogram) {
+    var delayMs = delayHistogram[0] * 10;
+    var delaySampleCount = delayHistogram[1];
+    var x = canvas.width * delayMs / MAX_DELAY_MS[interactionType];
+    var prevY = canvas.height;
+    var avgSlowness = 0;
+    delayHistogram[2].forEach(function(slownessBucket) {
+      var slowness = slownessBucket[0] * 10;
+      var count = slownessBucket[1];
+      avgSlowness += slowness * count / delaySampleCount;
+      context.fillStyle = SLOWNESS_COLORS[slownessBucket[0]];
+      var height = canvas.height * count / delaySampleCount;
+      console.debug(interactionType, 'delayMs', delayMs, 'slowness', slowness, 'count', count, 'prevX', prevX, 'x', x, 'prevY', prevY, 'y', prevY - height, 'height', height, 'width', x - prevX);
+      context.fillRect(prevX, prevY - height, x - prevX, height);
+      prevY -= height;
+    });
+    slownessMeans.push([(prevX + (x - prevX) / 2), canvas.height * avgSlowness / 100]);
+    prevX = x;
+  });
+  context.beginPath();
+  context.moveTo(slownessMeans[0][0], slownessMeans[0][1]);
+  slownessMeans.slice(1).forEach(function(point) {
+    context.lineTo(point[0], point[1]);
+  });
+  context.stroke();
 }
 </script>
