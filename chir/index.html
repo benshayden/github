@@ -29,6 +29,7 @@ body {
   text-align: center;
 }
 #load {
+  display: block;
   margin: 0 auto;
 }
 .slowness {
@@ -172,7 +173,7 @@ function recordInteraction(interactionType, delayMs, slowness) {
   if ((INTERACTIONS.length - 1) === INTERACTIONS.indexOf(interactionType)) {
     // That was the last interaction interactionType. Display a pretty graph.
     $('survey').style.display = 'none';
-    $('graph').style.display = 'block';
+    $('thanks').style.display = 'block';
     getHistograms();
   } else {
     // Start the next interaction.
