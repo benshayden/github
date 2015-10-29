@@ -142,6 +142,7 @@ function recordInteraction(flavor, delayMs, slowness) {
   xhr.send('flavor=' + flavor +
           '&delayMs=' + delayMs +
           '&slowness=' + slowness);
+  console.debug('recordInteraction', flavor, INTERACTIONS.indexOf(flavor));
   if ((INTERACTIONS.length - 1) === INTERACTIONS.indexOf(flavor)) {
     // That was the last interaction flavor. Display a pretty graph.
     $('survey').style.display = 'none';
