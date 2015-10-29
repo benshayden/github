@@ -114,10 +114,12 @@ function scheduleSurvey(flavor, max_ms) {
     }, delayMs);
 }
 
-$('slowness').addEventListener('click', function() {
+$('slowness').addEventListener('mousedown', enableSubmit);
+$('slowness').addEventListener('touchdown', enableSubmit);
+function enableSubmit() {
   $('submit').disabled = false;
   $('submit').textContent = 'That slow!';
-});
+}
 
 function showSurvey(flavor, startMs) {
   // TODO if scroll then animate survey upwards to simulate scrolling
