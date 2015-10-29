@@ -130,9 +130,13 @@ function showSurvey(flavor, startMs) {
   $('submit').disabled = true;
   $('survey').style.display = 'block';
   var delayMs = new Date().getTime() - startMs;
-  $('submit').addEventListener('click', function() {
+  $('submit').clickHandler = function(event) {
+    event.preventDefault();
+    $('submit').removeEventListener('click', $('submit').clickHandler);
+    $('submit').clickHandler = undefined;
     recordInteraction(flavor, delayMs, 100 - parseInt($('slowness').value));
-  });
+  };
+  $('submit').addEventListener('click', $('submit').clickHandler);
 }
 
 function recordInteraction(flavor, delayMs, slowness) {
