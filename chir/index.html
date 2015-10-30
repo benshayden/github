@@ -232,12 +232,20 @@ function chartHistogram(histogram) {
   var context = canvas.getContext('2d');
   var prevX = 0;
   var slownessMeans = [];
+  context.font = '14px Arial';
+  var bottomMargin = context.measureText('0').height + 10;
+  var prevXAxis = 0;
   histogram[2].forEach(function(delayHistogram) {
     var delayMs = delayHistogram[0] * 10;
     var delaySampleCount = delayHistogram[1];
     var x = canvas.width * delayMs / MAX_DELAY_MS[interactionType];
-    var prevY = canvas.height;
+    var prevY = canvas.height - bottomMargin;
     var avgSlowness = 0;
+    if (x > prevXAxis) {
+      var xAxisWidth = context.measureText('' + delayMs).width;
+      context.fillText('' + delayMs, x, canvas.height);
+      prevXAxis = x + xAxisWidth;
+    }
     delayHistogram[2].forEach(function(slownessBucket) {
       var slowness = slownessBucket[0] * 10;
       var count = slownessBucket[1];
