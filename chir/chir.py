@@ -38,7 +38,10 @@ class Interaction(ndb.Model):
       if interaction.interactionType not in MAX_DELAY_MS:
         continue
       sampleCounts[interaction.interactionType] += 1
-      histograms[interactionType].setdefault(interaction.delayMs, []).append(interaction.slowness)
+      histogram = histograms[interactionType]
+      slownesses = histogram.setdefault(interaction.delayMs, [])
+      slownesses.append(interaction.slowness)
+
     for interactionType, histogram in histograms.iteritems():
       maxDelayMs = MAX_DELAY_MS[interactionType]
       bucketSize = max(3, maxDelayMs / math.sqrt(sampleCounts[interactionType]))
