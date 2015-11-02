@@ -1,7 +1,10 @@
 import json
 import webapp2
+import math
 from google.appengine.ext import ndb
 from google.appengine.api import memcache
+
+MAX_DELAY_MS = dict(click=500, scroll=100, load=1000)
 
 class Interaction(ndb.Model):
   interactionType = ndb.StringProperty(indexed=False)
@@ -10,7 +13,7 @@ class Interaction(ndb.Model):
   
   @classmethod
   def initialize(cls):
-    for interactionType, maxDelayMs in dict(click=500, scroll=100, load=1000).iteritems():
+    for interactionType, maxDelayMs in MAX_DELAY_MS.iteritems():
       for delayMs in xrange(0, maxDelayMs, maxDelayMs / 10):
         for slowness in xrange(0, 100, 10):
           Interaction(interactionType=interactionType,
@@ -20,41 +23,31 @@ class Interaction(ndb.Model):
   @classmethod
   def histograms(cls):
     # returns [sorted[interactionType, [sorted[delayMs, meanSlowness]]]]
+    # but first build {interactionType: {delayMs: [slowness]}}
     histograms = {}
-    
+    sampleCounts = {}
+    for interactionType in MAX_DELAY_MS:
+      histograms[interactionType] = {}
+      sampleCounts[interactionType] = 0
     for interaction in cls.query():
-      interactionHistogram = histograms.setdefault(interaction.interactionType, 
-    # returns [(interactionType, sampleCount, sorted[
-    #             (delayMs/10, sampleCount, sorted[
-    #               (slowness/10, count)])]]
-    # but first build {'click': [sampleCount, {delayMs/10: [sampleCount, {slowness/10: count}]}]} 
-    histograms = {}
-    interactions = cls.query()
-    for interaction in interactions:
-      if interaction.delayMs is None or interaction.slowness is None or interaction.interactionType is None:
+      if interaction.interactionType not in MAX_DELAY_MS:
         continue
-      interactionHistogram = histograms.setdefault(interaction.interactionType, [0, {}])
-      interactionHistogram[0] += 1
-      slownessHistogram = interactionHistogram[1].setdefault(interaction.delayMs // 10, [0, {}])
-      slownessHistogram[0] += 1
-      slownessHistogram = slownessHistogram[1]
-      bucket = interaction.slowness // 10
-      if bucket in slownessHistogram:
-        slownessHistogram[bucket] += 1
-      else:
-        slownessHistogram[bucket] = 1
-
-    for interactionType in histograms:
-      interactionHistogram = histograms[interactionType]
-      for delayBucket in interactionHistogram[1]:
-        slownessHistogram = interactionHistogram[1][delayBucket]
-        slownessHistogram[1] = sorted(slownessHistogram[1].items())
-      interactionHistogram[1] = sorted([delayBucket, sampleCount, slownessHistogram]
-                                       for (delayBucket, (sampleCount, slownessHistogram))
-                                       in interactionHistogram[1].iteritems())
-    return [(interactionType, sampleCount, histogram)
-            for (interactionType, (sampleCount, histogram))
-            in histograms.iteritems()]
+      sampleCounts[interaction.interactionType] += 1
+      histograms[interactionType].setdefault(interaction.delayMs, []).append(interaction.slowness)
+    for interactionType, histogram in histograms.iteritems():
+      maxDelayMs = MAX_DELAY_MS[interactionType]
+      bucketSize = max(3, maxDelayMs / math.sqrt(sampleCounts[interactionType]))
+      delayBucket = 0
+      delayHistogram = []
+      while delayBucket < maxDelayMs:
+        prevDelayBucket = delayBucket
+        delayBucket += bucketSize
+        slownesses = []
+        for delayMs in xrange(int(math.floor(prevDelayBucket)), int(math.floor(delayBucket + 1))):
+          slownesses.extend(histogram[delayMs])
+        delayHistogram.append([prevDelayBucket, sum(slownesses) / len(slownesses)])
+      histograms[interactionType] = delayHistogram
+    return sorted(histograms.items())
 
 class Record(webapp2.RequestHandler):
   def post(self):
