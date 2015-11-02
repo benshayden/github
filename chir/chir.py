@@ -10,15 +10,20 @@ class Interaction(ndb.Model):
   
   @classmethod
   def initialize(cls):
-    for interactionType in ['click', 'scroll', 'load']:
-      for delayBucket in xrange(dict(click=500, scroll=100, load=1000)[interactionType):
-        delayMs = (delayBucket * 10) + 5
-        for slownessBucket in xrange(10):
-          slowness = (slownessBucket * 10) + 5
-          Interaction(interactionType=interactionType, delayMs=delayMs, slowness=slowness).put()
+    for interactionType, maxDelayMs in dict(click=500, scroll=100, load=1000).iteritems():
+      for delayMs in xrange(0, maxDelayMs, maxDelayMs / 10):
+        for slowness in xrange(0, 100, 10):
+          Interaction(interactionType=interactionType,
+                      delayMs=delayMs,
+                      slowness=slowness).put()
   
   @classmethod
   def histograms(cls):
+    # returns [sorted[interactionType, [sorted[delayMs, meanSlowness]]]]
+    histograms = {}
+    
+    for interaction in cls.query():
+      interactionHistogram = histograms.setdefault(interaction.interactionType, 
     # returns [(interactionType, sampleCount, sorted[
     #             (delayMs/10, sampleCount, sorted[
     #               (slowness/10, count)])]]
