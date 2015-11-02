@@ -12,9 +12,12 @@ class Interaction(ndb.Model):
   slowness = ndb.IntegerProperty()
   
   @classmethod
-  def initialize(cls):
+  def clear(cls):
     for interaction in cls.query():
       interaction.key.delete()
+  
+  @classmethod
+  def initialize(cls):
     for interactionType, maxDelayMs in MAX_DELAY_MS.iteritems():
       for delayMs in xrange(0, maxDelayMs, maxDelayMs / 10):
         for slowness in xrange(0, 100, 10):
@@ -70,7 +73,7 @@ class Graph(webapp2.RequestHandler):
 
 class Initialize(webapp2.RequestHandler):
   def get(self):
-    Interaction.initialize()
+    Interaction.clear()
 
 app = webapp2.WSGIApplication([
   ('/initialize', Initialize),
