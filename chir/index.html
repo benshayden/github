@@ -36,6 +36,13 @@ body {
   margin: 0 auto;
   text-align: center;
 }
+flex {
+  display: flex;
+}
+flex > * {
+  flex-grow: 1;
+  margin: 0.5em;
+}
 canvas {
   display: block;
   margin: 0 auto 1em auto;
@@ -45,7 +52,7 @@ canvas {
 <div id=what>
   This Interaction Research Assistant will ask you to interact with the computer in a few different ways,
   then ask you how slow the computer felt:
-  <button>too slow</button><button>fast enough</button>
+  <flex><button>too slow</button><button>fast enough</button></flex>
   This survey will take about 30 seconds.
 </div>
 
@@ -57,7 +64,7 @@ canvas {
 
 <div id=survey>
   How slow was that delay?
-  <button id=slow>too slow</button><button id=fast>fast enough</button>
+  <flex><button id=slow>too slow</button><button id=fast>fast enough</button></flex>
 </div>
 
 <div id=thanks>
