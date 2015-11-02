@@ -188,47 +188,34 @@ function getHistograms() {
 
 function chartHistogram(histogram) {
   var interactionType = histogram[0];
-  var interactionSampleCount = histogram[1];
+  histogram = histogram[1];
   var canvas = document.createElement('canvas');
   canvas.width = 600;
   canvas.height = 600;
   $('thanks').appendChild(document.createTextNode(interactionType));
   $('thanks').appendChild(canvas);
   var context = canvas.getContext('2d');
-  var prevX = 0;
-  var slownessMeans = [];
   context.font = '14px Arial';
   var bottomMargin = context.measureText('0').height + 10;
+  var leftMargin = 0;
   var prevXAxis = 0;
-  histogram[2].forEach(function(delayHistogram) {
-    var delayMs = delayHistogram[0] * 10;
-    var delaySampleCount = delayHistogram[1];
-    var x = canvas.width * delayMs / MAX_DELAY_MS[interactionType];
-    var prevY = canvas.height - bottomMargin;
-    var avgSlowness = 0;
-    if (x > prevXAxis) {
-      var xAxisWidth = context.measureText('' + delayMs).width;
-      context.fillText('' + delayMs, x, canvas.height);
-      prevXAxis = x + xAxisWidth;
+  var prevCanvasPoint = undefined;
+  histogram.forEach(function(point, index) {
+    var canvasPoint = [(canvas.width - leftMargin) * point[0] / MAX_DELAY_MS[interactionType],
+                       (canvas.height - bottomMargin) * (1 - point[1])];
+    if (prevCanvasPoint) {
+      context.beginPath();
+      context.moveTo(prevCanvasPoint[0], prevCanvasPoint[1]);
+      context.lineTo(canvasPoint[0], canvasPoint[1]);
+      context.stroke();
     }
-    delayHistogram[2].forEach(function(slownessBucket) {
-      var slowness = slownessBucket[0] * 10;
-      var count = slownessBucket[1];
-      avgSlowness += slowness * count / delaySampleCount;
-      context.fillStyle = SLOWNESS_COLORS[slownessBucket[0]];
-      var height = canvas.height * count / delaySampleCount;
-      console.debug(interactionType, 'delayMs', delayMs, 'slowness', slowness, 'count', count, 'prevX', prevX, 'x', x, 'prevY', prevY, 'y', prevY - height, 'height', height, 'width', x - prevX);
-      context.fillRect(prevX, prevY - height, x - prevX, height);
-      prevY -= height;
-    });
-    slownessMeans.push([(prevX + (x - prevX) / 2), canvas.height * avgSlowness / 100]);
-    prevX = x;
+    var avgSlowness = 0;
+    if (canvasPoint[0] > prevXAxis) {
+      var xAxisWidth = context.measureText(point[0] + ' ').width;
+      context.fillText('' + point[0], canvasPoint[0], canvas.height);
+      prevXAxis = canvasPoint[0] + xAxisWidth;
+    }
+    prevCanvasPoint = canvasPoint;
   });
-  context.beginPath();
-  context.moveTo(slownessMeans[0][0], slownessMeans[0][1]);
-  slownessMeans.slice(1).forEach(function(point) {
-    context.lineTo(point[0], point[1]);
-  });
-  context.stroke();
 }
 </script>
