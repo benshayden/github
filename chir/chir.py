@@ -13,12 +13,14 @@ class Interaction(ndb.Model):
   
   @classmethod
   def initialize(cls):
+    for interaction in cls.query():
+      interaction.delete()
     for interactionType, maxDelayMs in MAX_DELAY_MS.iteritems():
       for delayMs in xrange(0, maxDelayMs, maxDelayMs / 10):
         for slowness in xrange(0, 100, 10):
-          Interaction(interactionType=interactionType,
-                      delayMs=delayMs,
-                      slowness=slowness).put()
+          cls(interactionType=interactionType,
+              delayMs=delayMs,
+              slowness=slowness).put()
   
   @classmethod
   def histograms(cls):
@@ -66,7 +68,12 @@ class Graph(webapp2.RequestHandler):
       memcache.add(memcacheKey, histograms, time=60)
     self.response.out.write(histograms)
 
+class Initialize(webapp2.RequestHandler):
+  def get(self):
+    Interaction.initialize()
+
 app = webapp2.WSGIApplication([
+  ('/initialize', Initialize),
   ('/record', Record),
   ('/graph', Graph),
 ], debug=True)
