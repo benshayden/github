@@ -149,15 +149,15 @@ function showSurvey(interactionType, startMs) {
     $('slow').clickHandler = undefined;
     $('fast').removeEventListener('click', $('fast').clickHandler);
     $('fast').clickHandler = undefined;
-    recordInteraction(interactionType, delayMs, slowness * 100));
+    recordInteraction(interactionType, delayMs, slowness);
     startNextInteractionAfter(interactionType);
   }
   $('slow').clickHandler = function(event) {
-    submit(event, true);
+    submit(event, 100);
   };
   $('slow').addEventListener('click', $('slow').clickHandler);
   $('fast').clickHandler = function(event) {
-    submit(event, false);
+    submit(event, 0);
   };
   $('fast').addEventListener('click', $('fast').clickHandler);
 }
