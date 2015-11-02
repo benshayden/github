@@ -14,7 +14,7 @@ class Interaction(ndb.Model):
   @classmethod
   def initialize(cls):
     for interaction in cls.query():
-      interaction.key().delete()
+      interaction.key.delete()
     for interactionType, maxDelayMs in MAX_DELAY_MS.iteritems():
       for delayMs in xrange(0, maxDelayMs, maxDelayMs / 10):
         for slowness in xrange(0, 100, 10):
