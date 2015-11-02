@@ -21,3 +21,6 @@ handlers:
 
 - url: /graph
   script: chir.app
+
+- url: /initialize
+  script: chir.app
