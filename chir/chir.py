@@ -6,6 +6,14 @@ from google.appengine.api import memcache
 
 MAX_DELAY_MS = dict(click=500, scroll=100, load=1000)
 
+def safeMean(lst, default):
+  count = len(lst)
+  if count:
+      mean = sum(lst) / count
+  else:
+      mean = default
+  return mean
+
 class Interaction(ndb.Model):
   interactionType = ndb.StringProperty(indexed=False)
   delayMs = ndb.IntegerProperty()
@@ -56,8 +64,9 @@ class Interaction(ndb.Model):
         delayBucket += bucketSize
         slownesses = []
         for delayMs in xrange(int(prevDelayBucket), int(delayBucket)):
-          slownesses.extend(histogram[delayMs])
-        delayHistogram.append([prevDelayBucket, sum(slownesses) / len(slownesses)])
+          if delayMs in histogram:
+            slownesses.extend(histogram[delayMs])
+        delayHistogram.append([prevDelayBucket, safeMean(slownesses, 50)])
       histograms[interactionType] = delayHistogram
     return sorted(histograms.items())
 
