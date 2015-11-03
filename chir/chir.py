@@ -43,8 +43,12 @@ class Interaction(ndb.Model):
       slownesses.append(interaction.slowness)
 
     for interactionType, histogram in histograms.iteritems():
+      sampleCount = sampleCounts[interactionType]
+      if sampleCount < 9:
+        del histograms[interactionType]
+        continue
       maxDelayMs = MAX_DELAY_MS[interactionType]
-      bucketSize = max(3, maxDelayMs / math.sqrt(sampleCounts[interactionType]))
+      bucketSize = max(3, maxDelayMs / math.sqrt(sampleCount))
       delayBucket = 0
       delayHistogram = []
       while delayBucket < maxDelayMs:
