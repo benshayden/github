@@ -73,31 +73,11 @@ canvas {
 <div id=thanks>
   Thanks for your help!
   <br>&nbsp;<br>
-  <span class=legend>fast enough</span>
-  <span class=legend>====</span>
-  <span class=legend>====</span>
-  <span class=legend>a bit slow</span>
-  <span class=legend>====</span>
-  <span class=legend>====</span>
-  <span class=legend>pretty slow</span>
-  <span class=legend>====</span>
-  <span class=legend>====</span>
-  <span class=legend>too slow</span>
-  <br>&nbsp;<br>
 </div>
 
 <script>
 var INTERACTIONS = ['click', 'scroll', 'load'];
 var MAX_DELAY_MS = {click: 5e3, scroll: 1e3, load: 1e4};
-var SLOWNESS_COLORS = [];
-
-var legends = document.querySelectorAll('span.legend');
-for (var i = 0; i < 10; ++i) {
-  var red = Math.floor(255 * i / 10);
-  var color = 'rgb(' + red + ',' + (255 - red) + ',0)';
-  SLOWNESS_COLORS.push(color);
-  legends[i].style.color = color;
-}
 
 var $ = function(id) { return document.getElementById(id); }
 
