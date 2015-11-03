@@ -66,7 +66,7 @@ class Interaction(ndb.Model):
         for delayMs in xrange(int(prevDelayBucket), int(delayBucket)):
           if delayMs in histogram:
             slownesses.extend(histogram[delayMs])
-        delayHistogram.append([prevDelayBucket, safeMean(slownesses, 50)])
+        delayHistogram.append([int(round(prevDelayBucket)), safeMean(slownesses, 50)])
       histograms[interactionType] = delayHistogram
     return sorted(histograms.items())
 
