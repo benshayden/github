@@ -28,7 +28,7 @@ button {
   height: 3em;
 }
 #scroll {
-  height: 200%;
+  height: 100%;
 }
 #load {
   margin: 0 auto;
@@ -105,8 +105,9 @@ $('load').addEventListener('click', function(event) {
 
 function startInteraction(interactionType) {
   scrolled = false;
-  $('survey').style.display = 'none';
-  document.children[0].style.height = (interactionType === 'scroll') ? '100%' : '';
+  var isScroll = (interactionType === 'scroll');
+  $('survey').style.display = isScroll ? 'block' : 'none';
+  document.children[0].style.height = isScroll ? '100%' : '';
   INTERACTIONS.forEach(function(i) {
     $(i).style.display = (interactionType === i) ? 'block' : 'none';
   });
@@ -121,7 +122,14 @@ function scheduleSurvey(interactionType) {
 }
 
 function showSurvey(interactionType, startMs) {
-  // TODO if scroll then animate survey upwards to simulate scrolling
+  if (interactionType === 'scroll') {
+    var scrollHeight = $('scroll').getBoundingClientRect().height;
+    if (scrollHeight > 20)) {
+      $('scroll').style.height = (scrollHeight - 20) + 'px';
+      window.requestAnimationFrame(showSurvey);
+      return;
+    }
+  }
   $(interactionType).style.display = 'none';
   $('what').style.display = 'none';
   $('survey').style.display = 'block';
