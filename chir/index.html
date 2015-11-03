@@ -126,7 +126,9 @@ function showSurvey(interactionType, startMs) {
     var scrollHeight = $('scroll').getBoundingClientRect().height;
     if (scrollHeight > 20) {
       $('scroll').style.height = (scrollHeight - 20) + 'px';
-      window.requestAnimationFrame(showSurvey);
+      window.requestAnimationFrame(function() {
+        showSurvey(interactionType, startMs);
+      });
       return;
     }
   }
