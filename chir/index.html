@@ -124,7 +124,7 @@ function scheduleSurvey(interactionType) {
 function showSurvey(interactionType, startMs) {
   if (interactionType === 'scroll') {
     var scrollHeight = $('scroll').getBoundingClientRect().height;
-    if (scrollHeight > 20)) {
+    if (scrollHeight > 20) {
       $('scroll').style.height = (scrollHeight - 20) + 'px';
       window.requestAnimationFrame(showSurvey);
       return;
