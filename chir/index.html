@@ -77,6 +77,7 @@ canvas {
 
 <script>
 var INTERACTIONS = ['click', 'scroll', 'load'];
+var INTERACTION_REPEAT = 3;
 var MAX_DELAY_MS = {click: 5e3, scroll: 1e3, load: 1e4};
 
 var $ = function(id) { return document.getElementById(id); }
@@ -107,6 +108,7 @@ function startInteraction(interactionType) {
   scrolled = false;
   var isScroll = (interactionType === 'scroll');
   $('click').disabled = false;
+  $('scroll').style.height = '100%';
   $('survey').style.display = isScroll ? 'block' : 'none';
   document.children[0].style.height = isScroll ? '100%' : '';
   INTERACTIONS.forEach(function(i) {
@@ -160,7 +162,7 @@ function showSurvey(interactionType, startMs) {
 var interactionCounter = 0;
 
 function startNextInteractionAfter(interactionType) {
-  if (interactionCounter < 5) {
+  if (interactionCounter < INTERACTION_REPEAT) {
     ++interactionCounter;
     startInteraction(interactionType);
     return;
