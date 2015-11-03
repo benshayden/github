@@ -106,6 +106,7 @@ $('load').addEventListener('click', function(event) {
 function startInteraction(interactionType) {
   scrolled = false;
   var isScroll = (interactionType === 'scroll');
+  $('click').disabled = false;
   $('survey').style.display = isScroll ? 'block' : 'none';
   document.children[0].style.height = isScroll ? '100%' : '';
   INTERACTIONS.forEach(function(i) {
