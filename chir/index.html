@@ -5,7 +5,7 @@
 html * {
   max-height: 1000000px;
 }
-html, body {
+body {
   height: 100%;
 }
 body {
@@ -23,6 +23,8 @@ body {
   display: block;
   margin: 0 auto;
   width: 80%;
+}
+button {
   height: 3em;
 }
 #scroll {
@@ -41,7 +43,7 @@ flex {
 }
 flex > * {
   flex-grow: 1;
-  margin: 0.5em;
+  margin: 1em;
 }
 canvas {
   display: block;
@@ -56,7 +58,7 @@ canvas {
   This survey will take about 30 seconds.
 </div>
 
-<button id=click>Click to begin!</button>
+<button id=click>Click!</button>
 
 <div id=scroll>Scroll!</div>
 
@@ -123,6 +125,7 @@ $('load').addEventListener('click', function(event) {
 function startInteraction(interactionType) {
   scrolled = false;
   $('survey').style.display = 'none';
+  document.children[0].style.height = (interactionType === 'scroll') ? '100%' : '';
   INTERACTIONS.forEach(function(i) {
     $(i).style.display = (interactionType === i) ? 'block' : 'none';
   });
