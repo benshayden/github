@@ -10,12 +10,12 @@ class Interaction(ndb.Model):
   interactionType = ndb.StringProperty(indexed=False)
   delayMs = ndb.IntegerProperty()
   slowness = ndb.IntegerProperty()
-  
+
   @classmethod
   def clear(cls):
     for interaction in cls.query():
       interaction.key.delete()
-  
+
   @classmethod
   def initialize(cls):
     for interactionType, maxDelayMs in MAX_DELAY_MS.iteritems():
@@ -24,7 +24,7 @@ class Interaction(ndb.Model):
           cls(interactionType=interactionType,
               delayMs=delayMs,
               slowness=slowness).put()
-  
+
   @classmethod
   def histograms(cls):
     # returns [sorted[interactionType, [sorted[delayMs, meanSlowness]]]]
@@ -42,7 +42,7 @@ class Interaction(ndb.Model):
       slownesses = histogram.setdefault(interaction.delayMs, [])
       slownesses.append(interaction.slowness)
 
-    for interactionType, histogram in histograms.iteritems():
+    for interactionType, histogram in histograms.items():
       sampleCount = sampleCounts[interactionType]
       if sampleCount < 9:
         del histograms[interactionType]
@@ -55,7 +55,7 @@ class Interaction(ndb.Model):
         prevDelayBucket = delayBucket
         delayBucket += bucketSize
         slownesses = []
-        for delayMs in xrange(int(math.floor(prevDelayBucket)), int(math.floor(delayBucket + 1))):
+        for delayMs in xrange(int(prevDelayBucket), int(delayBucket)):
           slownesses.extend(histogram[delayMs])
         delayHistogram.append([prevDelayBucket, sum(slownesses) / len(slownesses)])
       histograms[interactionType] = delayHistogram
