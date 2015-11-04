@@ -24,3 +24,6 @@ handlers:
 
 - url: /initialize
   script: chir.app
+
+- url: /db.csv
+  script: chir.app
