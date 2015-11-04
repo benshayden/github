@@ -21,6 +21,9 @@ class Interaction(ndb.Model):
   interactionType = ndb.StringProperty(indexed=False)
   delayMs = ndb.IntegerProperty()
   comfort = ndb.IntegerProperty()
+  
+  def csv(self):
+    return '%s,%d,%d\n' % (self.interactionType, self.delayMs, self.comfort)
 
   @classmethod
   def clear(cls):
@@ -96,9 +99,24 @@ class Initialize(webapp2.RequestHandler):
   def get(self):
     Interaction.clear()
     Interaction.initialize()
+    
+class DBCSV(webapp2.RequestHandler):
+  def get(self):
+    count = 0
+    bufr = ''
+    for interaction in Interaction.query():
+      count += 1
+      bufr += interaction.csv()
+      if count == 1000:
+        self.response.out.write(bufr)
+        bufr = ''
+        count = 0
+    if bufr:
+      self.response.out.write(bufr)
 
 app = webapp2.WSGIApplication([
   ('/initialize', Initialize),
   ('/record', Record),
   ('/graph', Graph),
+  ('/db.csv', DBCSV),
 ], debug=True)
