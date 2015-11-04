@@ -6,7 +6,7 @@ var cylinder, cube, sphere, linear_extrude, union, polygon, vector_text, rectang
 function getParameterDefinitions() {
   var params = [];
   params.push({name: 'baseBones', type: 'float', initial: 9});
-  params.push({name: 'baseWidth', type: 'float', initial: 50});
+  params.push({name: 'baseWidth', type: 'float', initial: 60});
   params.push({name: 'boneDiameter', type: 'float', initial: 3.5});
   params.push({name: 'buttonSide', type: 'float', initial: 8});
   params.push({name: 'color', type: 'text', initial: '667fe5'});
@@ -179,6 +179,9 @@ function makeBase(baseWidth, baseBones, boneDiameter, bone) {
   }
   base = base.subtract(piece);
 
+  base = base.translate([0, -boneDiameter, 0]);
+  base = base.intersect(cube({size: [baseLength, baseWidth - (2 * boneDiameter), (baseWidth / 2) - (1.5 * boneDiameter)]}));
+  
   return base;
 }
 
