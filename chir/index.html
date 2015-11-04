@@ -130,11 +130,13 @@ function scheduleSurvey(interactionType) {
     }, delayMs);
 }
 
+var SCROLL_FRAME_PX = 50;
+
 function showSurvey(interactionType, startMs) {
   if (interactionType === 'scroll') {
     var scrollHeight = $('scroll').getBoundingClientRect().height;
-    if (scrollHeight > 20) {
-      $('scroll').style.height = (scrollHeight - 50) + 'px';
+    if (scrollHeight > SCROLL_FRAME_PX) {
+      $('scroll').style.height = (scrollHeight - SCROLL_FRAME_PX) + 'px';
       window.requestAnimationFrame(function() {
         showSurvey(interactionType, startMs);
       });
