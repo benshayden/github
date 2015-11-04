@@ -1,0 +1,76 @@
+<!doctype html>
+<style>
+html {
+  font-family: monospace;
+  background: black;
+  color: white;
+}
+cursor {
+  background: white;
+  color: black;
+}
+</style>
+<cursor>&nbsp;</cursor>
+<script>
+var cursor = document.querySelector('cursor');
+var buffer = '';
+
+addEventListener('keypress', handle);
+function handle(event) {
+  event = event.keyCode;
+  if ((event < 97) || (event > 122)) return;
+  event = String.fromCharCode(event);
+  buffer += event;
+  if (commands[buffer]) {
+    commands[buffer]();
+    buffer = '';
+  } else if (buffer.length > maxcmdlen) {
+    buffer = '';
+  }
+}
+
+var commands = {};
+var maxcmdlen = 1;
+
+function randCmd(n) {
+  n = n || 2;
+  var cmd = '';
+  while (!cmd || commands[cmd]) {
+    cmd = '';
+    for (var i = 0; i < n; ++i) {
+      cmd += String.fromCharCode(97 + Math.floor(Math.random() * 26));
+    }
+  }
+  if (n > maxcmdlen) {
+    maxcmdlen = n;
+  }
+  return cmd;
+}
+
+function def(msg, cb) {
+  var cmd = randCmd();
+  console.debug(cmd, msg);
+  commands[cmd] = cb;
+}
+
+function inserter(char) {
+  def(char, function() {
+    document.body.insertBefore(document.createTextNode(char), cursor);
+  });
+}
+
+def('back', function() {
+  document.body.removeChild(cursor.previousSibling);
+});
+
+for (var i = 33; i < 126; ++i) {
+  (function(i) {
+    inserter(String.fromCharCode(i));
+  })(i);
+}
+inserter(String.fromCharCode(160));
+
+def('newline', function() {
+  document.body.insertBefore(document.createElement('br'), cursor);
+});
+</script>
