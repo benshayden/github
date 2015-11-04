@@ -77,7 +77,7 @@ canvas {
 
 <script>
 var INTERACTIONS = ['click', 'scroll', 'load'];
-var INTERACTION_REPEAT = 3;
+var INTERACTION_REPEAT = {click: 4, scroll: 5, load: 3};
 var MAX_DELAY_MS = {click: 2e3, scroll: 1e3, load: 5e3};
 
 var $ = function(id) { return document.getElementById(id); }
@@ -118,7 +118,13 @@ function startInteraction(interactionType) {
 
 function scheduleSurvey(interactionType) {
   var startMs = new Date().getTime();
-  var delayMs = Math.round(Math.random() * MAX_DELAY_MS[interactionType]);
+  var delayMs = MAX_DELAY_MS[interactionType];
+  // Artificially force the first scroll to have max delay to illustrate
+  // how we're interested in the initial delay,
+  // not the speed or jank of the artificial animation.
+  if ((interactionType !== 'scroll') || (interactionCounter !== 0)) {
+    delayMs = Math.round(Math.random() * delayMs);
+  }
   window.setTimeout(function() {
     showSurvey(interactionType, startMs);
     }, delayMs);
@@ -162,7 +168,7 @@ function showSurvey(interactionType, startMs) {
 var interactionCounter = 0;
 
 function startNextInteractionAfter(interactionType) {
-  if (interactionCounter < INTERACTION_REPEAT) {
+  if (interactionCounter < INTERACTION_REPEAT[interactionType]) {
     ++interactionCounter;
     startInteraction(interactionType);
     return;
@@ -181,6 +187,9 @@ function startNextInteractionAfter(interactionType) {
 }
 
 function recordInteraction(interactionType, delayMs, comfort) {
+  // Don't record the artificial max-delay scroll, or it will screw up the histogram.
+  if (interactionType === 'scroll' && delayMs === MAX_DELAY_MS.scroll)
+    return;
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/record', true);
   xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
