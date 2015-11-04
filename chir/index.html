@@ -48,7 +48,7 @@ flex > * {
 }
 canvas {
   display: block;
-  margin: 0 auto 1em auto;
+  margin: 0 auto 3em auto;
 }
 </style>
 
@@ -78,7 +78,7 @@ canvas {
 <script>
 var INTERACTIONS = ['click', 'scroll', 'load'];
 var INTERACTION_REPEAT = 3;
-var MAX_DELAY_MS = {click: 5e3, scroll: 1e3, load: 1e4};
+var MAX_DELAY_MS = {click: 2e3, scroll: 1e3, load: 5e3};
 
 var $ = function(id) { return document.getElementById(id); }
 
@@ -128,7 +128,7 @@ function showSurvey(interactionType, startMs) {
   if (interactionType === 'scroll') {
     var scrollHeight = $('scroll').getBoundingClientRect().height;
     if (scrollHeight > 20) {
-      $('scroll').style.height = (scrollHeight - 20) + 'px';
+      $('scroll').style.height = (scrollHeight - 50) + 'px';
       window.requestAnimationFrame(function() {
         showSurvey(interactionType, startMs);
       });
@@ -140,21 +140,21 @@ function showSurvey(interactionType, startMs) {
   $('survey').style.display = 'block';
   var delayMs = new Date().getTime() - startMs;
   var done = false;
-  function submit(event, slowness) {
+  function submit(event, comfort) {
     event.preventDefault();
     $('slow').removeEventListener('click', $('slow').clickHandler);
     $('slow').clickHandler = undefined;
     $('fast').removeEventListener('click', $('fast').clickHandler);
     $('fast').clickHandler = undefined;
-    recordInteraction(interactionType, delayMs, slowness);
+    recordInteraction(interactionType, delayMs, comfort);
     startNextInteractionAfter(interactionType);
   }
   $('slow').clickHandler = function(event) {
-    submit(event, 100);
+    submit(event, 0);
   };
   $('slow').addEventListener('click', $('slow').clickHandler);
   $('fast').clickHandler = function(event) {
-    submit(event, 0);
+    submit(event, 100);
   };
   $('fast').addEventListener('click', $('fast').clickHandler);
 }
@@ -180,13 +180,13 @@ function startNextInteractionAfter(interactionType) {
   }
 }
 
-function recordInteraction(interactionType, delayMs, slowness) {
+function recordInteraction(interactionType, delayMs, comfort) {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/record', true);
   xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
   xhr.send('interactionType=' + interactionType +
           '&delayMs=' + delayMs +
-          '&slowness=' + slowness);
+          '&comfort=' + comfort);
 }
 
 function getHistograms() {
@@ -201,29 +201,56 @@ function getHistograms() {
 
 function chartHistogram(histogram) {
   var interactionType = histogram[0];
+  var maxDelayMs = MAX_DELAY_MS[interactionType];
   histogram = histogram[1];
   var canvas = document.createElement('canvas');
-  canvas.width = 600;
-  canvas.height = 600;
-  $('thanks').appendChild(document.createTextNode(interactionType));
+  canvas.width = 400;
+  canvas.height = 400;
+  $('thanks').appendChild(document.createTextNode(interactionType + ' comfort'));
   $('thanks').appendChild(canvas);
   var context = canvas.getContext('2d');
+
   context.font = '14px Arial';
-  var bottomMargin = context.measureText('0').height + 10;
-  var leftMargin = 0;
+
+  var topMargin = 16;
+  var bottomMargin = 26;
+  var leftMargin = context.measureText('100').width + 12;
+  var rightMargin = context.measureText(maxDelayMs).width + 2;
   var prevXAxis = 0;
   var prevCanvasPoint = undefined;
+
+  context.beginPath();
+  context.moveTo(canvas.width, canvas.height - bottomMargin);
+  context.lineTo(leftMargin, canvas.height - bottomMargin);
+  context.lineTo(leftMargin, 0);
+  context.stroke();
+
+  for (var pct = 0; pct <= 100; pct += 10) {
+    context.beginPath();
+    var y = topMargin + ((canvas.height - bottomMargin - topMargin) * (1 - pct / 100));
+    context.moveTo(leftMargin, y);
+    context.lineTo(leftMargin - 10, y);
+    context.stroke();
+    context.fillText('' + pct, 1, y);
+  }
+
   histogram.forEach(function(point, index) {
-    var canvasPoint = [(canvas.width - leftMargin) * point[0] / MAX_DELAY_MS[interactionType],
-                       (canvas.height - bottomMargin) * (1 - point[1])];
+    var canvasPoint = [];
+    canvasPoint[0] = leftMargin + (canvas.width - leftMargin - rightMargin) *
+      point[0] / maxDelayMs;
+    canvasPoint[1] = topMargin + ((canvas.height - bottomMargin - topMargin) * (1 - (point[1] / 100)));
     if (prevCanvasPoint) {
       context.beginPath();
       context.moveTo(prevCanvasPoint[0], prevCanvasPoint[1]);
       context.lineTo(canvasPoint[0], canvasPoint[1]);
       context.stroke();
     }
-    var avgSlowness = 0;
+
     if (canvasPoint[0] > prevXAxis) {
+      context.beginPath();
+      context.moveTo(canvasPoint[0], canvas.height - bottomMargin);
+      context.lineTo(canvasPoint[0], canvas.height - bottomMargin + 10);
+      context.stroke();
       var xAxisWidth = context.measureText(point[0] + ' ').width;
       context.fillText('' + point[0], canvasPoint[0], canvas.height);
       prevXAxis = canvasPoint[0] + xAxisWidth;

@@ -4,7 +4,7 @@ import math
 from google.appengine.ext import ndb
 from google.appengine.api import memcache
 
-MAX_DELAY_MS = dict(click=500, scroll=100, load=1000)
+MAX_DELAY_MS = dict(click=2e3, scroll=1e3, load=5e3)
 
 def safeMean(lst, default):
   count = len(lst)
@@ -14,10 +14,13 @@ def safeMean(lst, default):
       mean = default
   return mean
 
+def clamp(x, lo, hi):
+  return min(hi, max(lo, x))
+
 class Interaction(ndb.Model):
   interactionType = ndb.StringProperty(indexed=False)
   delayMs = ndb.IntegerProperty()
-  slowness = ndb.IntegerProperty()
+  comfort = ndb.IntegerProperty()
 
   @classmethod
   def clear(cls):
@@ -27,28 +30,30 @@ class Interaction(ndb.Model):
   @classmethod
   def initialize(cls):
     for interactionType, maxDelayMs in MAX_DELAY_MS.iteritems():
-      for delayMs in xrange(0, maxDelayMs, maxDelayMs / 10):
-        for slowness in xrange(0, 100, 10):
+      for delayMs in xrange(0, int(maxDelayMs) + 1, int(maxDelayMs / 5)):
+        comfort = int(100 * (1 - (float(delayMs) / maxDelayMs)))
+        for _ in xrange(5):
           cls(interactionType=interactionType,
               delayMs=delayMs,
-              slowness=slowness).put()
+              comfort=comfort).put()
 
   @classmethod
   def histograms(cls):
-    # returns [sorted[interactionType, [sorted[delayMs, meanSlowness]]]]
-    # but first build {interactionType: {delayMs: [slowness]}}
+    # returns [sorted[interactionType, [sorted[delayMs, meancomfort]]]]
+    # but first build {interactionType: {delayMs: [comfort]}}
     histograms = {}
     sampleCounts = {}
     for interactionType in MAX_DELAY_MS:
       histograms[interactionType] = {}
       sampleCounts[interactionType] = 0
+
     for interaction in cls.query():
       if interaction.interactionType not in MAX_DELAY_MS:
         continue
       sampleCounts[interaction.interactionType] += 1
-      histogram = histograms[interactionType]
-      slownesses = histogram.setdefault(interaction.delayMs, [])
-      slownesses.append(interaction.slowness)
+      histogram = histograms[interaction.interactionType]
+      comforts = histogram.setdefault(interaction.delayMs, [])
+      comforts.append(interaction.comfort)
 
     for interactionType, histogram in histograms.items():
       sampleCount = sampleCounts[interactionType]
@@ -59,14 +64,14 @@ class Interaction(ndb.Model):
       bucketSize = max(3, maxDelayMs / math.sqrt(sampleCount))
       delayBucket = 0
       delayHistogram = []
-      while delayBucket < maxDelayMs:
+      while delayBucket <= maxDelayMs:
         prevDelayBucket = delayBucket
         delayBucket += bucketSize
-        slownesses = []
+        comforts = []
         for delayMs in xrange(int(prevDelayBucket), int(delayBucket)):
           if delayMs in histogram:
-            slownesses.extend(histogram[delayMs])
-        delayHistogram.append([int(round(prevDelayBucket)), safeMean(slownesses, 50)])
+            comforts.extend(histogram[delayMs])
+        delayHistogram.append([int(prevDelayBucket), safeMean(comforts, 50)])
       histograms[interactionType] = delayHistogram
     return sorted(histograms.items())
 
@@ -75,7 +80,7 @@ class Record(webapp2.RequestHandler):
     interaction = Interaction(
       interactionType=self.request.get('interactionType'),
       delayMs=int(self.request.get('delayMs')),
-      slowness=int(self.request.get('slowness')))
+      comfort=int(self.request.get('comfort')))
     interaction.put()
 
 class Graph(webapp2.RequestHandler):
@@ -90,6 +95,7 @@ class Graph(webapp2.RequestHandler):
 class Initialize(webapp2.RequestHandler):
   def get(self):
     Interaction.clear()
+    Interaction.initialize()
 
 app = webapp2.WSGIApplication([
   ('/initialize', Initialize),
