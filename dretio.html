@@ -168,4 +168,11 @@ def('down', function() {
   if (!br) return;
   /* TODO */
 });
+
+function Huffman(hist) {
+  var q = [];
+  for (var k in hist) {
+    q.push({sym: k, w: hist[k]});
+  }
+}
 </script>
