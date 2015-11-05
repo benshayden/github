@@ -49,6 +49,7 @@ function randCmd(n) {
 
 function def(msg, cb) {
   var cmd = randCmd();
+  // TODO set cmd using usage vs strength
   console.debug(cmd, msg);
   commands[cmd] = cb;
 }
