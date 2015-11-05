@@ -73,4 +73,34 @@ inserter(String.fromCharCode(160));
 def('newline', function() {
   document.body.insertBefore(document.createElement('br'), cursor);
 });
+
+def('left', function() {
+  if (!cursor.previousSibling) return;
+  var newcursor = document.createElement('cursor');
+  var text = cursor.previousSibling;
+  // TODO text is br?
+  document.body.removeChild(text);
+  newcursor.appendChild(text);
+  document.body.insertBefore(newcursor, cursor);
+  text = cursor.childNodes[0];
+  cursor.removeChild(text);
+  document.body.insertBefore(text, cursor);
+  document.body.removeChild(cursor);
+  cursor = newcursor;
+});
+
+def('right', function() {
+  if (!cursor.nextSibling) return;
+  var newcursor = document.createElement('cursor');
+  var text = cursor.nextSibling;
+  // TODO text is br?
+  document.body.removeChild(text);
+  newcursor.appendChild(text);
+  text = cursor.childNodes[0];
+  cursor.removeChild(text);
+  document.body.insertBefore(text, cursor);
+  document.body.insertBefore(newcursor, cursor);
+  document.body.removeChild(cursor);
+  cursor = newcursor;
+});
 </script>
