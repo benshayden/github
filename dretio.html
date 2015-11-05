@@ -1,4 +1,4 @@
-<!doctype html>
+data:text/html,<!doctype html>
 <style>
 html {
   font-family: monospace;
@@ -10,8 +10,36 @@ cursor {
   color: black;
 }
 </style>
+Forget modifier keys, the mouse, arrows, symbols, and function keys.
+<br>This editor maps the 26 letter keys, spacebar, and maybe a few other keys
+<br>to every command: inserting lowercase/uppercase/numbers/symbols, cursor movement,
+<br>backspace, delete, spacebar, etc.
+<br>More common functions, such as inserting a letter 'e' require fewer strokes than
+<br>less common functions, such as inserting a tilde.
+<br>This is a compression problem.
+<br>But instead of encoding commands as bit-strings,
+<br>they are encoded as strings of letters and maybe a few other keys.
+<br>If keys were all equally easy to type, then the compression could use a standard
+<br>base-30-something Huffman code.
+<br>But some keys are preferred more than others.
+<br>'j' is easier to type than 'z', so commands are more likely to use 'j' than 'z'.
 <cursor>&nbsp;</cursor>
 <script>
+var i = 0;
+while (i < document.body.childNodes.length) {
+  var n = document.body.childNodes[i];
+  if (n.nodeName === '#text') {
+    var text = n.textContent;
+    for (var j = 0; j < text.length; ++j) {
+      document.body.insertBefore(document.createTextNode(text[j]), n);
+    }
+    document.body.removeChild(n);
+    i += text.length;
+  } else {
+    ++i;
+  }
+}
+
 var cursor = document.querySelector('cursor');
 var buffer = '';
 
@@ -49,7 +77,6 @@ function randCmd(n) {
 
 function def(msg, cb) {
   var cmd = randCmd();
-  // TODO set cmd using usage vs strength
   console.debug(cmd, msg);
   commands[cmd] = cb;
 }
@@ -79,7 +106,7 @@ def('left', function() {
   if (!cursor.previousSibling) return;
   var newcursor = document.createElement('cursor');
   var text = cursor.previousSibling;
-  // TODO text is br?
+  /* TODO text is br? */
   document.body.removeChild(text);
   newcursor.appendChild(text);
   document.body.insertBefore(newcursor, cursor);
@@ -94,7 +121,7 @@ def('right', function() {
   if (!cursor.nextSibling) return;
   var newcursor = document.createElement('cursor');
   var text = cursor.nextSibling;
-  // TODO text is br?
+  /* TODO text is br? */
   document.body.removeChild(text);
   newcursor.appendChild(text);
   text = cursor.childNodes[0];
@@ -103,5 +130,42 @@ def('right', function() {
   document.body.insertBefore(newcursor, cursor);
   document.body.removeChild(cursor);
   cursor = newcursor;
+});
+
+function prevBr() {
+  var br = cursor.previousSibling;
+  var col = 0;
+  while (br && br.nodeName !== 'BR') {
+    br = br.previousSibling;
+    ++col;
+  }
+  return {br: br, col: col};
+}
+
+function line() {
+  var elem = cursor.previousSibling;
+  var n = 0;
+  while (elem) {
+    if (elem.nodeName === 'BR') {
+      ++n;
+    }
+    elem = elem.previousSibling;
+  }
+  return n;
+}
+
+def('up', function() {
+  var br = prevBr();
+  if (!br.br) return;
+  /* TODO */
+});
+
+def('down', function() {
+  var br = cursor.nextSibling;
+  while (br && br.nodeName !== 'BR') {
+    br = br.nextSibling;
+  }
+  if (!br) return;
+  /* TODO */
 });
 </script>
