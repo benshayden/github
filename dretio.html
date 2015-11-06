@@ -171,10 +171,56 @@ def('down', function() {
   /* TODO */
 });
 
-function Huffman(hist) {
+function bsearch(a, cb) {
+    var minIndex = 0;
+    var maxIndex = a.length - 1;
+    while (minIndex <= maxIndex) {
+        var idx = Math.floor((minIndex + maxIndex) / 2);
+        var elem = a[idx];
+        var q = cb(elem);
+        if (q < 0) {
+            minIndex = idx + 1;
+        } else if (q > 0) {
+            maxIndex = idx - 1;
+        } else {
+            return idx;
+        }
+    }
+    return -1;
+}
+
+function Huffman(hist, alphabet) {
   var q = [];
   for (var k in hist) {
-    q.push({sym: k, w: hist[k]});
+    q.push({sym: k, freq: hist[k]});
   }
+  while ((q.length % (alphabet.length - 1)) !== 1) {
+    q.push({freq: 0});
+  }
+  q.sort(function(a, b) {
+    return a.freq - b.freq;
+  });
+  function makeInternalNode(childCount) {
+    var internal = {freq: 0, code: '', children: q.splice(0, childCount)};
+    internal.children.forEach(function(child) {
+      internal.freq += child.freq;
+      child.parent = internal;
+    });
+    q.splice(bsearch(q, function(other) {
+      return other.freq - internal.freq;
+    }), 0, internal);
+  }
+  while (q.length > alphabet.length) {
+    makeInternalNode(alphabet.length);
+  }
+  if (q.length !== alphabet.length) {console.error(q); throw 'Huffman logic error'; }
+  var codes = {};
+  function assignCode(node, index) {
+    node.code = (node.parent ? node.parent.code : '') + alphabet[alphabet.length - 1 - index];
+    if (node.sym) codes[node.sym] = node.code;
+    if (node.children) node.children.forEach(assignCode);
+  }
+  q.forEach(assignCode);
+  return codes;
 }
 </script>
