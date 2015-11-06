@@ -234,15 +234,16 @@ function Huffman(cmdhist, codekeyhist) {
 var commands2 = Huffman({commandname: 0.42}, {j: 0.042, f: 0.041});
 
 function commandmapscore(commands2, cmdhist, codekeyhist) {
+  /* higher better */
   var score = 0;
   var commandcount = 0;
   for (var command in commands2) {
     ++commandcount;
     var code = commands2[command];
     for (var keyi = 0; keyi < code.length; ++keyi) {
-      score += cmdhist[command] * codekeyhist[code[keyi]];
+      score += codekeyhist[code[keyi]] / cmdhist[command];
     }
   }
-  return score / commandcount;
+  return commandcount / score;
 }
 </script>
