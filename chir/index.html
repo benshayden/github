@@ -56,7 +56,7 @@ canvas {
   This Interaction Research Assistant will ask you to interact with the computer in a few different ways,
   then ask you how slow the computer felt:
   <flex><button>too slow</button><button>fast enough</button></flex>
-  This survey will take about 30 seconds.
+  This survey will take about 60 seconds.
 </div>
 
 <button id=click>Click!</button>
@@ -181,7 +181,7 @@ function startNextInteractionAfter(interactionType) {
     // That was the last interactionType. Display a pretty graph.
     $('survey').style.display = 'none';
     $('thanks').style.display = 'block';
-    getHistograms();
+    // getHistograms();
   } else {
     // Start the next interaction.
     startInteraction(INTERACTIONS[1 + index]);
