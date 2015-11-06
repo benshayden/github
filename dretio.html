@@ -189,12 +189,19 @@ function bsearch(a, cb) {
     return -1;
 }
 
-function Huffman(hist, alphabet) {
-  var q = [];
-  for (var k in hist) {
-    q.push({sym: k, freq: hist[k]});
+function Huffman(cmdhist, codekeyhist) {
+  var codekeys = [];
+  for (var codekey in codekeyhist) {
+    codekeys.push({codekey: codekey, freq: codekeyhist[codekey]});
   }
-  while ((q.length % (alphabet.length - 1)) !== 1) {
+  codekeys.sort(function(a, b) {
+    return a.freq - b.freq;
+  });
+  var q = [];
+  for (var k in cmdhist) {
+    q.push({sym: k, freq: cmdhist[k]});
+  }
+  while ((q.length % (codekeys.length - 1)) !== 1) {
     q.push({freq: 0});
   }
   q.sort(function(a, b) {
@@ -210,17 +217,32 @@ function Huffman(hist, alphabet) {
       return other.freq - internal.freq;
     }), 0, internal);
   }
-  while (q.length > alphabet.length) {
-    makeInternalNode(alphabet.length);
+  while (q.length > codekeys.length) {
+    makeInternalNode(codekeys.length);
   }
-  if (q.length !== alphabet.length) {console.error(q); throw 'Huffman logic error'; }
+  if (q.length !== codekeys.length) {console.error(q); throw 'Huffman logic error'; }
   var codes = {};
   function assignCode(node, index) {
-    node.code = (node.parent ? node.parent.code : '') + alphabet[alphabet.length - 1 - index];
+    node.code = (node.parent ? node.parent.code : '') + codekeys[index].codekey;
     if (node.sym) codes[node.sym] = node.code;
     if (node.children) node.children.forEach(assignCode);
   }
   q.forEach(assignCode);
   return codes;
+}
+
+var commands2 = Huffman({commandname: 0.42}, {j: 0.042, f: 0.041});
+
+function commandmapscore(commands2, cmdhist, codekeyhist) {
+  var score = 0;
+  var commandcount = 0;
+  for (var command in commands2) {
+    ++commandcount;
+    var code = commands2[command];
+    for (var keyi = 0; keyi < code.length; ++keyi) {
+      score += cmdhist[command] * codekeyhist[code[keyi]];
+    }
+  }
+  return score / commandcount;
 }
 </script>
