@@ -1,12 +1,3 @@
-// ATTINYs have very limited flash program memory. Calculating whether a date is
-// in DST from first principles (e.g. the Timezone library) can consume a lot of
-// flash program memory.
-// TinyDST calculates whether a date is in DST using as little flash program
-// memory as possible.
-
-// Example usage:
-// https://github.com/benshayden/github/blob/master/lightclock/lightclock.ino
-
 #ifndef _TINYDST_H_
 #define _TINYDST_H_
 
