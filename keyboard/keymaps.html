@@ -7,6 +7,10 @@
 .strength { border: 2px solid black; width: 1.2em; text-align: right; padding: 1px; }
 .modekey { display: block; width: 5em; }
 </style>
+
+keyheatmap histogram:<br>
+<textarea id=hist cols=100 rows=10></textarea>
+
 <table>
 <tr id=rowpins>
   <td>Row pins:</td>
@@ -27,6 +31,7 @@
   <td><input class=colpin value=21></td>
 </tr>
 </table>
+
 <table id=pinmap>
   <tr>
     <td>pinky</td>
@@ -277,11 +282,18 @@
     </td>
   </tr>
 </table>
+
+Arduino Keypad keymap:<br>
 <textarea id=keymaps cols=100 rows=10></textarea>
+
 <script>
 function qSA(s, p) {
   return Array.prototype.slice.apply((p || document).querySelectorAll(s));
 }
+var $ = function(i) {
+  return document.getElementById(i);
+};
+
 function buildkeymaps() {
   var rowpinnums = [];
   var colpinnums = [];
@@ -378,10 +390,13 @@ function buildkeymaps() {
     }).join(', ');
   }).join('},\n{') + '}';
 }
+
 qSA('input').forEach(function(input) {
   input.addEventListener('keyup', buildkeymaps);
 });
+
 buildkeymaps();
+
 function assignByStrength(keys, mode) {
   var strengths = qSA('input.strength');
   strengths.sort(function(a, b) {
@@ -390,5 +405,12 @@ function assignByStrength(keys, mode) {
   strengths.forEach(function(strengthinput, i) {
     strengthinput.parentNode.querySelectorAll('.modekey')[mode || 0].value = keys[i];
   });
+}
+
+$('hist').addEventListener('onkeyup', assignFromHist);
+function assignFromHist() {
+  var hist = $('hist').value;
+  hist = JSON.parse(hist);
+  assignByStrength(hist);
 }
 </script>
