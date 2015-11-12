@@ -17,4 +17,8 @@ Materials:
  * soldering iron, solder
  * optional [optical motion sensor](https://www.tindie.com/products/jkicklighter/adns-9800-optical-laser-sensor/)
 
+Use [keymaps.html](https://cdn.github.com/benshayden/github/TODO/keyboard/keymaps.html) to generate the KEYMAPS. Copy-paste them into keyboard.ino before programming the microcontroller.
+
+If you use Linux, run `pythong heatmap.py ~/.keyboardheatmap` as a daemon for a few weeks to generate a histogram of the keys that you use most frequently. Copy-paste the generated .keyboardheatmap into keymaps.html to generate KEYMAPS so that keys that you use more frequently are mapped to buttons that are easier for you to press.
+
 If you use other switches such as [Cherry MX](http://www.digikey.com/product-search/en?keywords=MX1A-C1NN), then you can still use the 3d-printed triangular base, but you'll need to redesign the button mounts, or use [thermoplastic](http://www.adafruit.com/products/2504).
