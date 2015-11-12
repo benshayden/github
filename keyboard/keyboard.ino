@@ -49,3 +49,5 @@ void loop() {
     }
   }
 }
+
+// TODO 24-32-ary Huffman-code mode?
