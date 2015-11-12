@@ -109,6 +109,10 @@ def keyheatmap(logfilename, flush_keys=100, digraph_timeout_s=2.0):
 
 if __name__ == '__main__':
   try:
-    keyheatmap(sys.argv[1])
+    if len(sys.argv) >= 2:
+      keyheatmap(sys.argv[1])
+    else:
+      for k in genkeys():
+        print k
   except KeyboardInterrupt:
     pass
