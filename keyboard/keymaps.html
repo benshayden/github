@@ -8,7 +8,7 @@
 .modekey { display: block; width: 5em; }
 </style>
 
-keyheatmap histogram:<br>
+keyboardheatmap:<br>
 <textarea id=hist cols=100 rows=10></textarea>
 
 <table>
@@ -461,7 +461,7 @@ function assignFromHist() {
   skeys.sort(function(a, b) {
     return a[0] - b[0];
   });
-  // TODO group skeys into modes sensibly but configurably
+  // TODO group skeys into modes sensibly but configurably, or automatically
   assignByStrength(skeys.slice(0, 32), 0);
   assignByStrength(skeys.slice(32), 1);
 }
