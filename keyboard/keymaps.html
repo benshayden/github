@@ -407,10 +407,62 @@ function assignByStrength(keys, mode) {
   });
 }
 
+// When keyheatmap.py records parenleft, that means that I pressed Shift + 9,
+// so add the counts for [modifier.]parentleft to the count for 9.
+var symbolkeys = {
+  parenleft: 9,
+  parenright: 0,
+  exclam: 1,
+  at: 2,
+  numbersign: 3,
+  dollar: 4,
+  percent: 5,
+  asciicircum: 6,
+  ampersand: 7,
+  asterisk: 8,
+  less: 'comma',
+  greater: 'period',
+  colon: 'semicolon',
+  quotedbl: 'apostrophe',
+  braceleft: 'bracketleft',
+  braceright: 'bracketright',
+  bar: 'backslash',
+  question: 'slash',
+  underscore: 'minus',
+  plus: 'equal',
+  asciitilde: 'grave',
+};
+
 $('hist').addEventListener('onkeyup', assignFromHist);
 function assignFromHist() {
   var hist = $('hist').value;
-  hist = JSON.parse(hist);
-  assignByStrength(hist);
+  if (hist === $('hist').prevValue) return;
+  $('hist').prevValue = hist;
+  try {
+    hist = JSON.parse(hist);
+  } catch (_) {
+    return;
+  }
+  if (hist.histogram) {
+    hist = hist.histogram;
+  }
+  var keyhist = {};
+  for (var k in hist) {
+    var count = hist[k];
+    k = k.split('.');
+    k = k[k.length - 1].toLowerCase();
+    k = symbolkeys[k] || k;
+    keyhist[k] = count + (keyhist[k] || 0);
+  }
+  var skeys = [];
+  for (var k in keyhist) {
+    skeys.push([keyhist[k], k]);
+  }
+  skeys.sort(function(a, b) {
+    return a[0] - b[0];
+  });
+  // TODO group skeys into modes sensibly but configurably
+  assignByStrength(skeys.slice(0, 32), 0);
+  assignByStrength(skeys.slice(32), 1);
 }
 </script>
