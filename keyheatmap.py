@@ -1,6 +1,7 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python2
 import code
 import ctypes
+import json
 import os
 import readline
 import sys
