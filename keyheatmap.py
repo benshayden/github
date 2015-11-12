@@ -5,6 +5,7 @@ import json
 import os
 import readline
 import sys
+import time
 
 x11 = ctypes.CDLL('libX11.so')
 
@@ -69,95 +70,45 @@ def genkeys(delay_ms=10):
           except:
             pass
 
-def histinc(histogram, keyname):
-  try: histogram[keyname] += 1
-  except KeyError: histogram[keyname] = 1
+def histinc(histogram, keyname, d=1):
+  try: histogram[keyname] += d
+  except KeyError: histogram[keyname] = d
 
-def load(logfilename, histogram=None, digraphs=None):
-  if histogram is None: histogram = {}
-  if digraphs is None: digraphs = {}
-  for line in file(logfilename):
-    if line and ' ' in line:
-      keyname, count = line.split()
-      if ',' in keyname:
-        digraphs[tuple(keyname.split(','))] = int(count)
-      else:
-        histogram[keyname] = int(count)
-  return histogram, digraphs
+def histinc2(histogram, key0, key1, d=1):
+  try:
+    histogram[key0][key1] += d
+  except KeyError:
+    try:
+      histogram[key0][key1] = d
+    except KeyError:
+      histogram[key0] = dict([(key1, d)])
 
-def flush(logfilename, histogram, digraphs):
-  logfile = file(logfilename, 'w')
-  for key, value in histogram.iteritems():
-    logfile.write('%s %d\n' % (key, value))
-  for key, value in digraphs.iteritems():
-    logfile.write('%s,%s %d\n' % (key[0], key[1], value))
-
-def keyheatmap(logfilename, flush_keys=100):
-  histogram = {}
-  digraphs = {}
+def keyheatmap(logfilename, flush_keys=100, digraph_timeout_s=2.0):
   if os.path.exists(logfilename):
-    load(logfilename, histogram, digraphs)
+    o = json.load(file(logfilename))
+    histogram = o.get('histogram', {})
+    digraphs = o.get('digraphs', {})
   else:
-    flush(logfilename, histogram, digraphs)
+    histogram, digraphs = {}, {}
+    json.dump(dict(histogram=histogram, digraphs=digraphs), file(logfilename, 'w'))
   os.chmod(logfilename, 0600)
   prev_key = None
+  prev_key_ts = None
   captured = 0
   for key_name in genkeys():
+    ts = time.time()
     histinc(histogram, key_name)
-    if prev_key:
-      histinc(digraphs, (prev_key, key_name))
+    if prev_key and (prev_key_ts > (ts - digraph_timeout_s)):
+      histinc2(digraphs, prev_key, key_name)
     prev_key = key_name
+    prev_key_ts = ts
     captured += 1
     if captured >= flush_keys:
-      flush(logfilename, histogram, digraphs)
+      json.dump(dict(histogram=histogram, digraphs=digraphs), file(logfilename, 'w'))
       captured = 0
-
-def probs(histogram, digraphs):
-  total = float(sum(histogram.itervalues()))
-  prob = {}
-  for key, count in histogram.iteritems():
-    prob[key] = ((float(count) / total), {})
-  for (key0, key1), count in digraphs.iteritems():
-    prob[key0][1][key1] = float(count) / float(histogram[key1])
-  return prob
-
-def sd(digraphs):
-  d2 = {}
-  for keys, count in digraphs.iteritems():
-    d2.setdefault(keys[0], {})[keys[1]] = count
-  return d2
-
-def sorts(h, d):
-  hi = h.items()
-  hi.sort(key=lambda(k, v): -v)
-  di = [(k, list(sorted(d.get(k, {}).items(), key=lambda(k,v): -v))) for k, v in hi]
-  return hi, di
-
-def analyze(logfilename):
-  histogram, digraphs = load(logfilename)
-  d2 = sd(digraphs)
-  hs, ds = sorts(histogram, d2)
-  env = dict(
-    h=histogram, d=digraphs, hs=hs, ds=ds, load=load, flush=flush,
-    probs=probs(histogram, digraphs),
-    d2=d2)
-  if len(sys.argv[2]) > 1:
-    s = 'from __future__' + ' import print_function\n' + sys.argv[2]
-    exec s in env
-  else:
-    readline
-    code.InteractiveConsole(env).interact()
 
 if __name__ == '__main__':
   try:
-    if len(sys.argv) < 2:
-      for k in genkeys():
-        print k
-    else:
-      logfilename = os.path.abspath(os.path.expanduser(sys.argv[1]))
-      if len(sys.argv) > 2 and os.path.exists(logfilename):
-        analyze(logfilename)
-      else:
-        keyheatmap(sys.argv[1])
+    keyheatmap(sys.argv[1])
   except KeyboardInterrupt:
     pass
