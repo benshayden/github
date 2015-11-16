@@ -28,6 +28,11 @@
 // or set internal variables or blink lights.
 // If that element's value is between 0 and 0xffff, then it is a leaf node
 // that will be interpreted as a keycode to be passed to Keyboard.press().
+// If the strength of the weakest finger is less than half that of the strongest finger,
+// then it might be preferable to use the strongest finger twice
+// rather than the weakest finger once.
+// In such a case, a variable-ary Huffman tree would increase the average sequence length,
+// but also increase the comfort.
 
 #define KEY_SHIFT KEY_LEFT_SHIFT
 #define KEY_CTRL KEY_LEFT_CTRL
