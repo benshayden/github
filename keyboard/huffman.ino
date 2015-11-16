@@ -1,19 +1,19 @@
 #include <Keypad.h>
 
 // Many keyboard have a hundred keys or more,
-// but they usually have even more functions than keys.
+// but they usually have even more functions.
 // This keyboard only has 32 keys,
 // but might still want to access all those hundred-plus functions.
+// This is a compression problem.
 // Many keyboards use mode keys to map multiple functions to each key,
-// but there's a more optimal method.
-// This is a compression problem, and there's a better compression algorithm.
+// but, with only 32 buttons, a better compression algorithm is necessary.
 // Use huffman.html to encode an arbitrary number of functions
 // as sequences of button presses.
 // Extremely common keys might map to a single button press.
 // Most keys will require 2 or 3 buttons.
 // Uncommon keys might require 4 or 5 button presses.
 // The huffman state machine is advanced every time a Key on the keypad is PRESSED.
-// If you press two buttons at exactly the same time, say |a| and |b|,
+// If you press two buttons less than a millisecond apart, say |a| and |b|,
 // then the state machine can't tell if you meant a-then-b or b-then-a,
 // but it will always interpret the lower number first.
 // The Huffman code tree is encoded in the HUFFMAN_TREE setting variable.
@@ -24,7 +24,8 @@
 // It is possible to create cycles. Don't.
 // If the value > 0xffff, then it is a leaf node
 // that will be interpreted as a function pointer, and called.
-// You can define these functions to call Keyboard.press() or set internal variables or blink lights.
+// You can define these functions to call Keyboard.press()
+// or set internal variables or blink lights.
 // If that element's value is between 0 and 0xffff, then it is a leaf node
 // that will be interpreted as a keycode to be passed to Keyboard.press().
 
@@ -52,14 +53,6 @@ char KEYMAP[sizeof(ROW_PINS) * sizeof(COLUMN_PINS)] = {
 #define ARRAYSIZE(a) (sizeof(a) / sizeof((a)[0]))
 Keypad keypad(KEYMAP, ROW_PINS, COLUMN_PINS, sizeof(ROW_PINS), sizeof(COLUMN_PINS));
 char* huffman_state = HUFFMAN[0];
-
-// The Key.kchar is used as an index into huffman_state:
-// char code = huffman_state[k.kchar];
-// If code == 0: then huffman_state is reset to HUFFMAN[0].
-// If code < 0: then -code is used to set huffman_state:
-// huffman_state = HUFFMAN[-code];
-// If code > 0xffff, then code is interpreted as a function pointer, and called.
-// If code > 0: then code is passed to Keyboard.press(), and huffman_state is reset to HUFFMAN[0].
 
 char lookup(char kchar) {
   kchar = huffman_state[kchar];
