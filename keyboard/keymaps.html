@@ -8,8 +8,9 @@
 .modekey { display: block; width: 5em; }
 </style>
 
-keyboardheatmap:<br>
-<textarea id=hist cols=100 rows=10></textarea>
+Open .keyboardheatmap: <input type=file id=heatmap><br>
+
+<input id=strengthmeter placeholder="Strength Meter"><br>
 
 <table>
 <tr id=rowpins>
@@ -433,8 +434,9 @@ var symbolkeys = {
   asciitilde: 'grave',
 };
 
-$('hist').addEventListener('onkeyup', assignFromHist);
-function assignFromHist() {
+$('heatmap').addEventListener('onkeyup', assignFromHeatmap);
+function assignFromHeatmap() {
+  // TODO rewrite
   var hist = $('hist').value;
   if (hist === $('hist').prevValue) return;
   $('hist').prevValue = hist;
@@ -465,4 +467,6 @@ function assignFromHist() {
   assignByStrength(skeys.slice(0, 32), 0);
   assignByStrength(skeys.slice(32), 1);
 }
+
+// TODO strengthmeter
 </script>
