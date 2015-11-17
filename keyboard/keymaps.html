@@ -469,10 +469,33 @@ function assignFromHeatmap() {
     return a[0] - b[0];
   });
   var mode0skeys = [];
-  var mode1skeys = [];
-  // TODO
-  assignByStrength(skeys.slice(0, 32), 0);
-  assignByStrength(skeys.slice(32), 1);
+  for (var ski = 0; ski < skeys.length; ) {
+    if (mode0.indexOf(skeys[ski][1]) >= 0) {
+      mode0skeys.push(skeys[ski]);
+      skeys.splice(ski, 1);
+    } else {
+      ++ski;
+    }
+  }
+  mode0.forEach(function(mk) {
+    var m0si = -1;
+    mode0skeys.forEach(function(k, ki) {
+      if (k[1] === mk) {
+        m0si = ki;
+      }
+    });
+    if (m0si < 0) {
+      mode0skeys.push([mode0skeys[0][0], mk]);
+    }
+  });
+  while (mode0skeys.length < 32) {
+    mode0skeys.push(skeys.splice(0, 1)[0]);
+  }
+  mode0skeys.sort(function(a, b) {
+    return a[0] - b[0];
+  });
+  assignByStrength(mode0skeys, 0);
+  assignByStrength(skeys.slice(0, 32), 1);
 }
 
 // TODO strengthmeter
