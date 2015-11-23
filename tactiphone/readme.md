@@ -6,7 +6,7 @@
 
 RC
 
-transistor
+optional op-amp for gain
 
 speaker
 
