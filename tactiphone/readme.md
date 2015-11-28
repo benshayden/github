@@ -4,9 +4,9 @@
 
 [copper tape](https://www.adafruit.com/products/1127)
 
-RC
+2 op amps
 
-optional op-amp for gain
+misc resistors, capacitors
 
 speaker
 
