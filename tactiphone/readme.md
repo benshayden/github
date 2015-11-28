@@ -11,3 +11,5 @@ misc resistors, capacitors
 speaker
 
 battery
+
+Load filter.nl in [circuitjs](http://lushprojects.com/circuitjs/circuitjs.html) to see how to use the op-amps to filter the PWM.
