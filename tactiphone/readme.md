@@ -1,3 +1,5 @@
+[](TODO describe tactiphone)
+
 [adafruit trinket](http://www.adafruit.com/products/1500) I2C pin 0 = SDA, 2 = SCL
 
 [MPR121](https://www.adafruit.com/products/1982)
