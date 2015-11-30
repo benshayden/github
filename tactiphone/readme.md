@@ -2,6 +2,10 @@ The Tactiphone is a tactile, baby-proof synthesizer.
 
 [](TODO photo)
 
+It is entirely contained in a plastic project box, so there are no dangerous wires or sharp edges, and it resists spills. With a wireless charger, you could seal it so that it is entirely water-proof and hard to accidentally open.
+
+It uses capacitive sensing to detect when notes are touched. It can be tuned to be sensitive to smaller fingers. It's quiet when touched with a fingertip and loud when touched with more of the finger. You can paint or glue tactile materials to the outside of the box without interfering with the sensors.
+
 ## Parts
 
  * 12 inch (30cm) long project box
@@ -12,6 +16,7 @@ The Tactiphone is a tactile, baby-proof synthesizer.
  * misc resistors, capacitors, hookup wire
  * speaker
  * battery
+ * optional wireless charger [transmitter](http://www.adafruit.com/products/2162) and [receiver](http://www.adafruit.com/products/1901)
 
 ## Circuit
 
