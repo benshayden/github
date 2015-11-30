@@ -42,4 +42,6 @@ and that timer only outputs on pin 4.
 
 [web tone generator](https://plasticity.szynalski.com/tone-generator.htm)
 
+[web keyboard](http://www.bgfl.org/bgfl/custom/resources_ftp/client_ftp/ks2/music/piano/)
+
 [web tuner](https://jbergknoff.github.io/guitar-tuner/)
