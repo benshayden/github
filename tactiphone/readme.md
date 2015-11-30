@@ -21,26 +21,10 @@ Load filter.nl in [circuitjs](http://lushprojects.com/circuitjs/circuitjs.html) 
 
 [Codebender sketch](https://codebender.cc/sketch:193420)
 
-This uses PWM on pin 4.
-You have to low-pass filter PWM.
-So you're going to have a resistor from pin 4 to your speaker
-(or a voltage follower buffer) and then a capacitor from that to ground.
-This interferes with USB communication, which also uses pin 4.
-So you need to remove the low-pass filter resistor from pin 4
-while programming the Trinket, and
-add it back after the programming finishes.
+##### You need to remove the resistor on pin 4 while programming, then put it back in after programming.
 
-Use TinyWireM to use I2C to communicate with the
-MPR121 capacitive touch sensor.
-Connect the Trinket's pin 0 to the MPR121's SDA pin,
-and pin 2 to the SCL pin.
-So we can't use pins 0 or 2 for PWM.
-We can't use pin 1 for PWM, either, because, in order for the
-PWM frequency to be fast enough for audio frequencies,
-we would need to reconfigure Timer/Counter 0, which would break
-millis(), micros(), delay(), and delayMicroseconds().
-So we need to configure Timer/Counter 1 to be fast enough for audio PWM,
-and that timer only outputs on pin 4.
+The attiny85 has two timers. Timer 0 drives the PWM that outputs to pin 1. Timer 1 drives the PWM that outputs to pin 4. 
+Timer 0 also drives delay(), delayMicroseconds(), millis(), and micros(). These timers default to such slow frequencies that they can't drive audio signals. Firmware must change the frequency of a timer in order for it to be fast enough to drive an audio signal. We can't change the frequency of Timer 0 because that would break delay(), millis(), etc. So we have to make Timer 1 drive a fast PWM signal. But Timer 1 outputs to pin 4, which is also used for USB communication while programming. While programming, your circuit cannot have anything connected to pin 4. While running this sketch, your circuit must have the audio filter and speaker connected to pin 4. So that's why you need to remove the resistor on pin 4 while programming, then put it back in after programming.
 
 ## References
 
