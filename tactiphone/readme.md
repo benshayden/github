@@ -17,7 +17,9 @@ The Tactiphone is a tactile, baby-proof synthesizer.
 
 Load filter.nl in [circuitjs](http://lushprojects.com/circuitjs/circuitjs.html) to see how to use the op-amps to filter the PWM.
 
-## Note on Programming
+## Notes on Programming
+
+[Codebender sketch](https://codebender.cc/sketch:193420)
 
 This uses PWM on pin 4.
 You have to low-pass filter PWM.
