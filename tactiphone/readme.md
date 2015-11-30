@@ -1,21 +1,23 @@
-[](TODO describe tactiphone)
+The Tactiphone is a tactile, baby-proof synthesizer.
 
-[adafruit trinket](http://www.adafruit.com/products/1500) I2C pin 0 = SDA, 2 = SCL
+[](TODO photo)
 
-[MPR121](https://www.adafruit.com/products/1982)
+## Parts
 
-[copper tape](https://www.adafruit.com/products/1127)
+ * 12 inch (30cm) long project box
+ * [adafruit trinket](http://www.adafruit.com/products/1500) I2C pin 0 = SDA, 2 = SCL
+ * [MPR121](https://www.adafruit.com/products/1982)
+ * [copper tape](https://www.adafruit.com/products/1127)
+ * [dual op-amp](http://www.adafruit.com/products/808)
+ * misc resistors, capacitors, hookup wire
+ * speaker
+ * battery
 
-2 op amps
-
-misc resistors, capacitors
-
-speaker
-
-battery
+## Circuit
 
 Load filter.nl in [circuitjs](http://lushprojects.com/circuitjs/circuitjs.html) to see how to use the op-amps to filter the PWM.
 
+## Note on Programming
 
 This uses PWM on pin 4.
 You have to low-pass filter PWM.
@@ -38,7 +40,11 @@ millis(), micros(), delay(), and delayMicroseconds().
 So we need to configure Timer/Counter 1 to be fast enough for audio PWM,
 and that timer only outputs on pin 4.
 
+## References
+
 [attiny85 datasheet](http://www.atmel.com/images/atmel-2586-avr-8-bit-microcontroller-attiny25-attiny45-attiny85_datasheet.pdf)
+
+[mpr121 datasheet](https://www.sparkfun.com/datasheets/Components/MPR121.pdf)
 
 [web tone generator](https://plasticity.szynalski.com/tone-generator.htm)
 
