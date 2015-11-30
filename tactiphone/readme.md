@@ -24,7 +24,7 @@ So you're going to have a resistor from pin 4 to your speaker
 This interferes with USB communication, which also uses pin 4.
 So you need to remove the low-pass filter resistor from pin 4
 while programming the Trinket, and
-add it back as soon as the programming finishes.
+add it back after the programming finishes.
 
 Use TinyWireM to use I2C to communicate with the
 MPR121 capacitive touch sensor.
