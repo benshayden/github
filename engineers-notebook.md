@@ -38,13 +38,19 @@ If we have variables, then we've implicitly defined a namespace. Let's define a 
 
 Let's avoid nesting namespaces to keep things simple, so a single macro can both end the previous namespace and begin a new one.
 
+Might as well allow dropping into javascript directly:
+
+[exec]
+Hz2 = find_peak(FFT(...));
+[/exec]
+
 How can we embed more powerful tools such as desmos, circuitjs, openjscad, codebender, etc?
 
 Those tools use their own kinds of documents: equations and settings for desmos; netlists for circuitjs; javascript for openjscad.
 
 Those documents should be versioned with our markdown+katex document. Speaking of versioning, integration with github or google docs, natch.
 
-The integration should be bi-directional. Changing a circuit diagram should update our uber-document, and vice-versa.
+Widget integration should be bi-directional. Changing a circuit diagram should update our uber-document, and vice-versa.
 
 The embedding mechanism should allow sharing the namespace so that changing R1 in our markdown+katex document changes R1 in circuitjs. openjscad already has a concept of settings.
 
@@ -52,3 +58,4 @@ Some of those tools allow loading a document from a URL, but that would require 
 
 Maybe we could get them all to accept messages from window.postMessage()? And send messages back when the user updates the document from within the embedded widget?
 
+As a proof of concept, we can imagine a simple svg drawing widget based on the Insert Drawing tool in google docs.
