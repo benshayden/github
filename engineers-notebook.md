@@ -6,7 +6,7 @@ I should be able to type a text format, and see equations and diagrams all on th
 But there's no interactivity. In order to really understand an equation, I need to see it in action and play with it.
 
 Also, throughout the course of a project, I change designs often, sometimes exploring multiple designs at once. If I could interactively change something and see how it affects other parts of the design, then I could iterate on designs a lot faster.
-See also openjscad, circuitjs, desmos, codebender, jsfiddle. (I wish there were an AVR/PIC simulator online. Maybe using an [online C++ compiler](tutorialspoint.com/compile_cpp_online.php)?)
+See also openjscad, circuitjs, desmos, codebender, jsfiddle, svg-edit. (I wish there were an AVR/PIC simulator online. Maybe using an [online C++ compiler](tutorialspoint.com/compile_cpp_online.php)?)
 
 Can we define Markdown or KaTeX macros to generate interactive widgets?
 
@@ -57,5 +57,3 @@ The embedding mechanism should allow sharing the namespace so that changing R1 i
 Some of those tools allow loading a document from a URL, but that would require a server to pick apart our uber-document and deliver a part of the document.
 
 Maybe we could get them all to accept messages from window.postMessage()? And send messages back when the user updates the document from within the embedded widget?
-
-As a proof of concept, we can imagine a simple svg drawing widget based on the Insert Drawing tool in google docs.
