@@ -6,7 +6,7 @@ I should be able to type a text format, and see equations and diagrams all on th
 But there's no interactivity. In order to really understand an equation, I need to see it in action and play with it.
 
 Also, throughout the course of a project, I change designs often, sometimes exploring multiple designs at once. If I could interactively change something and see how it affects other parts of the design, then I could iterate on designs a lot faster.
-See also openjscad, circuitjs, desmos, codebender. (I wish there were an AVR/PIC simulator online. Maybe using an [online C++ compiler](tutorialspoint.com/compile_cpp_online.php)?)
+See also openjscad, circuitjs, desmos, codebender, jsfiddle. (I wish there were an AVR/PIC simulator online. Maybe using an [online C++ compiler](tutorialspoint.com/compile_cpp_online.php)?)
 
 Can we define Markdown or KaTeX macros to generate interactive widgets?
 
@@ -44,7 +44,7 @@ Might as well allow dropping into javascript directly:
 Hz2 = find_peak(FFT(...));
 [/exec]
 
-How can we embed more powerful tools such as desmos, circuitjs, openjscad, codebender, etc?
+How can we embed more powerful tools such as desmos, circuitjs, openjscad, codebender, jsfiddle, etc?
 
 Those tools use their own kinds of documents: equations and settings for desmos; netlists for circuitjs; javascript for openjscad.
 
