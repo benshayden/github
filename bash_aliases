@@ -1,6 +1,8 @@
 export PS1='\[\e[0;36m\]\w \[\e[m\]'
 export EDITOR=vw
 export CHROME_DEVEL_SANDBOX=/usr/local/sbin/chrome-devel-sandbox
+export tt=tracing/tracing
+export PYTHONSTARTUP=~/.pythonrc.py
 
 alias get="sudo apt-get install"
 alias gets="aptitude search"
