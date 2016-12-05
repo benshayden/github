@@ -2,6 +2,7 @@ set vb
 set t_vb=
 set nocompatible
 set viminfo=
+set shortmess=I
 "call pathogen#helptags()
 "call pathogen#runtime_append_all_bundles()
 autocmd filetype python set expandtab
