@@ -5,8 +5,9 @@ set viminfo=
 set shortmess=I
 "call pathogen#helptags()
 "call pathogen#runtime_append_all_bundles()
-autocmd filetype python set expandtab
-au FileType python setl sw=2 sts=2 et
+"disable shiftwidth=4 in ftplugin/python.vim
+let g:python_recommended_style=0
+autocmd filetype python set expandtab shiftwidth=2 softtabstop=2 tabstop=4
 cmap w!! w !sudo tee % > /dev/null
 filetype indent on
 filetype on
@@ -141,6 +142,9 @@ function! SwitchSourceHeader()
   endif
 endfunction
 autocmd filetype cpp nmap <buffer> <silent> <leader>s :call SwitchSourceHeader()<CR>
+
+autocmd filetype html nmap <buffer> <silent> <leader>s :e %:r.js<CR>
+autocmd filetype javascript nmap <buffer> <silent> <leader>s :e %:r.html<CR>
 
 function! MySmartBraceComplete()
   if getline(line('.')-1) =~ '^\s*\(class\|struct\|enum\)'

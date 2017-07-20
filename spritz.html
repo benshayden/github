@@ -1,51 +1,63 @@
-<flex id=intro_outer>
-  <flex col id=intro>
+<flex style="justify-content: center;">
+  <flex col id=intro style="justify-content: center; height: 100%;">
     <div>What would you like to read?</div>
-    <flex><input type=file id=file accept=".txt"></flex>
-    <flex><input type=text id=url placeholder="URL of txt file"></flex>
-    <flex><button id=clipboard>Clipboard</button></flex>
-    <flex><button id=hpmor>Harry Potter and the Methods of Rationality</button></flex>
+    <select id=library>
+      <option value="">Open book from library</option>
+      <option value="https://dl.dropboxusercontent.com/s/dfhl7gvtidx7u22/arithmancer.txt">The Arithmancer by White Squirrel</option>
+    </select>
+    <input type=file id=file accept=".txt">
+    <button id=clipboard style="width: 100%; font-size: inherit;">
+      Text or URL from clipboard
+    </button>
   </flex>
 </flex>
 
-<div id=settings>
-  <div id=progress_container>
-    <div id=progress_inner>
+<div id=settings style="display: none; height: 50%; width: 100%;">
+  <div id=progress_container style="position: relative; width: 100%;">
+    <div id=progress_inner style="position: absolute; background-color: #88888880; width: 50%; height: 100%; z-index: -100;">
     </div>
     <center id=progress_label>
       Sentence <span id=progress_sentence></span> of <span id=total_sentences></span>
     </center>
   </div>
   <div>
-    <label>
-      <center>Words per minute: <span id=wpm_output></span></center>
-      <input type=range id=wpm min=100 max=1000 step=10>
-    </label>
+    <center>Words per minute: <span id=wpm_output></span></center>
+    <input type=range id=wpm min=100 max=1000 step=10 style="width: 100%;">
     <center id=time_output></center>
   </div>
   <flex id=skips>
-    <button id=back_start>|&lt;</button>
-    <button id=back1000>&lt;&lt;&lt;&lt;</button>
-    <button id=back100>&lt;&lt;&lt;</button>
-    <button id=back10>&lt;&lt;</button>
-    <button id=back>&lt;</button>
-    <button id=forward>&gt;</button>
-    <button id=forward10>&gt;&gt;</button>
-    <button id=forward100>&gt;&gt;&gt;</button>
-    <button id=forward1000>&gt;&gt;&gt;&gt;</button>
-    <button id=forward_end>&gt;|</button>
+    <button id=back_start onclick="setProgressSentence(0)">|&lt;</button>
+    <button id=back1000 onclick="setProgressSentence(getProgressSentence() - 1000)">&lt;&lt;&lt;&lt;</button>
+    <button id=back100 onclick="setProgressSentence(getProgressSentence() - 100)">&lt;&lt;&lt;</button>
+    <button id=back10 onclick="setProgressSentence(getProgressSentence() - 10)">&lt;&lt;</button>
+    <button id=back onclick="setProgressSentence(getProgressSentence() - 1)">&lt;</button>
+    <button id=forward onclick="setProgressSentence(getProgressSentence() + 1)">&gt;</button>
+    <button id=forward10 onclick="setProgressSentence(getProgressSentence() + 10)">&gt;&gt;</button>
+    <button id=forward100 onclick="setProgressSentence(getProgressSentence() + 100)">&gt;&gt;&gt;</button>
+    <button id=forward1000 onclick="setProgressSentence(getProgressSentence() + 1000)">&gt;&gt;&gt;&gt;</button>
+    <button id=forward_end onclick="setProgressSentence(SENTENCES.length - 1)">&gt;|</button>
   </flex>
 </div>
 
-<flex id=word><span id=prereticle></span><span id=reticle></span><span id=postreticle></span></flex>
-<button id=read>Press and hold to read.<br>Release to pause.</button>
+<flex id=word style="display: none; font-size: 30px; align-items: center; width: 100%; height: 50%;">
+  <span id=prereticle style="width: 20%; text-align: right;">
+  </span><span id=reticle style="color: red;">
+  </span><span id=postreticle>
+  </span>
+</flex>
+<button id=read style="display: none; position: absolute; width: 100%; height: 50%; bottom: 0;">
+  Press and hold to read.
+  <br>Release to pause.
+</button>
 
 <style>
+* {
+  max-height: 999999px;
+}
 body {
   background-color: black;
   color: white;
   margin: 0;
-  max-height:1000000px;
 }
 flex {
   display: flex;
@@ -59,97 +71,36 @@ button {
   background-color: white;
   color: black;
   font-family: serif;
+  font-size: inherit;
+  height: 2em;
   outline: none;
   user-select: none;
-}
-input[type="text"] {
-  background-color: black;
-  color: var(--foreground);
-  border: 1px solid white;
-  border-radius: 4px;
-  padding: 4px;
-  outline: none;
-}
-#intro_outer {
-  justify-content: center;
-}
-#intro {
-  justify-content: center;
-  height: 100%;
 }
 #intro * {
   margin: 4px;
   justify-content: center;
   width: 100%;
 }
-#settings {
-  display: none;
-  height: 50%;
-  width: 100%;
-}
 #settings > div:not(#progress_container)  {
   margin: 8px;
 }
-#url {
-  width: 100%;
-  height: 2em;
-}
-#clipboard {
-  width: 100%;
-  height: 2em;
-}
-#hpmor {
-  width: 100%;
-  height: 2em;
-}
-#word {
-  display: none;
-  font-size: 30px;
-  align-items: center;
-  width: 100%;
-  height: 50%;
-}
-#prereticle {
-  width: 20%;
-  text-align: right;
-}
-#read {
-  display: none;
-}
-#progress_container {
-  position: relative;
-  width: 100%;
-}
-#progress_inner {
-  position: absolute;
-  background-color: #88888880;
-  width: 50%;
-  height: 100%;
-  z-index: -100;
-}
-#wpm {
-  width: 100%;
-}
 #skips * {
   flex-grow: 1;
-  height: 2em;
-}
-#read {
-  position: absolute;
-  width: 100%;
-  height: 50%;
-  bottom: 0;
-}
-#reticle {
-  color: red;
+  margin: 4px;
 }
 </style>
 
 <script>
 // TODO lighthouse app
 
+const URL_REGEX = /^(https?|ftp):\/\//;
+const CLIPBOARD_HASH = '!clipboard';
+const BLINK_MS = 600;
 let SENTENCES = [];
 let TOTAL_WORDS = 0;
+
+const getHash = () => location.hash.substr(1);
+const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function fullscreen() {
   const D = document.documentElement;
@@ -171,27 +122,40 @@ function parse(txt) {
   for (const sen of SENTENCES) {
     TOTAL_WORDS += sen.length;
   }
+
   back1000.style.display = (SENTENCES.length < 2000) ? 'none' : 'block';
   forward1000.style.display = (SENTENCES.length < 2000) ? 'none' : 'block';
   back100.style.display = (SENTENCES.length < 200) ? 'none' : 'block';
   forward100.style.display = (SENTENCES.length < 200) ? 'none' : 'block';
   back10.style.display = (SENTENCES.length < 20) ? 'none' : 'block';
   forward10.style.display = (SENTENCES.length < 20) ? 'none' : 'block';
+
   intro.style.display = 'none';
   settings.style.display = 'block';
   read.style.display = 'block';
-  let s = parseInt(localStorage.getItem(
-    'progress_sentence_' + location.hash)) || 0;
+  let s = getProgressSentence();
   if (s >= SENTENCES.length) s = 0;
-  progress_sentence.textContent = s;
-  progress_inner.style.width = (100 * s / SENTENCES.length) + '%';
+  setProgressSentence(s);
+  setTimeOutput();
+}
+
+function parseURL(url, filename) {
+  fetch(url).then(r=>r.text()).then(txt => {
+    if (filename) {
+      // TODO store txt in indexeddb
+    }
+    parse(txt);
+  });
+}
+
+// TODO scan indexeddb and add options to library
+
+function setTimeOutput() {
   const mins = TOTAL_WORDS / parseInt(wpm.value);
   time_output.textContent = '';
   if (mins > 60) time_output.textContent += Math.floor(mins / 60) + ' hours, ';
   time_output.textContent += Math.round(mins % 60) + ' minutes';
 }
-
-const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function reticleIndex(w) {
   const m = w.match(/\w+/);
@@ -206,7 +170,8 @@ async function start() {
   read.style.backgroundColor = 'black';
   settings.style.display = 'none';
   const ms = 6e4 / parseInt(wpm.value);
-  let sentenceIndex = parseInt(progress_sentence.textContent) || 0;
+  let start = true;
+  let sentenceIndex = getProgressSentence();
   let wordIndex = 0;
   while (word.style.display === 'flex') { // noprotect
     const w = SENTENCES[sentenceIndex][wordIndex];
@@ -214,14 +179,13 @@ async function start() {
     prereticle.textContent = w.substr(0, i);
     reticle.textContent = w[i];
     postreticle.textContent = w.substr(i + 1);
-    await timeout(ms);
+    await timeout(start ? BLINK_MS : ms);
+    start = false;
     ++wordIndex;
     if (wordIndex >= SENTENCES[sentenceIndex].length) {
+      await timeout(BLINK_MS - ms);
       wordIndex = 0;
-      ++sentenceIndex;
-      if (sentenceIndex >= SENTENCES.length) {
-        sentenceIndex = 0;
-      }
+      sentenceIndex = (sentenceIndex + 1) % SENTENCES.length;
       setProgressSentence(sentenceIndex);
     }
   }
@@ -234,94 +198,90 @@ function stop() {
 }
 
 function getProgressSentence() {
-  return parseInt(localStorage.getItem('progress_sentence_' + location.hash));
+  return parseInt(localStorage.getItem('progress_sentence_' + getHash())) || 0;
 }
 function setProgressSentence(s) {
   s %= SENTENCES.length;
   while (s < 0) s += SENTENCES.length;
   progress_sentence.textContent = s;
   progress_inner.style.width = (100 * s / SENTENCES.length) + '%';
-  localStorage.setItem('progress_sentence_' + location.hash, s);
+  localStorage.setItem('progress_sentence_' + getHash(), s);
 }
 
 wpm.addEventListener('input', () => {
   const wpmv = parseInt(wpm.value);
   localStorage.setItem('wpm', wpmv);
   wpm_output.textContent = wpmv;
-  const mins = TOTAL_WORDS / wpmv;
-  time_output.textContent = '';
-  if (mins > 60) time_output.textContent += Math.floor(mins / 60) + ' hours, ';
-  time_output.textContent += Math.round(mins % 60) + ' minutes';
+  setTimeOutput();
 });
-clipboard.addEventListener('click',()=>{
+
+clipboard.addEventListener('click', async() => {
   fullscreen();
-  location.hash = '!clipboard';
-  localStorage.setItem('progress_sentence_' + location.hash, 0); // TODO add sha(text) to location.hash
-  navigator.clipboard.readText().then(parse);
-});
-function parseURL(url, filename) {
-  fetch(url).then(r=>r.text()).then(txt => {
-    if (filename) {
-      localStorage.setItem('file_' + filename, txt);
-    }
-    parse(txt);
-  });
-}
-if (location.hash === '!clipboard') {
-  navigator.clipboard.readText().then(parse);
-} else if (location.hash) {
-  const txt = localStorage.getItem('file_' + location.hash.substr(1));
-  if (txt) {
-    parse(txt);
-  } else {
-    parseURL(location.hash);
+  let txt;
+  try {
+    txt = await navigator.clipboard.readText();
+  } catch (e) {
+    console.log('error reading clipboard', e);
+    location.hash = '';
   }
-}
+  if (txt.length < 1e4 && txt.match(URL_REGEX)) {
+    location.hash = url.value;
+  } else {
+    intro.style.display = 'none';
+    location.hash = CLIPBOARD_HASH;
+    setProgressSentence(0);
+    parse(txt);
+  }
+});
+
 file.addEventListener('change', () => {
   fullscreen();
   location.hash = file.value;
   parseURL(URL.createObjectURL(file.files[0]), file.value);
 });
-url.addEventListener('change',()=>{
-  fullscreen();
-  location.hash = url.value;
-  parseURL(url.value, url.value);
+
+library.addEventListener('change', () => {
+  location.hash = library.value;
 });
+
 read.addEventListener('mousedown', start);
 read.addEventListener('mouseup', stop);
 read.addEventListener('touchstart', start);
 read.addEventListener('touchend', stop);
+read.addEventListener('contextmenu', e => e.preventDefault());
+
 wpm.value = parseInt(localStorage.getItem('wpm')) || 400;
 wpm_output.textContent = wpm.value;
-read.addEventListener('contextmenu', e => e.preventDefault());
-back_start.addEventListener('click', () => {
-  setProgressSentence(0);
-});
-back1000.addEventListener('click', () => {
-  setProgressSentence(getProgressSentence() - 1000);
-});
-back100.addEventListener('click', () => {
-  setProgressSentence(getProgressSentence() - 100);
-});
-back10.addEventListener('click', () => {
-  setProgressSentence(getProgressSentence() - 10);
-});
-forward1000.addEventListener('click', () => {
-  setProgressSentence(getProgressSentence() + 1000);
-});
-forward100.addEventListener('click', () => {
-  setProgressSentence(getProgressSentence() + 100);
-});
-forward10.addEventListener('click', () => {
-  setProgressSentence(getProgressSentence() + 10);
-});
-back.addEventListener('click', () => {
-  setProgressSentence(getProgressSentence() - 1);
-});
-forward.addEventListener('click', () => {
-  setProgressSentence(getProgressSentence() + 1);
-});
-forward_end.addEventListener('click', () => {
-  setProgressSentence(SENTENCES.length - 1);
-});
+
+window.onhashchange = async() => {
+  if (!getHash()) {
+    intro.style.display = 'flex';
+    settings.style.display = 'none';
+    read.style.display = 'none';
+    return;
+  }
+
+  if (getHash() === CLIPBOARD_HASH) {
+    if (intro.style.display === 'none') return;
+    try {
+      const txt = await navigator.clipboard.readText();
+    } catch (e) {
+      console.log('error reading clipboard', e);
+      location.hash = '';
+      return;
+    }
+    setProgressSentence(0);
+    parse(txt);
+    return;
+  }
+
+  if (getHash().match(URL_REGEX)) {
+    parseURL(getHash());
+    return;
+  }
+
+  // TODO read file from indexeddb
+  location.hash = '';
+};
+window.onhashchange();
 </script>

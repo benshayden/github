@@ -1,0 +1,694 @@
+<div style="display: flex;">
+<textarea id=translate_input></textarea>
+<div id=translate_output></div>
+</div>
+
+<button onclick=cursiveipa()>cursive</button>
+<table id=vowels>
+  <tr><th></th><th>front</th><th>nearfront</th><th>central</th><th>nearback</th><th>back</th></tr>
+  <tr><td>close</td></tr>
+  <tr><td>nearclose</td></tr>
+  <tr><td>closemid</td></tr>
+  <tr><td>mid</td></tr>
+  <tr><td>openmid</td></tr>
+  <tr><td>open</td></tr>
+</table>
+
+<table id=consonants>
+  <tr><th></th><th>labial</th><th>dental</th><th>velar</th><th>alveolar</th><th>postalveolar</th><th>palatal</th></tr>
+  <tr><td>plosive</td></tr>
+  <tr><td>nasal</td></tr>
+  <tr><td>fricative</td></tr>
+  <tr><td>approximant</td></tr>
+</table>
+
+<hr>
+
+<input type=checkbox id=vary_yFactor onchange=demo()><label for=vary_yFactor>yFactor</label>
+<input type=checkbox id=vary_shape onchange=demo()><label for=vary_shape>shape</label>
+<input type=checkbox id=vary_stroke onchange=demo()><label for=vary_stroke>stroke</label>
+<input type=checkbox id=vary_strokeWidth onchange=demo()><label for=vary_strokeWidth>strokeWidth</label>
+<input type=checkbox id=vary_skew onchange=demo()><label for=vary_skew>skew</label>
+<input type=checkbox id=vary_height onchange=demo()><label for=vary_height>height</label>
+
+<div id=output></div>
+
+<script>
+'use strict';
+// https://github.com/msavva/transphoner/blob/master/data/ipa.csv
+// https://easypronunciation.com/en/english-phonetic-transcription-converter#phonetic_transcription
+
+const IPA = new Map();  // ipa: Phone
+
+class Phone {
+  /**
+   * International phonetic alphabet unicode, possibly multiple codepoints.
+   * @param {string} ipa
+   */
+  constructor(ipa) {
+    this.ipa = ipa;
+    IPA.set(ipa, this);
+  }
+}
+
+class Consonant extends Phone {
+  /**
+   * @param {string} ipa
+   * @param {labial/labiodental/dental/alveolar/postalveolar/retroflex/palatal/velar/uvular/pharyngeal/glottal} place
+   * @param {plosive/nasal/trill/tap/fricative/approximant/click} manner
+   * @param {boolean} voiced
+   */
+  constructor(ipa, place, manner, voiced) {
+    super(ipa);
+    this.place = place;
+    this.manner = manner;
+    this.voiced = voiced;
+  }
+}
+
+const CONSONANTS_CSV = [
+  'm,labial,nasal,voiced',
+  'n,dental,nasal,voiced',
+  'ŋ,velar,nasal,voiced',
+  'p,labial,plosive,',
+  'b,labial,plosive,voiced',
+  't,alveolar,plosive,',
+  'd,alveolar,plosive,',
+  't͡ʃ,postalveolar,plosive,',
+  'd͡ʒ,postalveolar,plosive,voiced',
+  'k,velar,plosive,',
+  'g,velar,plosive,voiced',
+  'l,alveolar,approximant,voiced',
+  'r,postalveolar,approximant,voiced',
+  'j,palatal,approximant,voiced',
+  'w,velar,approximant,voiced',
+  's,alveolar,fricative,',
+  'z,alveolar,fricative,voiced',
+  'ʃ,postalveolar,fricative,',
+  'ʒ,postalveolar,fricative,voiced',
+  'f,labial,fricative,',
+  'v,labial,fricative,voiced',
+  'θ,dental,fricative,',
+  'ð,dental,fricative,voiced',
+];
+
+for (let row of CONSONANTS_CSV) {
+  row = row.split(',');
+  new Consonant(row[0], row[1], row[2], row[3] !== '');
+}
+
+class Vowel extends Phone {
+  /**
+   * @param {string} ipa
+   * @param {front/central/back} place
+   * @param {close/closemid/openmid/open} openness
+   * @param {boolean} rounded
+   * @param {unstressed/primary/secondary} stress
+   * @param {extrashort/short/long} length
+   */
+  constructor(ipa, place, openness, rounded, stress, length) {
+    super(ipa);
+    this.place = place;
+    this.openness = openness;
+    this.rounded = rounded;
+    this.stress = stress;
+    this.length = length
+  }
+}
+
+const VOWELS_CSV = [
+  'i,front,close,',
+  'y,front,close,rounded',
+  'u,back,close,rounded',
+  'ʊ,nearback,nearclose,rounded',
+  'ɪ,nearfront,nearclose,',
+  'e,front,closemid,',
+  'ɛ,front,openmid,',
+  'o,back,closemid,rounded',
+  'ɔ,back,openmid,rounded',
+  'a,front,open,',
+  'æ,front,nearopen,',
+  'ʏ,nearfront,nearclose,rounded',
+  'ø,front,closemid,rounded',
+  'œ,front,openmid,rounded',
+  'ə,central,mid,',
+  'ɘ,central,closemid,',
+  'ɯ,back,close,',
+  'ɑ,back,open,',
+  'ɨ,central,close,',
+  'ɞ,central,openmid,rounded',
+  'ɜ,central,openmid,',
+];
+
+for (let row of VOWELS_CSV) {
+  row = row.split(',');
+  for (const [length, lengthsuprasegmental] of [['short', ''], ['halflong', 'ˑ'],
+      ['long', 'ː'], ['extrashort', String.fromCharCode(774)]]) {
+    for (const [stress, stresssuprasegmental] of [['unstressed', ''],
+        ['primary', 'ˈ'], ['secondary', 'ˌ']]) {
+      new Vowel(row[0] + lengthsuprasegmental + stresssuprasegmental,
+          row[1], row[2], row[3] !== '', stress, length);
+    }
+  }
+}
+
+function createSVG(tagName) {
+  return document.createElementNS('http://www.w3.org/2000/svg', tagName);
+}
+
+class PathBuilder {
+  constructor(start) {
+    this.data_ = [];
+    this.moveTo(start);
+  }
+
+  build(opt_attrs) {
+    const path = createSVG('path');
+    path.setAttribute('d', this.data_.join(' '));
+    for (const [name, value] of Object.entries(opt_attrs || {})) {
+      path.setAttribute(name, value);
+    }
+    return path;
+  }
+
+  lineTo(p) {
+    this.data_.push(`L${p.x},${p.y}`);
+    return this;
+  }
+
+  moveTo(p) {
+    this.data_.push(`M${p.x},${p.y}`);
+    return this;
+  }
+
+  quadraticTo(end, control) {
+    this.data_.push(`Q${control.x},${control.y} ${end.x},${end.y}`);
+    return this;
+  }
+
+  bezierTo(end, control1, control2) {
+    this.data_.push(`C${control1.x},${control1.y} ${control2.x},${control2.y}
+        ${end.x},${end.y}`);
+    return this;
+  }
+
+  arcTo(rx, ry, xAxisRotDeg, large, sweep) {
+    this.data_.push(`A${rx},${ry} ${xAxisRotDeg},${large},${sweep} ${this.csv}`);
+    return this;
+  }
+}
+
+function clamp(x, lo, hi) {
+  return Math.min(Math.max(x, lo), hi);
+}
+
+class Portion {
+  constructor(opt_opts) {
+    const opts = opt_opts || {};
+    this.background = opts.background || 'white';
+    this.backgroundOpacity = opts.backgroundOpacity || 0;
+    this.fill = opts.fill || 'white';
+    this.fillOpacity = opts.fillOpacity || 0;
+    this.height = opts.height || 100;
+    this.shape = opts.shape || 'I';
+    this.skew = (opts.skew === undefined) ? 1 : opts.skew;  // 0-2
+    this.stroke = opts.stroke || 'black';
+    this.strokeWidth = opts.strokeWidth || 1;
+    this.yFactor = opts.yFactor || 1; // or -1
+  }
+
+  asDict() {
+    return {
+      background: this.background,
+      fill: this.fill,
+      height: this.height,
+      shape: this.shape,
+      skew: this.skew,
+      stroke: this.stroke,
+      strokeWidth: this.strokeWidth,
+      yFactor: this.yFactor,
+    };
+  }
+
+  draw(nth) {
+    performance.mark('portion-draw-start');
+    let size = 'half';
+    if (nth === 'only') size = 'full';
+    if (nth === 'second') {
+      this.yFactor *= -1;
+    }
+
+    const bg = createSVG('rect');
+    bg.setAttribute('strokeWidth', 0);
+    bg.setAttribute('fill', this.background);
+    bg.setAttribute('fill-opacity', this.backgroundOpacity);
+    bg.setAttribute('x', 0);
+    bg.setAttribute('y', ((this.yFactor - 0) * this.height));
+    bg.setAttribute('width', size === 'full' ? 100 : 50);
+    bg.setAttribute('height', this.height);
+
+    let path = new PathBuilder({x: 0, y: 0});
+    this[`shape${this.shape}${size}`](path);
+    path = path.build({
+      'stroke-width': this.strokeWidth,
+      stroke: this.stroke,
+      fill: this.fill,
+      'fill-opacity': this.fillOpacity,
+    });
+
+    if (nth === 'second') {
+      path.setAttribute('transform', 'rotate(180 50 0)');
+      this.yFactor *= -1;
+    }
+
+    const g = createSVG('g');
+    g.portion = this;
+    if (this.backgroundOpacity > 0) g.appendChild(bg);
+    g.appendChild(path);
+    performance.mark('portion-draw-end');
+    performance.measure(
+        'portion-draw', 'portion-draw-start', 'portion-draw-end');
+    return g;
+  }
+
+  // All shapes start horizontally at {x: 0, y: 0}.
+  // All shape*full end horizontally at {x: 100, y: 0}.
+  // All shape*half vertically at {x: 50, y: 0}.
+
+  get elevation() {
+    return this.height * this.yFactor;
+  }
+
+  bezierTo(pb, end, control1, control2) {
+    pb.bezierTo({x: end.x, y: end.y * this.elevation},
+                {x: control1.x, y: control1.y * this.elevation},
+                {x: control2.x, y: control2.y * this.elevation});
+  }
+
+  shapeIfull(pb) {
+    pb.quadraticTo({x: (40 * this.skew) + 10, y: this.elevation},
+                   {x: 50, y: 0});
+    pb.quadraticTo({x: 100, y: 0}, {x: 50, y: 0});
+  }
+
+  shapeIhalf(pb) {
+    pb.quadraticTo({x: (40 * this.skew) + 10, y: this.elevation},
+                   {x: 50, y: 0});
+    this.bezierTo(pb, {x: 50, y: 0},
+                      {x: (40 * this.skew) + 10, y: 0.9},
+                      {x: 50, y: 0.3});
+  }
+
+  shapeUfull(pb) {
+    this.bezierTo(pb, {x: (30 * this.skew) + 20, y: 1},
+                      {x: 50, y: 0},
+                      {x: 30 * this.skew, y: 1});
+    this.bezierTo(pb, {x: 100, y: 0},
+                      {x: (30 * this.skew) + 40, y: 1},
+                      {x: 50, y: 0});
+  }
+
+  shapeUhalf(pb) {
+    this.bezierTo(pb, {x: (30 * this.skew) + 10, y: 1},
+                      {x: 30, y: 0},
+                      {x: (30 * this.skew) - 10, y: 1});
+    this.bezierTo(pb, {x: 50, y: 0},
+                      {x: (30 * this.skew) + 20, y: 1},
+                      {x: 50, y: 0.5});
+  }
+
+  shapeOfull(pb) {
+    this.bezierTo(pb, {x: (30 * this.skew) + 20, y: 1},
+                      {x: 100 - (30 * this.skew), y: 0},
+                      {x: 40 + (30 * this.skew), y: 1});
+    this.bezierTo(pb, {x: 100, y: 0},
+                      {x: 30 * this.skew, y: 1},
+                      {x: 60 - (30 * this.skew), y: 0});
+  }
+
+  shapeOhalf(pb) {
+    this.bezierTo(pb, {x: 40 + (25 * this.skew), y: 1},
+                      {x: 50 + (25 * this.skew), y: 0},
+                      {x: 70 + (15 * this.skew), y: 1});
+    this.bezierTo(pb, {x: 50, y: 0},
+                      {x: 20 + (30 * this.skew), y: 1},
+                      {x: 50, y: 0.4});
+  }
+}
+
+const SHAPES = {
+  FULL: {
+    *O(skew) {
+      yield [
+        [20 + skew,  1],
+        [100 - skew, 0],
+        [40 + skew,  1],
+      ];
+      yield [
+        [100,        0],
+        [skew,       1],
+        [60 - skew,  0],
+      ];
+    }
+
+    *I(skew) {
+    }
+
+    *U(skew) {
+    }
+
+    *L(skew) {
+    }
+
+    *R(skew) {
+    }
+
+    *OO(skew) {
+    }
+
+    *II(skew) {
+    }
+  },
+
+  HALF: {
+  },
+};
+
+class Riser extends Portion {
+  constructor(opt_opts) {
+    const opts = opt_opts || {};
+    opts.yFactor = -1;
+    super(opts);
+  }
+}
+
+class Descender extends Portion {
+}
+
+class Grapheme {
+  constructor(phone, portions) {
+    this.phone = phone;
+    this.portions = portions;
+  }
+
+  asDict() {
+    return {
+      ipa: this.phone.ipa,
+      portions: this.portions.map(p => p.asDict()),
+    };
+  }
+
+  static fromDict(d) {
+    return new Grapheme(IPA.get(d.ipa), d.portions.map(p => new Portion(p)));
+  }
+
+  draw() {
+    const g = createSVG('g');
+    g.grapheme = this;
+    if (this.portions.length === 1) {
+      g.appendChild(this.portions[0].draw('only'));
+    } else if (this.portions.length === 2) {
+      g.appendChild(this.portions[0].draw('first'));
+      g.appendChild(this.portions[1].draw('second'));
+    }
+    return g;
+  }
+
+  static drawAll(table, opt_opts) {
+    performance.mark('drawAll-start');
+    const opts = opt_opts || {};
+    const xScale = opts.xScale || 1;
+    const yScale = opts.yScale || 1;
+    const interRowPadding = 10;
+
+    let maxRiserHeight = 0;
+    let maxDescenderHeight = 0;
+    let maxLineLength = 0;
+    let y = 0;
+    for (let row = 0; row < table.length; ++row) {
+      maxLineLength = Math.max(maxLineLength, table[row].length);
+      for (let col = 0; col < table[row].length; ++col) {
+        let cell = table[row][col];
+        if (!(cell instanceof Grapheme)) {
+          table[row][col] = cell = Grapheme.fromDict({portions: cell});
+        }
+
+        for (const portion of cell.portions) {
+          if (portion.yFactor > 0) {
+            maxDescenderHeight = Math.max(maxDescenderHeight, portion.height);
+          } else {
+            maxRiserHeight = Math.max(maxRiserHeight, portion.height);
+          }
+        }
+      }
+      if (row === 0) y = maxRiserHeight;
+    }
+    let rowHeight = maxRiserHeight + maxDescenderHeight;
+
+    const svg = createSVG('svg');
+    svg.setAttribute('viewBox', `0 0 ${100 * maxLineLength} ${table.length *
+      (rowHeight + interRowPadding)}`);
+    svg.setAttribute('width', xScale * 100 * maxLineLength);
+    svg.setAttribute('height', yScale * table.length * rowHeight);
+
+    for (const row of table) {
+      let x = 0;
+      for (const grapheme of row) {
+        const g = grapheme.draw();
+        g.setAttribute('transform', `translate(${x} ${y})`);
+        svg.appendChild(g);
+        x += 100;
+      }
+      y += rowHeight + interRowPadding;
+    }
+
+    performance.mark('drawAll-end');
+    performance.measure('drawAll', 'drawAll-start', 'drawAll-end');
+    return svg;
+  }
+}
+
+/**
+ * @param {!Phone} phone
+ * @return {!Grapheme}
+ */
+function orthography(phone) {
+  const riser = new Riser({strokeWidth: 6})
+  const grapheme = new Grapheme(phone, [riser]);
+  if (phone instanceof Vowel) {
+    switch (phone.openness) {
+      case 'close':
+        riser.height = 75;
+        break;
+      case 'closemid':
+        riser.height = 100;
+        break;
+      case 'openmid':
+        riser.height = 125;
+        break;
+      case 'open':
+        riser.height = 150;
+        break;
+    }
+    switch (phone.place) {
+      case 'front': riser.skew = 2; break;
+      case 'central': break;
+      case 'back': riser.skew = 0; break;
+    }
+    if (phone.rounded) {
+      riser.shape = 'O';
+    }
+  } else {
+    const descender = new Descender({strokeWidth: 6});
+    grapheme.portions.push(descender);
+    switch (phone.place) {
+      case 'labial':
+        riser.shape = 'U';
+        break;
+      case 'dental':
+        break;
+      case 'velar':
+        riser.shape = 'U';
+        riser.skew = 2;
+        break;
+      case 'alveolar':
+        riser.shape = 'O';
+        break;
+      case 'postalveolar':
+        riser.shape = 'O';
+        riser.skew = 2;
+        break;
+      case 'palatal':
+        riser.shape = 'U';
+        riser.skew = 2;
+        break;
+    }
+    switch (phone.manner) {
+      case 'nasal':
+        break;
+      case 'plosive':
+        descender.shape = 'U';
+        break;
+      case 'approximant':
+        descender.shape = 'O';
+        break;
+      case 'fricative':
+        descender.skew = 2;
+        break;
+    }
+    if (phone.voiced) {
+      riser.strokeWidth = 12;
+      descender.strokeWidth = 12;
+    }
+  }
+  return grapheme;
+}
+
+function scribe(ipas) {
+  document.body.appendChild(Grapheme.drawAll([ipas.map(
+      ipa => orthography(IPA.get(ipa)))]));
+}
+
+function demo() {
+  output.textContent = 'working...';
+
+  const yFactors = vary_yFactor.checked ? [-1, 1] : [-1];
+  const shapes = vary_shape.checked ? 'IOU' : 'I';
+  const strokes = vary_stroke.checked ? ['black', 'red', 'green', 'blue'] : ['black'];
+  const strokeWidths = vary_strokeWidth.checked ? [3, 6, 9] : [3];
+  const skews = vary_skew.checked ? [0, 1, 2] : [1];
+  const heights = vary_height.checked ? [50, 100, 150] : [100];
+
+  const table = [];
+  performance.mark('table-start');
+  for (const yFactor of yFactors) {
+    for (const height0 of heights) {
+      for (const shape0 of shapes) {
+        for (const skew0 of skews) {
+          for (const strokeWidth0 of strokeWidths) {
+            for (const stroke0 of strokes) {
+              const row = [];
+              table.push(row);
+              row.push([
+                  {
+                    shape: shape0,
+                    yFactor,
+                    skew: skew0,
+                    height: height0,
+                    stroke: stroke0,
+                    strokeWidth: strokeWidth0,
+                  }
+              ]);
+              for (const shape1 of shapes) {
+                for (const skew1 of skews) {
+                  for (const height1 of heights) {
+                    for (const strokeWidth1 of strokeWidths) {
+                      for (const stroke1 of strokes) {
+                        row.push([
+                            {
+                              shape: shape0,
+                              yFactor,
+                              skew: skew0,
+                              height: height0,
+                              stroke: stroke0,
+                              strokeWidth: strokeWidth0,
+                            },
+                            {
+                              shape: shape1,
+                              yFactor: -1 * yFactor,
+                              skew: skew1,
+                              height: height1,
+                              stroke: stroke1,
+                              strokeWidth: strokeWidth1,
+                            },
+                        ]);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  performance.mark('table-end');
+  performance.measure('table', 'table-start', 'table-end');
+  console.log(table[0].length * table.length);
+  output.textContent = '';
+  output.appendChild(Grapheme.drawAll(table, {xScale: 0.1, yScale: 0.1}));
+}
+
+function translate() {
+  translate_output.textContent = '';
+  const table = [];
+  for (const row of translate_input.value.split('\n')) {
+    table.push(row.split('').map(ipa => orthography(IPA.get(ipa))));
+  }
+  translate_output.appendChild(Grapheme.drawAll(table, {xScale: 0.1, yScale: 0.1}));
+}
+
+translate_input.onkeyup = translate;
+
+function cursiveipa() {
+  const mode = event.target.textContent;
+  event.target.textContent = (mode === 'cursive') ? 'IPA' : 'cursive';
+  for (const ipa of document.body.querySelectorAll('ipa')) {
+    ipa.textContent = '';
+    if (mode === 'cursive') {
+      ipa.appendChild(Grapheme.drawAll(
+          [[orthography(IPA.get(ipa.ipa))]],
+          {xScale: 0.1, yScale: 0.1}));
+    } else {
+      ipa.textContent = ipa.ipa;
+    }
+  }
+}
+
+addEventListener('load', () => {
+  for (let rowi = 1; rowi < vowels.children[0].children.length; ++rowi) {
+    const row = vowels.children[0].children[rowi];
+    const openness = row.children[0].textContent;
+    for (let coli = 1; coli < vowels.children[0].children[0].children.length; ++coli) {
+      const place = vowels.children[0].children[0].children[coli].textContent;
+      const td = document.createElement('td');
+      row.appendChild(td);
+      for (const phone of IPA.values()) {
+        if (phone instanceof Vowel &&
+            phone.length === 'short' &&
+            phone.stress === 'unstressed' &&
+            phone.openness === openness &&
+            phone.place === place) {
+          const ipa = document.createElement('ipa');
+          td.appendChild(ipa);
+          ipa.ipa = phone.ipa;
+          ipa.textContent = phone.ipa;
+        }
+      }
+    }
+  }
+
+  for (let rowi = 1; rowi < consonants.children[0].children.length; ++rowi) {
+    const row = consonants.children[0].children[rowi];
+    const manner = row.children[0].textContent;
+    for (let coli = 1; coli < consonants.children[0].children[0].children.length; ++coli) {
+      const place = consonants.children[0].children[0].children[coli].textContent;
+      const td = document.createElement('td');
+      row.appendChild(td);
+      for (const phone of IPA.values()) {
+        if (phone instanceof Consonant &&
+            phone.manner === manner &&
+            phone.place === place) {
+          const ipa = document.createElement('ipa');
+          td.appendChild(ipa);
+          ipa.ipa = phone.ipa;
+          ipa.textContent = phone.ipa;
+        }
+      }
+    }
+  }
+
+  demo();
+});
+</script>

@@ -18,5 +18,22 @@ function addpath() {
 }
 addpath $HOME/bin
 addpath $HOME/dev/depot_tools
+addpath $HOME/dev/goma
 addpath $HOME/Downloads/android-sdk-linux/platform-tools
-addpath $HOME/Downloads/google_appengine
+alias cd..="cd .."
+export dd=dashboard/dashboard
+
+function pdc() {
+  for c in {a..z};do
+    if [ ! -f ~/dev/$c.desc ]; then
+      pushd ~/dev/$c
+      break;
+    fi
+  done
+}
+
+function watchdir() {
+  inotifywait "$1" -r 2>/dev/null | grep "$1" | grep CREATE >/dev/null && ( sleep 1; $2 )
+  watchdir "$1" "$2"
+  sleep 0.3
+}
