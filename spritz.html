@@ -249,15 +249,33 @@ clipboard.addEventListener('click',()=>{
   localStorage.setItem('progress_sentence_' + location.hash, 0); // TODO add sha(text) to location.hash
   navigator.clipboard.readText().then(parse);
 });
+function parseURL(url, filename) {
+  fetch(url).then(r=>r.text()).then(txt => {
+    if (filename) {
+      localStorage.setItem('file_' + filename, txt);
+    }
+    parse(txt);
+  });
+}
+if (location.hash === '!clipboard') {
+  navigator.clipboard.readText().then(parse);
+} else if (location.hash) {
+  const txt = localStorage.getItem('file_' + location.hash.substr(1));
+  if (txt) {
+    parse(txt);
+  } else {
+    parseURL(location.hash);
+  }
+}
 file.addEventListener('change', () => {
   fullscreen();
   location.hash = file.value;
-  console.log('TODO', file.files[0]);
+  parseURL(URL.createObjectURL(f.files[0]), file.value);
 });
 url.addEventListener('change',()=>{
   fullscreen();
   location.hash = url.value;
-  fetch(url.value).then(parse);
+  parseURL(url.value, url.value);
 });
 read.addEventListener('mousedown', start);
 read.addEventListener('mouseup', stop);
