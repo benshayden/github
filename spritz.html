@@ -270,7 +270,7 @@ if (location.hash === '!clipboard') {
 file.addEventListener('change', () => {
   fullscreen();
   location.hash = file.value;
-  parseURL(URL.createObjectURL(f.files[0]), file.value);
+  parseURL(URL.createObjectURL(file.files[0]), file.value);
 });
 url.addEventListener('change',()=>{
   fullscreen();
