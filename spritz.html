@@ -1,0 +1,284 @@
+<flex id=intro_outer>
+  <flex col id=intro>
+    <div>What would you like to read?</div>
+    <flex><input type=file id=file></flex>
+    <flex><input type=text id=url placeholder="URL of txt file"></flex>
+    <flex><button id=clipboard>Clipboard</button></flex>
+    <flex><button id=hpmor>Harry Potter and the Methods of Rationality</button></flex>
+  </flex>
+</flex>
+
+<div id=settings>
+  <div id=progress_container>
+    <div id=progress_inner>
+    </div>
+    <center id=progress_label>
+      Sentence <span id=progress_sentence></span> of <span id=total_sentences></span>
+    </center>
+  </div>
+  <div>
+    <label>
+      <center>Words per minute: <span id=wpm_output></span></center>
+      <input type=range id=wpm min=100 max=1000 step=10>
+    </label>
+    <center id=time_output></center>
+  </div>
+  <div>
+    <button id=back_start>|&lt;</button>
+    <button id=back10>&lt;&lt;</button>
+    <button id=back>&lt;</button>
+    <button id=forward>&gt;</button>
+    <button id=forward10>&gt;&gt;</button>
+    <button id=forward_end>&gt;|</button>
+  </div>
+</div>
+
+<flex id=word><span id=prereticle></span><span id=reticle></span><span id=postreticle></span></flex>
+<button id=read>Press and hold to read.<br>Release to pause.</button>
+
+<style>
+body {
+  background-color: black;
+  color: white;
+  margin: 0;
+}
+flex {
+  display: flex;
+}
+flex[col] {
+  flex-direction: column;
+}
+button {
+  border-radius: 24px;
+  border: none;
+  background-color: white;
+  color: black;
+  font-family: serif;
+  outline: none;
+  user-select: none;
+}
+input[type="text"] {
+  background-color: black;
+  color: var(--foreground);
+  border: 1px solid white;
+  border-radius: 4px;
+  padding: 4px;
+  outline: none;
+}
+#intro_outer {
+  justify-content: center;
+}
+#intro {
+  justify-content: center;
+  height: 100%;
+}
+#intro * {
+  margin: 4px;
+  justify-content: center;
+  width: 100%;
+}
+#settings {
+  display: none;
+  height: 50%;
+  width: 100%;
+}
+#settings > div:not(#progress_container)  {
+  margin: 8px;
+}
+#url {
+  width: 100%;
+  height: 2em;
+}
+#clipboard {
+  width: 100%;
+  height: 2em;
+}
+#hpmor {
+  width: 100%;
+  height: 2em;
+}
+#word {
+  display: none;
+  font-size: 30px;
+  align-items: center;
+  width: 100%;
+  height: 50%;
+}
+#prereticle {
+  width: 20%;
+  text-align: right;
+}
+#read {
+  display: none;
+}
+#progress_container {
+  position: relative;
+  width: 100%;
+}
+#progress_inner {
+  position: absolute;
+  background-color: #88888880;
+  width: 50%;
+  height: 100%;
+  z-index: -100;
+}
+#wpm {
+  width: 100%;
+}
+#back_start, #back10, #back, #forward, #forward10, #forward_end {
+  width: 15%;
+  height: 2em;
+}
+#read {
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  bottom: 0;
+}
+#reticle {
+  color: red;
+}
+</style>
+
+<script>
+// TODO lighthouse app
+
+let SENTENCES = [];
+let TOTAL_WORDS = 0;
+
+function fullscreen() {
+  const D = document.documentElement;
+  if (D.requestFullscreen) return D.requestFullscreen();
+  if (D.webkitRequestFullscreen) return D.webkitRequestFullscreen();
+  if (D.mozRequestFullScreen) return D.mozRequestFullScreen();
+}
+
+function parse(txt) {
+  fullscreen();
+  SENTENCES = [];
+  for (let s of txt.match(/[^\.!\?]+[\.!\?"”']*/g)) {
+    s = s.match(/[^ \n]+ */g);
+    if (!s) continue;
+    SENTENCES.push(s.map(w => w.trim()));
+  }
+  total_sentences.textContent = SENTENCES.length;
+  if (SENTENCES.length === 0) return;
+  TOTAL_WORDS = 0;
+  for (const sen of SENTENCES) {
+    TOTAL_WORDS += sen.length;
+  }
+  intro.style.display = 'none';
+  settings.style.display = 'block';
+  read.style.display = 'block';
+  let s = parseInt(localStorage.getItem(
+    'progress_sentence_' + location.hash)) || 0;
+  if (s >= SENTENCES.length) s = 0;
+  progress_sentence.textContent = s;
+  progress_inner.style.width = (100 * s / SENTENCES.length) + '%';
+  const mins = TOTAL_WORDS / parseInt(wpm.value);
+  time_output.textContent = '';
+  if (mins > 60) time_output.textContent += Math.floor(mins / 60) + 'hours, ';
+  time_output.textContent += Math.round(mins % 60) + ' minutes';
+}
+
+const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+function reticleIndex(w) {
+  const m = w.match(/\w+/);
+  if (m[0].length === 1) return m.index;
+  if (m[0].length < 6) return 1 + m.index;
+  return 2 + m.index;
+}
+
+async function start() {
+  if (word.style.display === 'block') return;
+  word.style.display = 'flex';
+  read.style.backgroundColor = 'black';
+  settings.style.display = 'none';
+  const ms = 6e4 / parseInt(wpm.value);
+  let sentenceIndex = parseInt(progress_sentence.textContent) || 0;
+  let wordIndex = 0;
+  while (word.style.display === 'flex') { // noprotect
+    const w = SENTENCES[sentenceIndex][wordIndex];
+    const i = reticleIndex(w);
+    prereticle.textContent = w.substr(0, i);
+    reticle.textContent = w[i];
+    postreticle.textContent = w.substr(i + 1);
+    await timeout(ms);
+    ++wordIndex;
+    if (wordIndex >= SENTENCES[sentenceIndex].length) {
+      wordIndex = 0;
+      ++sentenceIndex;
+      if (sentenceIndex >= SENTENCES.length) {
+        sentenceIndex = 0;
+      }
+      setProgressSentence(sentenceIndex);
+    }
+  }
+}
+
+function stop() {
+  word.style.display = 'none';
+  read.style.backgroundColor = 'white';
+  settings.style.display = 'block';
+}
+
+function getProgressSentence() {
+  return parseInt(localStorage.getItem('progress_sentence_' + location.hash));
+}
+function setProgressSentence(s) {
+  s %= SENTENCES.length;
+  while (s < 0) s += SENTENCES.length;
+  progress_sentence.textContent = s;
+  progress_inner.style.width = (100 * s / SENTENCES.length) + '%';
+  localStorage.setItem('progress_sentence_' + location.hash, s);
+}
+
+wpm.addEventListener('input', () => {
+  const wpmv = parseInt(wpm.value);
+  localStorage.setItem('wpm', wpmv);
+  wpm_output.textContent = wpmv;
+  const mins = TOTAL_WORDS / wpmv;
+  time_output.textContent = '';
+  if (mins > 60) time_output.textContent += Math.floor(mins / 60) + 'hours, ';
+  time_output.textContent += Math.round(mins % 60) + ' minutes';
+});
+clipboard.addEventListener('click',()=>{
+  location.hash = '!clipboard';
+  localStorage.setItem('progress_sentence_' + location.hash, 0); // TODO add sha(text) to location.hash
+  navigator.clipboard.readText().then(parse);
+});
+file.addEventListener('change', () => {
+  location.hash = file.value;
+  console.log('TODO', file.files[0]);
+});
+url.addEventListener('change',()=>{
+  location.hash = url.value;
+  fetch(url.value).then(parse);
+});
+read.addEventListener('mousedown', start);
+read.addEventListener('mouseup', stop);
+read.addEventListener('touchstart', start);
+read.addEventListener('touchend', stop);
+wpm.value = parseInt(localStorage.getItem('wpm')) || 400;
+wpm_output.textContent = wpm.value;
+read.addEventListener('contextmenu', e => e.preventDefault());
+back_start.addEventListener('click', () => {
+  setProgressSentence(0);
+});
+back10.addEventListener('click', () => {
+  setProgressSentence(getProgressSentence() - 10);
+});
+forward10.addEventListener('click', () => {
+  setProgressSentence(getProgressSentence() + 10);
+});
+back.addEventListener('click', () => {
+  setProgressSentence(getProgressSentence() - 1);
+});
+forward.addEventListener('click', () => {
+  setProgressSentence(getProgressSentence() + 1);
+});
+forward_end.addEventListener('click', () => {
+  setProgressSentence(SENTENCES.length - 1);
+});
+</script>
