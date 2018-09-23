@@ -154,7 +154,6 @@ function fullscreen() {
 }
 
 function parse(txt) {
-  fullscreen();
   SENTENCES = [];
   for (let s of txt.match(/[^\.!\?]+[\.!\?"”']*/g)) {
     s = s.match(/[^ \n]+ */g);
@@ -244,15 +243,18 @@ wpm.addEventListener('input', () => {
   time_output.textContent += Math.round(mins % 60) + ' minutes';
 });
 clipboard.addEventListener('click',()=>{
+  fullscreen();
   location.hash = '!clipboard';
   localStorage.setItem('progress_sentence_' + location.hash, 0); // TODO add sha(text) to location.hash
   navigator.clipboard.readText().then(parse);
 });
 file.addEventListener('change', () => {
+  fullscreen();
   location.hash = file.value;
   console.log('TODO', file.files[0]);
 });
 url.addEventListener('change',()=>{
+  fullscreen();
   location.hash = url.value;
   fetch(url.value).then(parse);
 });
