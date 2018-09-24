@@ -187,7 +187,7 @@ function parse(txt) {
   progress_inner.style.width = (100 * s / SENTENCES.length) + '%';
   const mins = TOTAL_WORDS / parseInt(wpm.value);
   time_output.textContent = '';
-  if (mins > 60) time_output.textContent += Math.floor(mins / 60) + 'hours, ';
+  if (mins > 60) time_output.textContent += Math.floor(mins / 60) + ' hours, ';
   time_output.textContent += Math.round(mins % 60) + ' minutes';
 }
 
