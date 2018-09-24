@@ -23,14 +23,18 @@
     </label>
     <center id=time_output></center>
   </div>
-  <div>
+  <flex id=skips>
     <button id=back_start>|&lt;</button>
+    <button id=back1000>&lt;&lt;&lt;&lt;</button>
+    <button id=back100>&lt;&lt;&lt;</button>
     <button id=back10>&lt;&lt;</button>
     <button id=back>&lt;</button>
     <button id=forward>&gt;</button>
     <button id=forward10>&gt;&gt;</button>
+    <button id=forward100>&gt;&gt;&gt;</button>
+    <button id=forward1000>&gt;&gt;&gt;&gt;</button>
     <button id=forward_end>&gt;|</button>
-  </div>
+  </flex>
 </div>
 
 <flex id=word><span id=prereticle></span><span id=reticle></span><span id=postreticle></span></flex>
@@ -126,8 +130,8 @@ input[type="text"] {
 #wpm {
   width: 100%;
 }
-#back_start, #back10, #back, #forward, #forward10, #forward_end {
-  width: 15%;
+#skips * {
+  flex-grow: 1;
   height: 2em;
 }
 #read {
@@ -167,6 +171,12 @@ function parse(txt) {
   for (const sen of SENTENCES) {
     TOTAL_WORDS += sen.length;
   }
+  back1000.style.display = (SENTENCES.length < 2000) ? 'none' : 'block';
+  forward1000.style.display = (SENTENCES.length < 2000) ? 'none' : 'block';
+  back100.style.display = (SENTENCES.length < 200) ? 'none' : 'block';
+  forward100.style.display = (SENTENCES.length < 200) ? 'none' : 'block';
+  back10.style.display = (SENTENCES.length < 20) ? 'none' : 'block';
+  forward10.style.display = (SENTENCES.length < 20) ? 'none' : 'block';
   intro.style.display = 'none';
   settings.style.display = 'block';
   read.style.display = 'block';
@@ -240,7 +250,7 @@ wpm.addEventListener('input', () => {
   wpm_output.textContent = wpmv;
   const mins = TOTAL_WORDS / wpmv;
   time_output.textContent = '';
-  if (mins > 60) time_output.textContent += Math.floor(mins / 60) + 'hours, ';
+  if (mins > 60) time_output.textContent += Math.floor(mins / 60) + ' hours, ';
   time_output.textContent += Math.round(mins % 60) + ' minutes';
 });
 clipboard.addEventListener('click',()=>{
@@ -287,8 +297,20 @@ read.addEventListener('contextmenu', e => e.preventDefault());
 back_start.addEventListener('click', () => {
   setProgressSentence(0);
 });
+back1000.addEventListener('click', () => {
+  setProgressSentence(getProgressSentence() - 1000);
+});
+back100.addEventListener('click', () => {
+  setProgressSentence(getProgressSentence() - 100);
+});
 back10.addEventListener('click', () => {
   setProgressSentence(getProgressSentence() - 10);
+});
+forward1000.addEventListener('click', () => {
+  setProgressSentence(getProgressSentence() + 1000);
+});
+forward100.addEventListener('click', () => {
+  setProgressSentence(getProgressSentence() + 100);
 });
 forward10.addEventListener('click', () => {
   setProgressSentence(getProgressSentence() + 10);
