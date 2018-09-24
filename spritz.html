@@ -16,7 +16,7 @@
   </flex>
 </flex>
 
-<div id=settings style="display: none; height: 50%; width: 100%;">
+<flex col id=settings style="display: none; height: 50%; width: 100%; justify-content: center;">
   <div id=progress_container style="position: relative; width: 100%;">
     <div id=progress_inner style="position: absolute; background-color: #88888880; width: 50%; height: 100%; z-index: -100;">
     </div>
@@ -41,7 +41,7 @@
     <button id=forward1000 onclick="setProgressSentence(getProgressSentence() + 1000)">&gt;&gt;&gt;&gt;</button>
     <button id=forward_end onclick="setProgressSentence(SENTENCES.length - 1)">&gt;|</button>
   </flex>
-</div>
+</flex>
 
 <flex id=word style="display: none; font-size: 30px; align-items: center; width: 100%; height: 50%;">
   <span id=prereticle style="width: 20%; text-align: right;">
@@ -102,7 +102,6 @@ const URL_REGEX = /^(blob|https?|ftp):/;
 const CLIPBOARD_HASH = '!clipboard';
 const BLINK_MS = 600;
 let SENTENCES = [];
-let TOTAL_WORDS = 0;
 
 const getHash = () => location.hash.substr(1);
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -123,10 +122,6 @@ function parse(txt) {
   }
   total_sentences.textContent = SENTENCES.length;
   if (SENTENCES.length === 0) return;
-  TOTAL_WORDS = 0;
-  for (const sen of SENTENCES) {
-    TOTAL_WORDS += sen.length;
-  }
 
   back1000.style.display = (SENTENCES.length < 2000) ? 'none' : 'block';
   forward1000.style.display = (SENTENCES.length < 2000) ? 'none' : 'block';
@@ -136,7 +131,7 @@ function parse(txt) {
   forward10.style.display = (SENTENCES.length < 20) ? 'none' : 'block';
 
   intro.style.display = 'none';
-  settings.style.display = 'block';
+  settings.style.display = 'flex';
   read.style.display = 'block';
   let s = getProgressSentence();
   if (s >= SENTENCES.length) s = 0;
@@ -156,10 +151,15 @@ function parseURL(url, filename) {
 // TODO scan indexeddb and add options to library
 
 function setTimeOutput() {
-  const mins = TOTAL_WORDS / parseInt(wpm.value);
+  let words = 0;
+  for (let s = getProgressSentence(); s < SENTENCES.length; ++s) {
+    words += SENTENCES[s].length - 1;
+  }
+  let mins = words / parseInt(wpm.value);
+  mins += BLINK_MS * (SENTENCES.length - getProgressSentence()) / 6e4;
   time_output.textContent = '';
   if (mins > 60) time_output.textContent += Math.floor(mins / 60) + ' hours, ';
-  time_output.textContent += Math.round(mins % 60) + ' minutes';
+  time_output.textContent += Math.round(mins % 60) + ' minutes remaining';
 }
 
 function reticleIndex(w) {
@@ -200,7 +200,7 @@ async function start() {
 function stop() {
   word.style.display = 'none';
   read.style.backgroundColor = 'white';
-  settings.style.display = 'block';
+  settings.style.display = 'flex';
 }
 
 function getProgressSentence() {
@@ -212,6 +212,7 @@ function setProgressSentence(s) {
   progress_sentence.textContent = s;
   progress_inner.style.width = (100 * s / SENTENCES.length) + '%';
   localStorage.setItem('progress_sentence_' + getHash(), s);
+  setTimeOutput();
 }
 
 wpm.addEventListener('input', () => {
