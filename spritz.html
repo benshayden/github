@@ -164,6 +164,7 @@ function setTimeOutput() {
 
 function reticleIndex(w) {
   const m = w.match(/\w+/);
+  if (!m) return 0;
   if (m[0].length === 1) return m.index;
   if (m[0].length < 6) return 1 + m.index;
   return 2 + m.index;
