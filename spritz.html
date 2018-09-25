@@ -24,9 +24,9 @@
       <span id=progress_percent>0</span>%: Sentence <span id=progress_sentence></span> of <span id=total_sentences></span>
     </center>
   </div>
-  <center id=time_output style="margin: 8px;"></center>
-  <center style="margin: 8px;">Words per minute: <span id=wpm_output></span></center>
-  <input type=range id=wpm min=100 max=1000 step=10 style="width: 100%;" style="margin: 8px;">
+  <center id=time_output></center>
+  <center>Words per minute: <span id=wpm_output></span></center>
+  <input type=range id=wpm min=100 max=1000 step=10 style="width: 100%;">
   <flex id=skips style="flex-wrap: wrap;">
     <button id=back_start onclick="setProgressSentence(0)">|&lt;</button>
     <button id=back1000 onclick="setProgressSentence(getProgressSentence() - 1000)">&lt;&lt;&lt;&lt;</button>
