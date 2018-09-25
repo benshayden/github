@@ -17,18 +17,17 @@
 </flex>
 
 <flex col id=settings style="display: none; height: 50%; width: 100%; justify-content: center;">
-  <div id=progress_container style="position: relative; width: 100%;">
+  <div id=progress_container style="position: relative; width: 100%; margin: 8px;">
     <div id=progress_inner style="position: absolute; background-color: #88888880; width: 50%; height: 100%; z-index: -100;">
     </div>
     <center id=progress_label>
-      Sentence <span id=progress_sentence></span> of <span id=total_sentences></span>
+      <span id=progress_percent>0</span>%: Sentence <span id=progress_sentence></span> of <span id=total_sentences></span>
     </center>
   </div>
-  <div>
-    <center>Words per minute: <span id=wpm_output></span></center>
-    <input type=range id=wpm min=100 max=1000 step=10 style="width: 100%;">
-    <center id=time_output></center>
-  </div>
+  <center id=time_output style="margin: 8px;"></center>
+  <div id=current_sentence style="margin: 8px; border: 1px solid white;"></div>
+  <center style="margin: 8px;">Words per minute: <span id=wpm_output></span></center>
+  <input type=range id=wpm min=100 max=1000 step=10 style="width: 100%;" style="margin: 8px;">
   <flex id=skips>
     <button id=back_start onclick="setProgressSentence(0)">|&lt;</button>
     <button id=back1000 onclick="setProgressSentence(getProgressSentence() - 1000)">&lt;&lt;&lt;&lt;</button>
@@ -86,12 +85,11 @@ button {
   justify-content: center;
   width: 100%;
 }
-#settings > div:not(#progress_container)  {
-  margin: 8px;
-}
 #skips * {
   flex-grow: 1;
   margin: 4px;
+  min-width: 40px;
+  white-space: nowrap;
 }
 </style>
 
@@ -172,11 +170,12 @@ function reticleIndex(w) {
 
 async function start() {
   if (word.style.display === 'flex') return;
+  fullscreen();
   word.style.display = 'flex';
   read.style.backgroundColor = 'black';
   settings.style.display = 'none';
   const ms = 6e4 / parseInt(wpm.value);
-  let start = true;
+  let starting = true;
   let sentenceIndex = getProgressSentence();
   let wordIndex = 0;
   while (word.style.display === 'flex') { // noprotect
@@ -185,11 +184,13 @@ async function start() {
     prereticle.textContent = w.substr(0, i);
     reticle.textContent = w[i];
     postreticle.textContent = w.substr(i + 1);
-    await timeout(start ? BLINK_MS : ms);
-    start = false;
+    await timeout(starting ? BLINK_MS : ms);
+    starting = false;
     ++wordIndex;
     if (wordIndex >= SENTENCES[sentenceIndex].length) {
-      await timeout(BLINK_MS - ms);
+      if (SENTENCES[sentenceIndex].length > 3) {
+        await timeout(BLINK_MS - ms);
+      }
       wordIndex = 0;
       sentenceIndex = (sentenceIndex + 1) % SENTENCES.length;
       setProgressSentence(sentenceIndex);
@@ -210,7 +211,9 @@ function setProgressSentence(s) {
   s %= SENTENCES.length;
   while (s < 0) s += SENTENCES.length;
   progress_sentence.textContent = s;
+  progress_percent.textContent = parseInt(100 * s / SENTENCES.length);
   progress_inner.style.width = (100 * s / SENTENCES.length) + '%';
+  current_sentence.textContent = SENTENCES[s].join(' ');
   localStorage.setItem('progress_sentence_' + getHash(), s);
   setTimeOutput();
 }
