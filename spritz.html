@@ -33,18 +33,20 @@
   <center id=time_output></center>
   <center>Words per minute: <span id=wpm_output></span></center>
   <input type=range id=wpm min=100 max=1000 step=10 style="width: 100%;">
-  <div id=skips style="display: grid; grid-template-rows: auto auto; grid-template-columns: auto auto auto auto auto auto;">
+  <div id=skips style="display: grid; grid-template-rows: auto auto; grid-template-columns: auto auto auto auto auto auto auto;">
     <flex style="align-items: center;">Back</flex>
     <button onclick="setProgressSentence(getProgressSentence()-1)">1</button>
     <button id=back10 onclick="setProgressSentence(getProgressSentence()-10)">10</button>
     <button id=back100 onclick="setProgressSentence(getProgressSentence()-100)">100</button>
     <button id=back1000 onclick="setProgressSentence(getProgressSentence()-1000)">1000</button>
+    <button id=back10000 onclick="setProgressSentence(getProgressSentence()-10000)">10000</button>
     <button id=back_start onclick="setProgressSentence(0)">start</button>
     <flex style="align-items: center;">Forward</flex>
     <button onclick="setProgressSentence(getProgressSentence()+1)">1</button>
     <button id=forward10 onclick="setProgressSentence(getProgressSentence()+10)">10</button>
     <button id=forward100 onclick="setProgressSentence(getProgressSentence()+100)">100</button>
     <button id=forward1000 onclick="setProgressSentence(getProgressSentence()+1000)">1000</button>
+    <button id=forward10000 onclick="setProgressSentence(getProgressSentence()+10000)">10000</button>
     <button id=forward_end onclick="setProgressSentence(SENTENCES.length-1)">end</button>
   </div>
   <div>Current sentence:</div>
@@ -154,12 +156,14 @@ function parse(txt) {
   total_sentences.textContent = SENTENCES.length;
   if (SENTENCES.length === 0) return;
 
-  back1000.style.display = (SENTENCES.length < 2000) ? 'none' : 'block';
-  forward1000.style.display = (SENTENCES.length < 2000) ? 'none' : 'block';
-  back100.style.display = (SENTENCES.length < 200) ? 'none' : 'block';
-  forward100.style.display = (SENTENCES.length < 200) ? 'none' : 'block';
-  back10.style.display = (SENTENCES.length < 20) ? 'none' : 'block';
-  forward10.style.display = (SENTENCES.length < 20) ? 'none' : 'block';
+  back10000.style.visibility = (SENTENCES.length < 20000) ? 'hidden' : 'visible';
+  forward10000.style.visibility = (SENTENCES.length < 20000) ? 'hidden' : 'visible';
+  back1000.style.visibility = (SENTENCES.length < 2000) ? 'hidden' : 'visible';
+  forward1000.style.visibility = (SENTENCES.length < 2000) ? 'hidden' : 'visible';
+  back100.style.visibility = (SENTENCES.length < 200) ? 'hidden' : 'visible';
+  forward100.style.visibility = (SENTENCES.length < 200) ? 'hidden' : 'visible';
+  back10.style.visibility = (SENTENCES.length < 20) ? 'hidden' : 'visible';
+  forward10.style.visibility = (SENTENCES.length < 20) ? 'hidden' : 'visible';
 
   intro.style.display = 'none';
   settings.style.display = 'flex';
