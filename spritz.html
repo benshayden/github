@@ -2,21 +2,27 @@
 <meta name="theme-color" content="black">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1">
 
-<flex id=intro style="justify-content: center; height: 100%;">
-  <flex col style="justify-content: center; height: 100%;">
-    <div>What would you like to read?</div>
-    <select id=library>
-      <option value="">Open book from library</option>
-      <option value="https://dl.dropboxusercontent.com/s/dfhl7gvtidx7u22/arithmancer.txt">The Arithmancer by White Squirrel</option>
-    </select>
-    <input type=file id=file accept=".txt">
-    <button id=clipboard style="width: 100%; font-size: inherit;">
+<flex col id=intro style="justify-content: center; height: 100%; padding: 8px;">
+  <div style="padding-bottom: 8px;">
+    Open a text file to read:
+  </div>
+  <flex>
+    <button id=clipboard style="flex-grow: 1; font-size: inherit;">
       Text or URL from clipboard
     </button>
+    <label class="button" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; margin-left: 8px;">
+      <input type=file id=file accept=".txt" style="position: absolute; z-index: -1; visibility: hidden;">
+      Local file
+    </label>
   </flex>
+  <div id=library>
+    <a href="#https://dl.dropboxusercontent.com/s/dfhl7gvtidx7u22/arithmancer.txt">
+      The Arithmancer by White Squirrel
+    </a>
+  </div>
 </flex>
 
-<flex col id=settings style="display: none; height: 50%; width: 100%;">
+<flex col id=settings style="display: none; height: 50%; width: 100%; padding: 8px; box-sizing: border-box;">
   <div id=progress_container style="position: relative; width: 100%;">
     <div id=progress_inner style="position: absolute; background-color: #88888880; width: 50%; height: 100%; z-index: -100;">
     </div>
@@ -27,19 +33,22 @@
   <center id=time_output></center>
   <center>Words per minute: <span id=wpm_output></span></center>
   <input type=range id=wpm min=100 max=1000 step=10 style="width: 100%;">
-  <flex id=skips style="flex-wrap: wrap;">
-    <button id=back_start onclick="setProgressSentence(0)">|&lt;</button>
-    <button id=back1000 onclick="setProgressSentence(getProgressSentence() - 1000)">&lt;&lt;&lt;&lt;</button>
-    <button id=back100 onclick="setProgressSentence(getProgressSentence() - 100)">&lt;&lt;&lt;</button>
-    <button id=back10 onclick="setProgressSentence(getProgressSentence() - 10)">&lt;&lt;</button>
-    <button id=back onclick="setProgressSentence(getProgressSentence() - 1)">&lt;</button>
-    <button id=forward onclick="setProgressSentence(getProgressSentence() + 1)">&gt;</button>
-    <button id=forward10 onclick="setProgressSentence(getProgressSentence() + 10)">&gt;&gt;</button>
-    <button id=forward100 onclick="setProgressSentence(getProgressSentence() + 100)">&gt;&gt;&gt;</button>
-    <button id=forward1000 onclick="setProgressSentence(getProgressSentence() + 1000)">&gt;&gt;&gt;&gt;</button>
-    <button id=forward_end onclick="setProgressSentence(SENTENCES.length - 1)">&gt;|</button>
-  </flex>
-  <div id=current_sentence style="border: 1px solid white;"></div>
+  <div id=skips style="display: grid; grid-template-rows: auto auto; grid-template-columns: auto auto auto auto auto auto;">
+    <flex style="align-items: center;">Back</flex>
+    <button onclick="setProgressSentence(getProgressSentence()-1)">1</button>
+    <button id=back10 onclick="setProgressSentence(getProgressSentence()-10)">10</button>
+    <button id=back100 onclick="setProgressSentence(getProgressSentence()-100)">100</button>
+    <button id=back1000 onclick="setProgressSentence(getProgressSentence()-1000)">1000</button>
+    <button id=back_start onclick="setProgressSentence(0)">start</button>
+    <flex style="align-items: center;">Forward</flex>
+    <button onclick="setProgressSentence(getProgressSentence()+1)">1</button>
+    <button id=forward10 onclick="setProgressSentence(getProgressSentence()+10)">10</button>
+    <button id=forward100 onclick="setProgressSentence(getProgressSentence()+100)">100</button>
+    <button id=forward1000 onclick="setProgressSentence(getProgressSentence()+1000)">1000</button>
+    <button id=forward_end onclick="setProgressSentence(SENTENCES.length-1)">end</button>
+  </div>
+  <div>Current sentence:</div>
+  <div id=current_sentence style="border: 1px solid white; margin: 8px 0; padding: 8px;"></div>
 </flex>
 
 <flex id=word style="display: none; font-size: 30px; align-items: center; width: 100%; height: 50%;">
@@ -48,7 +57,8 @@
   </span><span id=postreticle>
   </span>
 </flex>
-<button id=read style="display: none; position: absolute; width: 100%; height: 50%; bottom: 0;">
+
+<button id=read style="display: none; position: absolute; width: 100%; height: 50%; bottom: 0; background-color: white; color: black; border: none;">
   Press and hold to read.
   <br>Release to pause.
 </button>
@@ -61,6 +71,7 @@ body {
   height: 100%;
   background-color: black;
   color: white;
+  font-size: 16px;
   margin: 0;
 }
 flex {
@@ -69,27 +80,34 @@ flex {
 flex[col] {
   flex-direction: column;
 }
-button {
+button, .button {
+  background-color: black;
   border-radius: 24px;
-  border: none;
-  background-color: white;
-  color: black;
+  border: 1px solid white;
+  box-sizing: border-box;
+  color: white;
   font-family: serif;
   font-size: inherit;
-  height: 2em;
+  height: 32px;
   outline: none;
   user-select: none;
 }
-#intro * {
-  justify-content: center;
-  padding: 4px;
-  width: 100%;
+#intro a {
+  margin: 8px 0;
+  border: 1px solid white;
+  border-radius: 24px;
+  box-sizing: border-box;
+  color: white;
+  display: flex;
+  height: 32px;
+  align-items: center;
+  justify-content: start;
+  text-decoration: none;
+  padding-left: 12px;
 }
-#skips * {
+#skips button {
   flex-grow: 1;
   margin: 4px;
-  min-width: 60px;
-  white-space: nowrap;
 }
 </style>
 
@@ -152,24 +170,33 @@ function parse(txt) {
   setTimeOutput();
 }
 
-function parseURL(url, filename) {
-  fetch(url).then(r=>r.text()).then(txt => {
-    if (filename) {
-      setDbFile(filename, txt);
+async function parseURL(url, filename) {
+  try {
+    const txt = await getDbFile(filename || url);
+    if (txt) {
+      parse(txt);
+      return;
     }
+  } catch (e) {
+    console.error('error reading db file', e);
+  }
+
+  fetch(url).then(r=>r.text()).then(txt => {
+    setDbFile(filename || url, txt);
     parse(txt);
   });
 }
 
 (async() => {
-  const existing = new Set([...library.options].map(o => o.value).filter(v => v));
+  const existing = new Set([...library.children].map(a =>
+    new URL(a.href).hash.substr(1)));
   for (const k of (await dbKeys())) {
     if (existing.has(k)) continue;
-    const o = document.createElement('option');
-    o.value = k;
-    const p = new URL(k).pathname.split('/');
-    o.textContent = p[p.length - 1];
-    library.appendChild(o);
+    const a = document.createElement('a');
+    a.href = '#' + k;
+    const p = new URL(k).pathname.split(/[\\\/]/);
+    a.textContent = p[p.length - 1];
+    library.appendChild(a);
   }
 })();
 
@@ -275,11 +302,6 @@ file.addEventListener('change', () => {
   parseURL(URL.createObjectURL(file.files[0]), file.value);
 });
 
-library.addEventListener('change', () => {
-  fullscreen();
-  location.hash = library.value;
-});
-
 read.addEventListener('mousedown', start);
 read.addEventListener('mouseup', stop);
 read.addEventListener('touchstart', start);
@@ -311,22 +333,7 @@ window.onhashchange = async() => {
     return;
   }
 
-  try {
-    const txt = await getDbFile(getHash());
-    if (txt) {
-      parse(txt);
-      return;
-    }
-  } catch (e) {
-    console.error('error reading db file', e);
-  }
-
-  if (getHash().match(URL_REGEX)) {
-    parseURL(getHash());
-    return;
-  }
-
-  location.hash = '';
+  parseURL(decodeURIComponent(getHash()));
 };
 window.onhashchange();
 </script>
