@@ -10,7 +10,7 @@
     <button id=clipboard style="flex-grow: 1; font-size: inherit;">
       Text or URL from clipboard
     </button>
-    <label class="button" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; margin-left: 8px;">
+    <label onclick="fullscreen()" class="button" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; margin-left: 8px;">
       <input type=file id=file accept=".txt" style="position: absolute; z-index: -1; visibility: hidden;">
       Local file
     </label>
@@ -171,8 +171,10 @@ function parse(txt) {
 }
 
 async function parseURL(url, filename) {
+  console.log('parseURL', url, filename);
+  if (!filename) filename = url;
   try {
-    const txt = await getDbFile(filename || url);
+    const txt = await getDbFile(filename);
     if (txt) {
       parse(txt);
       return;
@@ -181,22 +183,43 @@ async function parseURL(url, filename) {
     console.error('error reading db file', e);
   }
 
+  if (!url.match(URL_REGEX)) {
+    console.warn('not fetching', url);
+    return;
+  }
   fetch(url).then(r=>r.text()).then(txt => {
-    setDbFile(filename || url, txt);
     parse(txt);
+    setDbFile(filename, txt);
+    addToLibrary(filename);
   });
 }
 
+function basename(url) {
+  const p = new URL(url).pathname.split(/[\\\/]/);
+  return p[p.length - 1];
+}
+
+function addToLibrary(url) {
+  const a = document.createElement('a');
+  a.href = '#' + url;
+  a.textContent = basename(url);
+  a.onclick = fullscreen;
+  library.appendChild(a);
+}
+
 (async() => {
-  const existing = new Set([...library.children].map(a =>
-    new URL(a.href).hash.substr(1)));
-  for (const k of (await dbKeys())) {
-    if (existing.has(k)) continue;
-    const a = document.createElement('a');
-    a.href = '#' + k;
-    const p = new URL(k).pathname.split(/[\\\/]/);
-    a.textContent = p[p.length - 1];
-    library.appendChild(a);
+  const existing = new Set();
+  for (const a of library.children) {
+    a.onclick = fullscreen;
+    existing.add(new URL(a.href).hash.substr(1));
+  }
+
+  let keys = await dbKeys();
+  keys = keys.filter(k => !existing.has(k));
+  keys.sort((x, y) => basename(x).localeCompare(basename(y)));
+
+  for (const k of keys) {
+    addToLibrary(url);
   }
 })();
 
@@ -297,7 +320,6 @@ clipboard.addEventListener('click', async() => {
 });
 
 file.addEventListener('change', () => {
-  fullscreen();
   location.hash = file.value;
   parseURL(URL.createObjectURL(file.files[0]), file.value);
 });
