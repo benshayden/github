@@ -16,7 +16,7 @@
   </flex>
 </flex>
 
-<flex col id=settings style="display: none; height: 50%; width: 100%; justify-content: center;">
+<flex col id=settings style="display: none; height: 50%; width: 100%;">
   <div id=progress_container style="position: relative; width: 100%;">
     <div id=progress_inner style="position: absolute; background-color: #88888880; width: 50%; height: 100%; z-index: -100;">
     </div>
@@ -25,7 +25,6 @@
     </center>
   </div>
   <center id=time_output style="margin: 8px;"></center>
-  <div id=current_sentence style="border: 1px solid white;"></div>
   <center style="margin: 8px;">Words per minute: <span id=wpm_output></span></center>
   <input type=range id=wpm min=100 max=1000 step=10 style="width: 100%;" style="margin: 8px;">
   <flex id=skips style="flex-wrap: wrap;">
@@ -40,6 +39,7 @@
     <button id=forward1000 onclick="setProgressSentence(getProgressSentence() + 1000)">&gt;&gt;&gt;&gt;</button>
     <button id=forward_end onclick="setProgressSentence(SENTENCES.length - 1)">&gt;|</button>
   </flex>
+  <div id=current_sentence style="border: 1px solid white;"></div>
 </flex>
 
 <flex id=word style="display: none; font-size: 30px; align-items: center; width: 100%; height: 50%;">
