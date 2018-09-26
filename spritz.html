@@ -27,9 +27,16 @@
     <div id=progress_inner style="position: absolute; background-color: #88888880; width: 50%; height: 100%; z-index: -100;">
     </div>
     <center id=progress_label>
-      <span id=progress_percent>0</span>%: Sentence <span id=progress_sentence></span> of <span id=total_sentences></span>
+      <!--<span id=progress_percent>0</span>%:-->
+      Sentence <span id=progress_sentence></span>
+      of <span id=total_sentences></span>
     </center>
   </div>
+  <center>
+    <span id=loc_percent>0</span>%:
+    Location <input type=number id=progress_loc min=0 step=1>
+    of <input type=number id=loc_total min=1 step=1>
+  </center>
   <center id=time_output></center>
   <center>Words per minute: <span id=wpm_output></span></center>
   <input type=range id=wpm min=100 max=1000 step=10 style="width: 100%;">
@@ -94,6 +101,15 @@ button, .button {
   outline: none;
   user-select: none;
 }
+input[type="text"], input[type="number"] {
+  background-color: black;
+  border: 1px solid white;
+  box-sizing: border-box;
+  color: white;
+  font-size: inherit;
+  height: 32px;
+  outline: none;
+}
 #intro a {
   margin: 8px 0;
   border: 1px solid white;
@@ -122,6 +138,7 @@ const URL_REGEX = /^(blob|https?|ftp):/;
 const CLIPBOARD_HASH = '!clipboard';
 const BLINK_MS = 600;
 let SENTENCES = [];
+let TOTAL_BYTES = 0;
 
 const dbPromise = idb.open('files', 1, upgrade => {
   upgrade.createObjectStore('files');
@@ -154,6 +171,15 @@ function parse(txt) {
     SENTENCES.push(s.map(w => w.trim()));
   }
   total_sentences.textContent = SENTENCES.length;
+  TOTAL_BYTES = 0;
+  for (const s of SENTENCES) {
+    for (const w of s) {
+      TOTAL_BYTES += w.length + 1;
+    }
+    TOTAL_BYTES += 1;
+  }
+  loc_total.value = localStorage.getItem('loc_total_' + getHash()) ||
+    Math.round(TOTAL_BYTES / 128);
   if (SENTENCES.length === 0) return;
 
   back10000.style.visibility = (SENTENCES.length < 20000) ? 'hidden' : 'visible';
@@ -289,11 +315,23 @@ function getProgressSentence() {
 function setProgressSentence(s) {
   s %= SENTENCES.length;
   while (s < 0) s += SENTENCES.length;
+  localStorage.setItem('progress_sentence_' + getHash(), s);
   progress_sentence.textContent = s;
-  progress_percent.textContent = parseInt(100 * s / SENTENCES.length);
+  //progress_percent.textContent = Math.round(100 * s / SENTENCES.length);
   progress_inner.style.width = (100 * s / SENTENCES.length) + '%';
   current_sentence.textContent = SENTENCES[s].join(' ');
-  localStorage.setItem('progress_sentence_' + getHash(), s);
+  const total_loc = parseInt(loc_total.value);
+  if (total_loc) {
+    let cur_byte = 0;
+    for (let i = 0; i < s; ++i) {
+      for (const w of SENTENCES[i]) {
+        cur_byte += w.length + 1;
+      }
+      cur_byte += 1;
+    }
+    progress_loc.value = cur_byte * total_loc / TOTAL_BYTES;
+    loc_percent.value = Math.round(100 * cur_byte / TOTAL_BYTES);
+  }
   setTimeOutput();
 }
 
@@ -336,6 +374,37 @@ read.addEventListener('contextmenu', e => e.preventDefault());
 
 wpm.value = parseInt(localStorage.getItem('wpm')) || 400;
 wpm_output.textContent = wpm.value;
+
+function setLocation() {
+  const loc = parseInt(progress_loc.value) || 0;
+  const total_loc = parseInt(loc_total.value);
+  if (!loc || !total) return;
+  const loc_byte = loc * TOTAL_BYTES / total_loc;
+  let cur_byte = 0;
+  for (let s = 0; s < SENTENCES.length; ++s) {
+    for (const w of SENTENCES[s]) {
+      cur_byte += w.length + 1;
+    }
+    cur_byte += 1;
+    if (cur_byte > loc_byte) {
+      if (2 < Math.abs(s - getProgressSentence())) {
+        setProgressSentence(s);
+      }
+      break;
+    }
+  }
+}
+
+loc_total.addEventListener('change', () => {
+  const total_loc = parseInt(loc_total.value);
+  if (!total_loc) return;
+  localStorage.setItem('loc_total_' + getHash(), total_loc);
+  setLocation();
+});
+
+progress_loc.addEventListener('change', () => {
+  setLocation();
+});
 
 window.onhashchange = async() => {
   if (!getHash()) {
