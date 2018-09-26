@@ -380,7 +380,7 @@ wpm_output.textContent = wpm.value;
 function setLocation() {
   const loc = parseInt(progress_loc.value) || 0;
   const total_loc = parseInt(loc_total.value);
-  if (!loc || !total) return;
+  if (!loc || !total_loc) return;
   const loc_byte = loc * TOTAL_BYTES / total_loc;
   let cur_byte = 0;
   for (let s = 0; s < SENTENCES.length; ++s) {
