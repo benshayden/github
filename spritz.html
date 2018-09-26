@@ -34,8 +34,8 @@
   </div>
   <center>
     <span id=loc_percent>0</span>%:
-    Location <input type=number id=progress_loc min=0 step=1>
-    of <input type=number id=loc_total min=1 step=1>
+    Location <input type=number id=progress_loc min=0 step=1 style="width: 6em;">
+    of <input type=number id=loc_total min=1 step=1 style="width: 6em;">
   </center>
   <center id=time_output></center>
   <center>Words per minute: <span id=wpm_output></span></center>
@@ -225,8 +225,10 @@ async function parseURL(url, filename) {
 }
 
 function basename(url) {
-  const p = new URL(url).pathname.split(/[\\\/]/);
-  return p[p.length - 1];
+  let p = new URL(url).pathname.split(/[\\\/]/);
+  p = p[p.length - 1];
+  if (p.endsWith('.txt')) p = p.substr(0, p.length - 4);
+  return p;
 }
 
 function addToLibrary(url) {
@@ -329,7 +331,7 @@ function setProgressSentence(s) {
       }
       cur_byte += 1;
     }
-    progress_loc.value = cur_byte * total_loc / TOTAL_BYTES;
+    progress_loc.value = Math.round(cur_byte * total_loc / TOTAL_BYTES);
     loc_percent.value = Math.round(100 * cur_byte / TOTAL_BYTES);
   }
   setTimeOutput();
