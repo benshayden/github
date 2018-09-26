@@ -332,7 +332,7 @@ function setProgressSentence(s) {
       cur_byte += 1;
     }
     progress_loc.value = Math.round(cur_byte * total_loc / TOTAL_BYTES);
-    loc_percent.value = Math.round(100 * cur_byte / TOTAL_BYTES);
+    loc_percent.textContent = Math.round(100 * cur_byte / TOTAL_BYTES);
   }
   setTimeOutput();
 }
