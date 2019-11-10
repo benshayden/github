@@ -352,7 +352,7 @@ clipboard.addEventListener('click', async() => {
     location.hash = '';
   }
   if (txt.length < 1e4 && txt.match(URL_REGEX)) {
-    location.hash = url.value;
+    location.hash = txt;
   } else {
     intro.style.display = 'none';
     location.hash = CLIPBOARD_HASH;
