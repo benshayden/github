@@ -431,11 +431,4 @@ window.onhashchange = async() => {
   parseURL(decodeURIComponent(getHash()));
 };
 window.onhashchange();
-  
-navigator.permissions.query({name:'clipboard-read'}).then(function(result) {
-  console.log(result.state);
-  result.onchange = function() {
-    console.log(result.state);
-  }
-});
 </script>
