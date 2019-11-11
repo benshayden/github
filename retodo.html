@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Retodo</title>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="retodo.png">
+    <style>
+      .sheet {
+        display: block;
+        padding: 4px;
+      }
+      #todos {
+        border-collapse: collapse;
+      }
+      td {
+        padding: 8px 0;
+      }
+      .todo {
+        border-bottom: 1px solid #ddd;
+      }
+      .freq, .since {
+        margin-left: 16px;
+        font-size: smaller;
+        color: grey;
+      }
+      :checked + span {
+        color: grey;
+      }
+      #authorize_button, #help {
+        display: none;
+      }
+    </style>
+    <script>
+    (function() {
+addEventListener('load', () => {
+  if (window.location.protocol === 'http:') {
+    window.location.protocol = 'https:';
+    return;
+  }
+  const script = document.createElement('script');
+  script.async = 'async';
+  script.defer = 'defer';
+  script.src = 'https://apis.google.com/js/api.js';
+  script.onreadystatechange = () => {
+    if (this.readyState === 'complete') this.onload()
+  };
+  script.onload = () => {
+    this.onload = function(){};
+    window.gapi.load('client:auth2', initClient);
+  };
+  document.head.appendChild(script);
+});
+
+function initClient() {
+  window.gapi.client.init({
+    apiKey: 'AIzaSyA5OXvfhebavqqiloTIZ1-VfwqJ8g4oAXA',
+    clientId: '262001031099-enpjc732li50o1lha2junip9jlad113h.apps.googleusercontent.com',
+    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+  }).then(async function () {
+    updateSigninStatus();
+    window.gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+    document.getElementById('authorize_button').onclick = handleAuthClick;
+  }, function(error) {
+    document.body.innerText = JSON.stringify(error);
+  });
+}
+
+function updateSigninStatus() {
+  if (window.gapi.auth2.getAuthInstance().isSignedIn.get()) {
+    document.getElementById('authorize_button').style.display = 'none';
+    listTodos();
+  } else {
+    document.getElementById('authorize_button').style.display = 'block';
+  }
+}
+
+addEventListener('hashchange', () => {
+  if (window.gapi.auth2.getAuthInstance().isSignedIn.get()) {
+    listTodos();
+  }
+});
+
+function handleAuthClick(event) {
+  return window.gapi.auth2.getAuthInstance().signIn();
+}
+
+async function listTodos() {
+  for (const todo of document.body.querySelectorAll('.todo')) {
+    document.body.removeChild(todo);
+  }
+  for (const sheetLink of document.body.querySelectorAll('.sheet')) {
+    document.body.removeChild(sheetLink);
+  }
+
+  const sheetIds = window.location.hash.replace(/#/g, '').split('&').filter(id => id);
+
+  if (!sheetIds.length) {
+    // Force the browser to display '#' in the URL to allow users to paste sheet IDs.
+    window.location.hash = '##';
+    window.location.hash = '';
+    document.body.querySelector('#help').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('help').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+
+  // Load all sheets.
+  const sheets = sheetIds.map(id => new Spreadsheet(id));
+  window.sheets = sheets;
+  await Promise.all(sheets.map(s => s.loaded));
+
+  document.getElementById('loading').style.display = 'none';
+
+  // Collect, sort, dispay todos.
+  const todos = [];
+  for (const sheet of sheets) {
+    for (const todo of sheet.todos) {
+      todos.push(todo);
+    }
+  }
+  todos.sort((a, b) => a.name.localeCompare(b.name));
+  for (const todo of todos.filter(t => !t.isDone)) {
+    todo.display();
+  }
+  appendShowDoneButton();
+  for (const todo of todos.filter(t => t.isDone)) {
+    todo.display();
+  }
+
+  // Display links to sheets.
+  for (const sheet of sheets) {
+    await sheet.displayLink();
+  }
+}
+
+function showDoneButton() {
+  const b = document.createElement('button');
+  b.innerText = 'Show Done';
+  b.style.width = '100%';
+  b.style.margin = '8px 0';
+  b.style.padding = '8px';
+  b.addEventListener('click', () => {
+    const todos = [...document.body.querySelectorAll('.todo')].filter(t => t.querySelector('input').checked);
+    const show = todos[0].style.display === 'none';
+    for (const todo of todos) {
+      todo.style.display = show ? '' : 'none';
+    }
+    b.innerText = show ? 'Hide Done' : 'Show Done';
+  });
+  return b;
+}
+  
+function appendShowDoneButton() {
+  const doneTr = document.createElement('tr');
+  const td = document.createElement('td');
+  doneTr.appendChild(td);
+  td.colSpan = 10;
+  td.appendChild(showDoneButton());
+  document.body.querySelector('#todos').appendChild(doneTr);
+}
+
+// https://developers.google.com/sheets/api/reference/rest/
+
+class Todo {
+  constructor(sheet, rowIndex, name, frequency, day, time, started, ended) {
+    this.sheet = sheet;
+    this.rowIndex = rowIndex;
+    this.name = name;
+    this.frequency = frequency;
+    this.day = day;
+    this.time = time;
+    this.started = started && new Date(started);
+    this.ended = ended && new Date(ended);
+  }
+
+  async startNow() {
+    return await this.startAt(new Date());
+  }
+  
+  async endNow() {
+    return await this.endAt(new Date());
+  }
+  
+  async startAt(started) {
+    this.started = started;
+    return await this._updateRow();
+  }
+
+  async endAt(ended) {
+    this.ended = ended;
+    return await this._updateRow();
+  }
+
+  static fromRow(sheet, rows, i) {
+    const [name, frequency, day, time, started, ended] = rows[i];
+    return new Todo(sheet, i + 1, name, frequency, day, time, started, ended);
+  }
+
+  async _updateRow() {
+    const values = [
+      [this.name, this.frequency || '', this.day || '', this.time || '', '' + (this.started || ''), '' + (this.ended || '')],
+    ];
+    const response = await window.gapi.client.sheets.spreadsheets.values.update({
+      spreadsheetId: this.sheet.id,
+      range: 'A' + this.rowIndex + ':Z',
+      valueInputOption: 'RAW',
+      resource: {values},
+    });
+  }
+
+  get isDone() {
+    return !this.started || (!!this.ended && (this.ended > this.started));
+  }
+
+  async setIsDone(done) {
+    if (done) {
+      return await this.endNow();
+    }
+    return await this.startNow();
+  }
+
+  get frequencyBadge() {
+    const frequency = (this.frequency || 'daily').toLocaleLowerCase();
+    if (frequency === 'once') {
+      return 'O';
+    } else if (frequency === 'monthly') {
+      return 'M';
+    } else if (frequency === 'quarterly' || frequency.startsWith('3mo')) {
+      return 'Q';
+    } else if (frequency === 'biannual') {
+      return '2/Y';
+    } else if (frequency === 'annual' || frequency.startsWith('year')) {
+      return 'Y';
+    } else if (frequency === 'biennial') {
+      return '2Y';
+    } else if (frequency === 'weekly') {
+      return 'W';
+    } else if (frequency.startsWith('2w')) {
+      return '2W';
+    } else if (frequency.startsWith('4w')) {
+      return '4W';
+    }
+    return 'D';
+  }
+  
+  get since() {
+    let since = '';
+    if (!this.ended) return since;
+    let mins = (new Date() - this.ended) / (1000 * 60);
+    const days = parseInt(mins / (60 * 24));
+    if (days) since += days + 'd ';
+    const hours = parseInt((mins/60)%24);
+    if (hours) since += hours + 'h ';
+    mins = parseInt(mins % 60)
+    if (!days && mins) since += mins + 'm';
+    return since;
+  }
+
+  display() {
+    const tr = document.createElement('tr');
+    tr.className = 'todo';
+    tr.style.display = this.isDone ? 'none' : '';
+    function appendTd() {
+      const td = document.createElement('td');
+      tr.appendChild(td);
+      return td;
+    }
+    document.body.querySelector('#todos').appendChild(tr);
+
+    const label = document.createElement('label');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = 'todo-' + Math.random();
+    checkbox.checked = this.isDone;
+    // TODO style https://unpkg.com/@chopsui/chops-checkbox@0.2.0/chops-checkbox.js
+    checkbox.addEventListener('change', event => {
+      this.setIsDone(event.target.checked);
+    });
+    label.appendChild(checkbox);
+    label.htmlFor = checkbox.id;
+    const span = document.createElement('span');
+    span.innerText = this.name;
+    label.appendChild(span);
+    appendTd().appendChild(label);
+    
+    const fBadge = document.createElement('span');
+    fBadge.className = 'freq';
+    fBadge.innerText = this.frequencyBadge;
+    appendTd().appendChild(fBadge);
+
+    const since = document.createElement('span');
+    since.className = 'since';
+    since.innerText = this.since;
+    appendTd().appendChild(since);
+    
+    // TODO if multiple spreadsheets, indicate which one this came from?
+
+    if (!this.isDone) {
+      const skip = document.createElement('button');
+      skip.innerText = 'skip';
+      skip.addEventListener('click', () => {
+        this.startAt('');
+        checkbox.checked = true;
+      });
+      appendTd().appendChild(skip);
+    }
+  }
+  
+  get nextTime() {
+    return getNextTime(this.frequency, this.day, this.time, this.started);
+  }
+
+  async process() {
+    const now = new Date();
+    let nextTime = this.nextTime;
+    if (nextTime > now) return;
+
+    let candidate = getNextTime(this.frequency, this.day, this.time, nextTime);
+    while (candidate < now) {
+      nextTime = candidate;
+      candidate = getNextTime(this.frequency, this.day, this.time, nextTime);
+    }
+    return await this.startAt(nextTime);
+  }
+}
+
+class Spreadsheet {
+  constructor(id) {
+    this.id = id;
+    this.loaded = this._load();
+  }
+
+  async _load() {
+    this._url = '';
+    this._title = '';
+    this._error = undefined;
+    this.todos = [];
+    try {
+      const response = await window.gapi.client.sheets.spreadsheets.get({
+        spreadsheetId: this.id,
+        includeGridData: true,
+      });
+
+      this._url = response.result.spreadsheetUrl;
+      this._title = response.result.properties.title;
+
+      const rows = response.result.sheets[0].data[0].rowData.map(({values}) =>
+        values.map(v => v.formattedValue));
+      for (let i = 1; i < rows.length; ++i) {
+        if (!rows[i][0]) continue;
+        this.todos.push(Todo.fromRow(this, rows, i));
+      }
+
+      await Promise.all(this.todos.map(t => t.process()));
+    } catch(err) {
+      console.log(err);
+      this._error = err;
+    }
+  }
+
+  displayLink() {
+    const a = document.createElement('a');
+    a.innerText = this._title;
+    a.href = this._url;
+    a.target = '_blank';
+    a.className = 'sheet';
+    document.body.appendChild(a);
+  }
+}
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+function getNextTime(frequency, day, time, prevTime) {
+  const now = new Date();
+  let nextTime;
+
+  frequency = (frequency || 'daily').toLocaleLowerCase();
+  day = (day || '').toLocaleLowerCase();
+  time = (time || '').match(/(\d+)(\:(\d+))? ?([ap]m)/i);
+
+  if (frequency === 'once') {
+    // Always return something in the future so these tasks never automatically switch to undone.
+    return new Date(now.getFullYear() + 10, 0, 1);
+  } else if (frequency === 'monthly') {
+    if (prevTime) {
+      nextTime = new Date(prevTime.getFullYear(), prevTime.getMonth() + 1, parseInt(day) || 1);
+    } else {
+      nextTime = new Date(now.getFullYear(), now.getMonth(), parseInt(day) || 1);
+    }
+  } else if (frequency === 'quarterly' || frequency.startsWith('3mo')) {
+    if (prevTime) {
+      nextTime = new Date(prevTime.getFullYear(), prevTime.getMonth() + 3, parseInt(day) || 1);
+    } else {
+      nextTime = new Date(now.getFullYear(), now.getMonth(), parseInt(day) || 1);
+    }
+  } else if (frequency === 'biannual') {
+    if (prevTime) {
+      nextTime = new Date(prevTime.getFullYear(), prevTime.getMonth() + 6, parseInt(day) || 1);
+    } else {
+      nextTime = new Date(now.getFullYear(), now.getMonth(), parseInt(day) || 1);
+    }
+  } else if (frequency === 'annual' || frequency.startsWith('year')) {
+    if (prevTime) {
+      nextTime = new Date(prevTime.getFullYear() + 1, prevTime.getMonth(), parseInt(day) || 1);
+    } else {
+      nextTime = new Date(now.getFullYear(), now.getMonth(), parseInt(day) || 1);
+    }
+  } else if (frequency === 'biennial') {
+    if (prevTime) {
+      nextTime = new Date(prevTime.getFullYear() + 2, prevTime.getMonth(), parseInt(day) || 1);
+    } else {
+      nextTime = new Date(now.getFullYear(), now.getMonth(), parseInt(day) || 1);
+    }
+  } else {
+    let dDays = 1;
+    if (frequency === 'weekly') {
+      dDays = 7;
+    } else if (frequency.startsWith('2w')) {
+      dDays = 7 * 2;
+    } else if (frequency.startsWith('4w')) {
+      dDays = 7 * 4;
+    } else if (frequency !== 'daily') {
+      console.error(`Unrecognized frequency "${frequency}", assuming daily`);
+    }
+
+    if (!prevTime) {
+      prevTime = new Date(now - (dDays * MS_PER_DAY));
+    }
+
+    nextTime = new Date(
+      prevTime.getFullYear(), prevTime.getMonth(),
+      prevTime.getDate() + dDays,
+      prevTime.getHours(), prevTime.getMinutes());
+
+    if (day) {
+      // Adjust nextTime to the next <day>.
+      let isGoodDay = d => true;
+      if (day.startsWith('week')) {
+        isGoodDay = d => d > 0 && d < 6;
+      } else if (day.startsWith('sun')) {
+        isGoodDay = d => d === 0;
+      } else if (day.startsWith('mon')) {
+        isGoodDay = d => d === 1;
+      } else if (day.startsWith('tue')) {
+        isGoodDay = d => d === 2;
+      } else if (day.startsWith('wed')) {
+        isGoodDay = d => d === 3;
+      } else if (day.startsWith('thu')) {
+        isGoodDay = d => d === 4;
+      } else if (day.startsWith('fri')) {
+        isGoodDay = d => d === 5;
+      } else if (day.startsWith('sat')) {
+        isGoodDay = d => d === 6;
+      }
+
+      while (!isGoodDay(nextTime.getDay())) {
+        nextTime = new Date(
+          nextTime.getFullYear(), nextTime.getMonth(),
+          nextTime.getDate() + 1,
+          nextTime.getHours(), nextTime.getMinutes());
+      }
+    }
+  }
+
+  // Adjust nextTime to the given <time>.
+  if (time) {
+    let hour = parseInt(time[1]);
+    if (time[4] && time[4][0].toLocaleLowerCase() === 'p') {
+      hour += 12;
+    }
+
+    let minute = nextTime.getMinutes();
+    if (time[3]) {
+      // Adjust nextTime to the given <minute>
+      minute = parseInt(time[3]);
+    }
+
+    nextTime = new Date(
+      nextTime.getFullYear(), nextTime.getMonth(),
+      nextTime.getDate(), hour, minute)
+  }
+
+  return nextTime;
+}
+})();
+</script>
+  </head>
+  <body>
+    <button id="authorize_button">Authorize</button>
+    <div id="help">
+      <ol>
+        <li>Create a Google Spreadsheet with column headings "name", "frequency", "day", "time", "started", "ended".</li>
+        <li>Copy the spreadsheet's ID from its URL to the end of this URL after the "#".</li>
+      </ol>
+    </div>
+    <div id="loading">Updating todos</div>
+    <table id="todos">
+    </table>
+  </body>
+</html>
