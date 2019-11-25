@@ -5,30 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" href="retodo.png">
 <style>
-  .sheet {
-    display: block;
-    padding: 4px;
-  }
-  #todos {
-    border-collapse: collapse;
-  }
-  td {
-    padding: 8px 0;
-  }
-  .todo {
-    border-bottom: 1px solid #ddd;
-  }
-  .freq, .since {
-    margin-left: 16px;
-    font-size: smaller;
-    color: grey;
-  }
-  :checked + span {
-    color: grey;
-  }
-  #authorize_button, #help {
-    display: none;
-  }
+.sheet {
+  display: block;
+  padding: 4px;
+}
+#todos {
+  border-collapse: collapse;
+}
+td {
+  padding: 8px 0;
+}
+.todo {
+  border-bottom: 1px solid #ddd;
+}
+.todo button {
+  margin-left: 8px;
+}
+.freq, .since {
+  margin-left: 16px;
+  font-size: smaller;
+  color: grey;
+}
+:checked + span {
+  color: grey;
+}
+#authorize_button, #help {
+  display: none;
+}
 </style>
 <script>
 (function() {
