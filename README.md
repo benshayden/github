@@ -2,7 +2,7 @@
 
 [Spritz](https://benshayden.github.io/github/spritz.html)
 
-[resistor code](https://benshayden.github.io/github/resistors.html)
+[Resistor code](https://benshayden.github.io/github/resistors.html)
 
 [Retodo](https://benshayden.github.io/github/retodo.html)
 
