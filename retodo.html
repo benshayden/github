@@ -1,39 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>Retodo</title>
-    <meta charset="utf-8"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="shortcut icon" href="retodo.png">
-    <style>
-      .sheet {
-        display: block;
-        padding: 4px;
-      }
-      #todos {
-        border-collapse: collapse;
-      }
-      td {
-        padding: 8px 0;
-      }
-      .todo {
-        border-bottom: 1px solid #ddd;
-      }
-      .freq, .since {
-        margin-left: 16px;
-        font-size: smaller;
-        color: grey;
-      }
-      :checked + span {
-        color: grey;
-      }
-      #authorize_button, #help {
-        display: none;
-      }
-    </style>
-    <script>
-    (function() {
+<!doctype html>
+<title>Retodo</title>
+<meta charset="utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="shortcut icon" href="retodo.png">
+<style>
+  .sheet {
+    display: block;
+    padding: 4px;
+  }
+  #todos {
+    border-collapse: collapse;
+  }
+  td {
+    padding: 8px 0;
+  }
+  .todo {
+    border-bottom: 1px solid #ddd;
+  }
+  .freq, .since {
+    margin-left: 16px;
+    font-size: smaller;
+    color: grey;
+  }
+  :checked + span {
+    color: grey;
+  }
+  #authorize_button, #help {
+    display: none;
+  }
+</style>
+<script>
+(function() {
 addEventListener('load', () => {
   if (window.location.protocol === 'http:') {
     window.location.protocol = 'https:';
@@ -55,8 +53,10 @@ addEventListener('load', () => {
 
 function initClient() {
   window.gapi.client.init({
-    apiKey: 'AIzaSyA5OXvfhebavqqiloTIZ1-VfwqJ8g4oAXA',
-    clientId: '262001031099-enpjc732li50o1lha2junip9jlad113h.apps.googleusercontent.com',
+    //apiKey: 'AIzaSyA5OXvfhebavqqiloTIZ1-VfwqJ8g4oAXA',
+    //clientId: '262001031099-enpjc732li50o1lha2junip9jlad113h.apps.googleusercontent.com',
+    clientId: '563656626445-ijrtluv6l4k9v8io4tinnl054onkmvaf.apps.googleusercontent.com',
+    apiKey: 'AIzaSyCisRYYgsPjDE0DuiC2Wr8j7K8Mj2aFW-U',
     discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
     scope: 'https://www.googleapis.com/auth/spreadsheets',
   }).then(async function () {
@@ -229,11 +229,11 @@ class Todo {
       return 'O';
     } else if (frequency === 'monthly') {
       return 'M';
-    } else if (frequency === 'quarterly' || frequency.startsWith('3mo')) {
+    } else if (frequency.startsWith('q') || frequency.startsWith('3mo')) {
       return 'Q';
     } else if (frequency === 'biannual') {
       return '2/Y';
-    } else if (frequency === 'annual' || frequency.startsWith('year')) {
+    } else if (frequency === 'annual' || frequency.startsWith('y')) {
       return 'Y';
     } else if (frequency === 'biennial') {
       return '2Y';
