@@ -1,4 +1,4 @@
-[Generate a random password, burn it into muscle memory](https://benshayden.github.io/github/pwtrain.html)
+[Memorize random password](https://benshayden.github.io/github/pwtrain.html)
 
 [Spritz](https://benshayden.github.io/github/spritz.html)
 
