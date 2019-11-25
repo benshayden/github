@@ -1,0 +1,320 @@
+<!doctype html>
+<title>Daemon</title>
+<style>
+#log {
+  padding-bottom: 1em;
+  border-bottom: 1px solid black;
+}
+#menu {
+  margin: 1em 0;
+}
+</style>
+
+<div id=log></div>
+<div id=menu></div>
+<input id=input autofocus style="width: 100%;">
+
+<script>
+async function sha(s) {
+  s = new TextEncoder('utf-8').encode(s);
+  const hash = await crypto.subtle.digest('SHA-256', s);
+  const view = new DataView(hash);
+  let hex = '';
+  for (let i = 0; i < view.byteLength; i += 4) {
+    hex += ('00000000' + view.getUint32(i).toString(16)).slice(-8);
+  }
+  return hex;
+}
+
+(function() {
+const _LOG = document.getElementById('log');
+function log(message) {
+  const d = document.createElement('div');
+  const t = document.createTextNode(message);
+  d.appendChild(t);
+  _LOG.appendChild(d);
+}
+// Bob plants a seed and it sprouts.
+// The mouse eats the sprout and returns to its hole. A moment later, it returns, dragging a small brass key.
+// Bob ignites the fuel.
+// Bob waters the sprout.
+// Bob joins your team.
+// Bob returns to his campfire/camptree/campfountain.
+
+const MODE = Object.fromEntries(`
+  OVERWORLD BATTLE POSTBATTLE
+`.trim().split().map(v => [v, v]));
+
+const OVERWORLD = {
+  describe() {
+    const messages = [];
+    const dirs = 'north south east west'.split(' ');
+    if (PLAYER.location.x === 0 && PLAYER.location.y === 0) {
+      messages.push('You are outside your home.');
+      dirs.push('inside');
+    }
+    dirs[dirs.length - 1] = 'or ' + dirs[dirs.length - 1];
+    messages.push('You can go ' + dirs.join(', ') + '.');
+    return messages;
+  }
+};
+
+const MENU = {
+  _div: document.getElementById('menu'),
+  _mode: MODE.OVERWORLD,
+
+  _render(mode) {
+    if (mode !== undefined) this._mode = mode;
+    this._div.innerText = '';
+    for (const message of this._info) {
+      const d = document.createElement('div');
+      d.innerText = message;
+      this._div.appendChild(d);
+    }
+  },
+
+  get _info() {
+    switch (this._mode) {
+      case MODE.OVERWORLD: return OVERWORLD.describe();
+      case MODE.BATTLE: return [
+      ];
+      case MODE.POSTBATTLE: return [
+        this._postbattle,
+      ];
+    }
+  },
+
+  onMove() {
+    // There is a group of ${daemon}. One of them is watching you.
+    // There is a village to the ${direction}.
+    // There is a river/ocean to the ${direction}.
+    // There is a locked brass door in the north wall.
+    // A small mouse watches you.
+    // There is a small pile of grey dust by a cracked wall. It smells of gunpowder.
+    // There is a bed of fresh loamy soil.
+    // A tortoise daemon is following you. It looks hale.
+    this._render(MODE.OVERWORLD);
+  },
+
+  onBattleStart() {
+    this._render(MODE.BATTLE);
+  },
+
+  onBattleEnd(daemon) {
+    this._postbattle = `Hello! My name is ~~~~~~~~. I'm a tortoise daemon. What would you like to call me?`;
+    this._render(MODE.POSTBATTLE);
+  },
+
+  onNickname() {
+    this._render(MODE.OVERWORLD);
+  },
+};
+
+document.getElementById('input').addEventListener('change', async function onInput() {
+  const value = this.value;
+  const lower = value.toLocaleLowerCase().trim();
+  this.value = '';
+  const dig = await sha(lower);
+  const parts = lower.split(/ +/);
+  const part0 = parts[0];
+  console.log('parts:', parts);
+
+  if (dig === 'a4a4db5d13cc2e00f26bd48597bfe25b43ff62c9ab66607568274f7b5af3222e') {
+    PLAYER._monsters = [
+      new TortoiseDaemon(),
+    ];
+    return;
+  }
+
+  if (['?', 'help'].includes(part0)) {
+    // TODO
+    return;
+  }
+
+  if (part0 === 'go') {
+    // TODO
+    return;
+  }
+
+  if (part0 === 'approach') {
+    // TODO
+    return;
+  }
+
+  if (part0 === 'attack') {
+    // TODO
+    return;
+  }
+
+  if (TECH[part0]) {
+    // TODO
+    return;
+  }
+
+  if (part0 === 'switch') {
+    // TODO
+    return;
+  }
+
+  if (part0 === 'accept') {
+    // TODO
+    return;
+  }
+
+  if (part0 === 'reject') {
+    // TODO
+    return;
+  }
+});
+
+class Point {
+  constructor(x = 0, y = 0) {
+    this.x = x;
+    this.y = y;
+  }
+
+  distance(p) {
+    const dx = this.x - p.x;
+    const dy = this.y - p.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+}
+
+const TYPE = Object.fromEntries(`
+  WATER FIRE EARTH AIR MIND
+`.trim().split().map(v => [v, v]));
+
+// STRENGTH[attacker][defenender]
+const STRENGTH = {
+  [TYPE.WATER]: {
+    [TYPE.WATER]: 1,
+    [TYPE.FIRE]: 1,
+    [TYPE.EARTH]: 1,
+    [TYPE.AIR]: 1,
+    [TYPE.MIND]: 1,
+  },
+  [TYPE.FIRE]: {
+    [TYPE.WATER]: 1,
+    [TYPE.FIRE]: 1,
+    [TYPE.EARTH]: 1,
+    [TYPE.AIR]: 1,
+    [TYPE.MIND]: 1,
+  },
+  [TYPE.EARTH]: {
+    [TYPE.WATER]: 1,
+    [TYPE.FIRE]: 1,
+    [TYPE.EARTH]: 1,
+    [TYPE.AIR]: 1,
+    [TYPE.MIND]: 1,
+  },
+  [TYPE.AIR]: {
+    [TYPE.WATER]: 1,
+    [TYPE.FIRE]: 1,
+    [TYPE.EARTH]: 1,
+    [TYPE.AIR]: 1,
+    [TYPE.MIND]: 1,
+  },
+  [TYPE.MIND]: {
+    [TYPE.WATER]: 1,
+    [TYPE.FIRE]: 1,
+    [TYPE.EARTH]: 1,
+    [TYPE.AIR]: 1,
+    [TYPE.MIND]: 1,
+  },
+};
+
+const TECH = {
+  water() {
+  },
+
+  spark() {
+  },
+
+  seed() {
+  },
+};
+
+const HEALTHINESS = [
+  [
+    'It might not be able to take any more.',
+  ],
+  [
+    'It could be worse.',
+  ],
+  [
+    'It could use a bandaid',
+  ],
+  [
+    'It could be better.',
+  ],
+  [
+    'It looks hale.',
+  ],
+];
+
+function randomChoice(s) {
+  return s[Math.round(Math.random() * s.length)];
+}
+
+class Daemon {
+  constructor() {
+  }
+
+  attack(defender) {
+    defender.health = Math.max(0, defender.health - STRENGTH[this.type][defender.type]
+      * this.attack / defender.defense);
+  }
+
+  defend(attacker) {
+    this.health = Math.max(0, this.health - STRENGTH[attacker.type][this.type]
+      * attacker.attack / this.defense);
+  }
+
+  get healthiness() {
+    return randomChoice(HEALTHINESS[
+      (this.health == this.maxHealth)
+      ? (HEALTHINESS.length - 1)
+      : Math.floor((HEALTHINESS.length - 1) * this.health / this.maxHealth)]);
+  }
+}
+
+class WaterDaemon extends Daemon {
+  constructor() {
+    super();
+    this.type = TYPE.WATER;
+  }
+}
+
+class TortoiseDaemon extends WaterDaemon {
+  constructor() {
+    super();
+    this.species = 'tortoise';
+    this.tech = TECH.water;
+    this.health = 1;
+    this.maxHealth = 1;
+    this.attack = 1;
+    this.defense = 1;
+  }
+}
+
+const PLAYER = {
+  location: {x: 0, y: 0},
+  monsters: [],
+};
+
+
+addEventListener('load', () => {
+  log(`
+    Scientists started warning of the cataclysm just when the daemons appeared.
+    Many believe the daemons will cause the cataclysm, and fear them.  Can you
+    make peace in time to save the world?
+  `);
+  MENU.onMove();
+});
+
+})();
+
+// https://www.mapeditor.org/
+// http://phaser.io/
+// screens: choose starter, overworld, battle, postbattle accept
+</script>
