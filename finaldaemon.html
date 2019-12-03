@@ -15,7 +15,6 @@
 <input id=input autofocus style="width: 100%;">
 
 <script>
-// mvp map: home puzzle camp library camp puzzle trainer library camp puzzle final puzzle
 // npcs at each tile
 
 // localstorage state: map, log, location, team, npc_script_line, unlocked_species
@@ -47,13 +46,43 @@ const MODE = Object.fromEntries(`
 `.trim().split().map(v => [v, v]));
 
 const OVERWORLD = {
+  _tiles: [new Array(3), new Array(3), new Array(3), new Array(3)],
+  _queue: [
+    { // home
+    },
+    { // puzzle
+    },
+    { // camp
+    },
+    { // library
+    },
+    { // camp
+    },
+    { // puzzle
+    },
+    { // trainer
+    },
+    { // library
+    },
+    { // camp
+    },
+    { // puzzle
+    },
+    { // final daemon
+    },
+    { // puzzle
+    },
+  ],
   describe() {
-    const messages = [];
-    const dirs = 'north south east west'.split(' ');
-    if (PLAYER.location.x === 0 && PLAYER.location.y === 0) {
-      messages.push('You are outside your home.');
-      dirs.push('inside');
+    const p = new Point(PLAYER.location.x, PLAYER.location.y);
+    p.y %= this._tiles.length;
+    p.x %= this._tiles[p.y].length;
+    if (!this._tiles[p.y][p.x]) {
+      this._tiles[p.y][p.x] = this._queue.shift();
     }
+    const messages = [...this._tiles[p.y][p.x].messages];
+    const dirs = 'north south east west'.split(' ');
+    dirs.push(...this._tiles[p.y][p.x].dirs);
     dirs[dirs.length - 1] = 'or ' + dirs[dirs.length - 1];
     messages.push('You can go ' + dirs.join(', ') + '.');
     return messages;
