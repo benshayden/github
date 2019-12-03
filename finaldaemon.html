@@ -76,7 +76,7 @@ const OVERWORLD = {
     if (!this._tiles[p.y][p.x]) {
       this._tiles[p.y][p.x] = this._queue.shift();
     }
-    const messages = [...this._tiles[p.y][p.x].messages];
+    const messages = [...this._tiles[p.y][p.x].messages || []];
     const dirs = 'north south east west'.split(' ');
     dirs.push(...this._tiles[p.y][p.x].dirs);
     dirs[dirs.length - 1] = 'or ' + dirs[dirs.length - 1];
@@ -84,6 +84,12 @@ const OVERWORLD = {
     return messages;
   }
 };
+  
+function commaOr(seq) {
+  seq = [...seq];
+  seq[seq.length - 1] = 'or ' + seq[seq.length - 1];
+  return seq.join(', ');
+}
 
 const MENU = {
   _div: document.getElementById('menu'),
@@ -100,6 +106,9 @@ const MENU = {
   },
 
   get _info() {
+    if (SPECIES.filter(s => s.available).length === 0) {
+      return [`Which daemon catches your eye: ${commaOr(SPECIES.slice(0, 3).map(s => s.species))}?`];
+    }
     switch (this._mode) {
       case MODE.OVERWORLD: return OVERWORLD.describe();
       case MODE.BATTLE: return [
@@ -271,18 +280,21 @@ const SPECIES = [
     type: TYPE.WATER,
     power: 1,
     tech: 'squirt',
+    available: false,
   },
   {
     species: 'grasshopper',
     type: TYPE.EARTH,
     power: 1,
     tech: 'seed',
+    available: false,
   },
   {
     species: 'salamander',
     type: TYPE.FIRE,
     power: 1,
     tech: 'ember',
+    available: false,
   },
 ];
 
