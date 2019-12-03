@@ -239,6 +239,27 @@ class Daemon {
       : Math.floor((HEALTHINESS.length - 1) * this.health / this.maxHealth)]);
   }
 }
+  
+const SPECIES = [
+  {
+    species: 'frog',
+    type: TYPE.WATER,
+    power: 1,
+    tech: 'squirt',
+  },
+  {
+    species: 'grasshopper',
+    type: TYPE.EARTH,
+    power: 1,
+    tech: 'seed',
+  },
+  {
+    species: 'salamander',
+    type: TYPE.FIRE,
+    power: 1,
+    tech: 'ember',
+  },
+];
 
 const PLAYER = {
   location: {x: 0, y: 0},
