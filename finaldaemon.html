@@ -15,6 +15,13 @@
 <input id=input autofocus style="width: 100%;">
 
 <script>
+// mvp: puzzle camp library camp puzzle trainer library camp puzzle final
+// npcs at each tile
+
+// localstorage state: map, log, location, team, npc_script_line, unlocked_species
+// Each tile contains one of NPC, library, wild daemon camp, trainer, entrance, or mini-puzzle.
+// minipuzzles yield potions which restore full health during battle, reset a potion puzzle.
+
 async function sha(s) {
   s = new TextEncoder('utf-8').encode(s);
   const hash = await crypto.subtle.digest('SHA-256', s);
@@ -34,12 +41,6 @@ function log(message) {
   d.appendChild(t);
   _LOG.appendChild(d);
 }
-// Bob plants a seed and it sprouts.
-// The mouse eats the sprout and returns to its hole. A moment later, it returns, dragging a small brass key.
-// Bob ignites the fuel.
-// Bob waters the sprout.
-// Bob joins your team.
-// Bob returns to his campfire/camptree/campfountain.
 
 const MODE = Object.fromEntries(`
   OVERWORLD BATTLE POSTBATTLE
@@ -85,14 +86,6 @@ const MENU = {
   },
 
   onMove() {
-    // There is a group of ${daemon}. One of them is watching you.
-    // There is a village to the ${direction}.
-    // There is a river/ocean to the ${direction}.
-    // There is a locked brass door in the north wall.
-    // A small mouse watches you.
-    // There is a small pile of grey dust by a cracked wall. It smells of gunpowder.
-    // There is a bed of fresh loamy soil.
-    // A tortoise daemon is following you. It looks hale.
     this._render(MODE.OVERWORLD);
   },
 
@@ -181,7 +174,7 @@ class Point {
 }
 
 const TYPE = Object.fromEntries(`
-  WATER FIRE EARTH AIR MIND
+  WATER FIRE EARTH
 `.trim().split().map(v => [v, v]));
 
 // STRENGTH[attacker][defenender]
@@ -190,47 +183,16 @@ const STRENGTH = {
     [TYPE.WATER]: 1,
     [TYPE.FIRE]: 1,
     [TYPE.EARTH]: 1,
-    [TYPE.AIR]: 1,
-    [TYPE.MIND]: 1,
   },
   [TYPE.FIRE]: {
     [TYPE.WATER]: 1,
     [TYPE.FIRE]: 1,
     [TYPE.EARTH]: 1,
-    [TYPE.AIR]: 1,
-    [TYPE.MIND]: 1,
   },
   [TYPE.EARTH]: {
     [TYPE.WATER]: 1,
     [TYPE.FIRE]: 1,
     [TYPE.EARTH]: 1,
-    [TYPE.AIR]: 1,
-    [TYPE.MIND]: 1,
-  },
-  [TYPE.AIR]: {
-    [TYPE.WATER]: 1,
-    [TYPE.FIRE]: 1,
-    [TYPE.EARTH]: 1,
-    [TYPE.AIR]: 1,
-    [TYPE.MIND]: 1,
-  },
-  [TYPE.MIND]: {
-    [TYPE.WATER]: 1,
-    [TYPE.FIRE]: 1,
-    [TYPE.EARTH]: 1,
-    [TYPE.AIR]: 1,
-    [TYPE.MIND]: 1,
-  },
-};
-
-const TECH = {
-  water() {
-  },
-
-  spark() {
-  },
-
-  seed() {
   },
 };
 
@@ -278,36 +240,15 @@ class Daemon {
   }
 }
 
-class WaterDaemon extends Daemon {
-  constructor() {
-    super();
-    this.type = TYPE.WATER;
-  }
-}
-
-class TortoiseDaemon extends WaterDaemon {
-  constructor() {
-    super();
-    this.species = 'tortoise';
-    this.tech = TECH.water;
-    this.health = 1;
-    this.maxHealth = 1;
-    this.attack = 1;
-    this.defense = 1;
-  }
-}
-
 const PLAYER = {
   location: {x: 0, y: 0},
-  monsters: [],
+  team: [],
 };
-
 
 addEventListener('load', () => {
   log(`
-    Scientists started warning of the cataclysm just when the daemons appeared.
-    Many believe the daemons will cause the cataclysm, and fear them.  Can you
-    make peace in time to save the world?
+    You awaken to the feeling of being watched.
+    As you open your eyes, you find three animal-shaped daemons sitting on your bed.
   `);
   MENU.onMove();
 });
@@ -318,3 +259,70 @@ addEventListener('load', () => {
 // http://phaser.io/
 // screens: choose starter, overworld, battle, postbattle accept
 </script>
+
+<div style="display: none; white-space: pre;">
+You awaken to the feeling of being watched.
+As you open your eyes, you find three animal-shaped daemons sitting on your bed.
+Which daemon catches your eye: frog, grasshopper, or salamander?
+The frog daemon notices your gaze and introduces itself while the other two disappear.
+"Hello! I don't think I have a name yet. What will you call me?"
+bob
+"Sounds good to me. Let's go outside!"
+Some frog daemons are playing in a fountain. One of them is watching you.
+Some salamander daemons are keeping warm in a fire.
+Some grasshopper daemons are watching grass grow.
+Before you can stop it, bob approaches them.
+The wild frog daemon attacked!
+bob can attack or splash or run.
+You can use a potion.
+bob is hale.
+The wild frog daemon is hale.
+bob made a watery shield.
+The wild frog daemon yields. Will you accept or reject its help on your journey?
+"Hello! I don't think I have a name yet. What will you call me?"
+charlie joins your party.
+A man wearing a large grey coat is watching you with his frog daemon.
+You can talk to them.You can go north, south, east, or west.bob is hale. You can reorder your party.The man's frog daemon attacked!Bob smells a library to the south.A tiny library decorated with candles sits by the path.You can enter the library.
+You have been found worthy.
+Salamander daemons will now be visible to you.
+You have been found worthy.
+Grasshopper daemons will now be visible to you.
+Directly south of here, you will find the entrance to a cave.
+Deep inside the cave, the final daemon works its mischief.
+Whenever you feel prepared, you must journey through the cave and challenge it.
+You can enter the cave.
+You can challenge the final daemon.
+The Final daemon yields.
+// Take final daemon to stop polluters and avert cataclysm.
+
+Bob plants a seed and it sprouts.
+The mouse eats the sprout and returns to its hole. A moment later, it returns, dragging a small brass key.
+Bob ignites the fuel.
+Bob waters the sprout.
+Bob joins your team.
+Bob returns to their camp.
+
+There is a group of ${daemon}. One of them is watching you.
+There is a village to the ${direction}.
+There is a river/ocean to the ${direction}.
+There is a locked brass door in the north wall.
+A small mouse watches you.
+There is a small pile of grey dust by a cracked wall. It smells of gunpowder.
+There is a bed of fresh loamy soil.
+A tortoise daemon is following you. It looks hale.
+
+Scientists started warning of the cataclysm just when the daemons appeared.
+Many believe the daemons will cause the cataclysm, and fear them.
+Can you make peace in time to save the world?
+They say the cataclysm will be a great fire.
+They say the cataclysm will be a great flood.
+They say the cataclysm will be a great plague.
+The final daemon directs the cataclysm.
+The final daemon isn't really a daemon.
+The final daemon is guarded by an elite squad containing one of every type of daemon.
+There are N species of daemons.
+There are N types of daemons.
+Water daemons fare well against fire daemons.
+Fire daemons fare well against earth daemons.
+Earth daemons fare well against water daemons.
+</div>
