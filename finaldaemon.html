@@ -44,9 +44,12 @@ const MODE = Object.fromEntries(`
 const OVERWORLD = {
   _tiles: [new Array(3), new Array(3), new Array(3), new Array(3)],
   _queue: [
-    { // home
+    {
+      messages: ['Your home seems smaller somehow.'],
+      dirs: ['inside'],
     },
     { // puzzle
+      messages: [() => {}],
     },
     { // camp
     },
@@ -147,15 +150,23 @@ document.getElementById('input').addEventListener('change', async function onInp
   console.log('parts:', parts);
 
   if (dig === 'a4a4db5d13cc2e00f26bd48597bfe25b43ff62c9ab66607568274f7b5af3222e') {
-    PLAYER._monsters = [
-      new TortoiseDaemon(),
-    ];
+    PLAYER._monsters = SPECIES.map(s => {
+      return {...s, name: s.species};
+    };
     return;
   }
 
   if (['?', 'help'].includes(part0)) {
     // TODO
     return;
+  }
+    
+  if (SPECIES.filter(s => s.available).length === 0) {
+    for (const s of SPECIES) {
+      if (part0 === s.species) {
+        return;
+      }
+    }
   }
 
   if (part0 === 'go') {
