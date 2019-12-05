@@ -17,6 +17,7 @@
 // Each tile contains one of NPC, library, wild daemon camp, trainer, entrance, or mini-puzzle.
 // minipuzzles yield potions which restore full health during battle, reset a potion puzzle.
 
+(function() {
 async function sha(s) {
   s = new TextEncoder('utf-8').encode(s);
   const hash = await crypto.subtle.digest('SHA-256', s);
@@ -28,22 +29,208 @@ async function sha(s) {
   return hex;
 }
 
-(function() {
-const _LOG = document.getElementById('log');
-function log(message) {
-  const d = document.createElement('div');
-  const t = document.createTextNode(message);
-  d.appendChild(t);
-  _LOG.appendChild(d);
+function commaOr(seq) {
+  seq = [...seq];
+  seq[seq.length - 1] = 'or ' + seq[seq.length - 1];
+  return seq.join(', ');
 }
 
-const MODE = Object.fromEntries(`
-  OVERWORLD BATTLE POSTBATTLE
-`.trim().split().map(v => [v, v]));
+class Point {
+  constructor(x = 0, y = 0) {
+    this.x = x;
+    this.y = y;
+  }
 
-const OVERWORLD = {
-  _tiles: [new Array(3), new Array(3), new Array(3), new Array(3)],
-  _queue: [
+  distance(p) {
+    const dx = this.x - p.x;
+    const dy = this.y - p.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+}
+
+function randomChoice(s) {
+  return s[Math.round(Math.random() * s.length)];
+}
+
+class Daemon {
+  constructor(species, name) {
+    Object.assign(this, species);
+    this.name = name || this.species;
+  }
+
+  attack(defender) {
+    defender.health = Math.max(0, defender.health - STRENGTH[this.type][defender.type]
+      * this.attack / defender.defense);
+  }
+
+  defend(attacker) {
+    this.health = Math.max(0, this.health - STRENGTH[attacker.type][this.type]
+      * attacker.attack / this.defense);
+  }
+
+  get healthiness() {
+    return randomChoice(Daemon.HEALTHINESS[
+      (this.health == this.maxHealth)
+      ? (Daemon.HEALTHINESS.length - 1)
+      : Math.floor((Daemon.HEALTHINESS.length - 1) * this.health / this.maxHealth)]);
+  }
+}
+
+Daemon.TYPE = Object.fromEntries(`
+  WATER FIRE EARTH
+`.trim().split().map(v => [v, v]));
+  
+Daemon.TECHNIQUE = {
+  water: {
+    overworld() {
+    },
+    battle() {
+    },
+  },
+  ember: {
+    overworld() {
+    },
+    battle() {
+    },
+  },
+  seed: {
+    overworld() {
+    },
+    battle() {
+    },
+  },
+};
+for (const [name, obj] of Object.entries(Daemon.TECHNIQUE)) {
+  obj.name = name;
+}
+
+Daemon.SPECIES = [
+  {
+    species: 'frog',
+    type: Daemon.TYPE.WATER,
+    power: 1,
+    tech: Daemon.TECHNIQUE.water,
+    available: false,
+  },
+  {
+    species: 'grasshopper',
+    type: Daemon.TYPE.EARTH,
+    power: 1,
+    tech: Daemon.TECHNIQUE.seed,
+    available: false,
+  },
+  {
+    species: 'salamander',
+    type: Daemon.TYPE.FIRE,
+    power: 1,
+    tech: Daemon.TECHNIQUE.ember,
+    available: false,
+  },
+];
+
+Daemon.HEALTHINESS = [
+  [
+    'might not be able to take any more.',
+  ],
+  [
+    'could be worse.',
+  ],
+  [
+    'could use a bandaid.',
+  ],
+  [
+    'could be better.',
+  ],
+  [
+    'looks hale.',
+  ],
+];
+
+// STRENGTH[attacker][defenender]
+Daemon.STRENGTH = {
+  [Daemon.TYPE.WATER]: {
+    [Daemon.TYPE.WATER]: 1,
+    [Daemon.TYPE.FIRE]: 1,
+    [Daemon.TYPE.EARTH]: 1,
+  },
+  [Daemon.TYPE.FIRE]: {
+    [Daemon.TYPE.WATER]: 1,
+    [Daemon.TYPE.FIRE]: 1,
+    [Daemon.TYPE.EARTH]: 1,
+  },
+  [Daemon.TYPE.EARTH]: {
+    [Daemon.TYPE.WATER]: 1,
+    [Daemon.TYPE.FIRE]: 1,
+    [Daemon.TYPE.EARTH]: 1,
+  },
+};
+
+const FD = {
+  _maps: {},  // {name: {tiles: [[]], queue: []}}
+  _daemons: [],  // [Daemon]
+  _location: new Point(0, 0),
+  _LOG: document.getElementById('log'),
+  _MENU: document.getElementById('menu'),
+  _INPUT: document.getElementById('input'),
+  _onInput: () => {},
+  
+  log(message) {
+    const d = document.createElement('div');
+    const t = document.createTextNode(message);
+    d.appendChild(t);
+    this._LOG.appendChild(d);
+  },
+
+  starter() {
+    this.log(`
+      You awaken to the feeling of being watched.
+      As you open your eyes, you find three animal-shaped daemons sitting on your bed.
+    `);
+    this._MENU.innerText = `Which daemon catches your eye: ${commaOr(SPECIES.slice(0, 3).map(s => s.species))}?`;
+    this._onInput = this._onStarter;
+  },
+
+  _onStarter(species) {
+  },
+
+  overworld() {
+    const p = new Point(PLAYER.location.x, PLAYER.location.y);
+    p.y %= this._tiles.length;
+    p.x %= this._tiles[p.y].length;
+    if (!this._tiles[p.y][p.x]) {
+      this._tiles[p.y][p.x] = this._queue.shift();
+    }
+    const messages = [...this._tiles[p.y][p.x].messages || []];
+    const dirs = 'north south east west'.split(' ');
+    dirs.push(...this._tiles[p.y][p.x].dirs);
+    dirs[dirs.length - 1] = 'or ' + dirs[dirs.length - 1];
+    messages.push('You can go ' + dirs.join(', ') + '.');
+    this._MENU.innerText = messages.join('\n');
+    this._onInput = this._onOverworld;
+  },
+  
+  async _onOverworld(cmd) {
+    const dig = await sha(cmd);
+  },
+  
+  battle() {
+    this._MENU.innerText = '';
+    this._onInput = this._onBattle;
+  },
+  
+  _onBattle(cmd) {
+  },
+};
+
+FD._INPUT.addEventListener('change', () => {
+  const cmd = FD._INPUT.value.toLocaleLowerCase().trim();
+  FD._INPUT.value = '';
+  FD._onInput(cmd);
+});
+
+FD._maps.overworld = {
+  tiles: [new Array(3), new Array(3), new Array(3), new Array(3)],
+  queue: [
     {
       messages: ['Your home seems smaller somehow.'],
       dirs: ['inside'],
@@ -72,261 +259,15 @@ const OVERWORLD = {
     { // puzzle
     },
   ],
-  describe() {
-    const p = new Point(PLAYER.location.x, PLAYER.location.y);
-    p.y %= this._tiles.length;
-    p.x %= this._tiles[p.y].length;
-    if (!this._tiles[p.y][p.x]) {
-      this._tiles[p.y][p.x] = this._queue.shift();
-    }
-    const messages = [...this._tiles[p.y][p.x].messages || []];
-    const dirs = 'north south east west'.split(' ');
-    dirs.push(...this._tiles[p.y][p.x].dirs);
-    dirs[dirs.length - 1] = 'or ' + dirs[dirs.length - 1];
-    messages.push('You can go ' + dirs.join(', ') + '.');
-    return messages;
-  }
-};
-  
-function commaOr(seq) {
-  seq = [...seq];
-  seq[seq.length - 1] = 'or ' + seq[seq.length - 1];
-  return seq.join(', ');
-}
-
-const MENU = {
-  _div: document.getElementById('menu'),
-  _mode: MODE.OVERWORLD,
-
-  _render(mode) {
-    if (mode !== undefined) this._mode = mode;
-    this._div.innerText = '';
-    for (const message of this._info) {
-      const d = document.createElement('div');
-      d.innerText = message;
-      this._div.appendChild(d);
-    }
-  },
-
-  get _info() {
-    if (SPECIES.filter(s => s.available).length === 0) {
-      return [`Which daemon catches your eye: ${commaOr(SPECIES.slice(0, 3).map(s => s.species))}?`];
-    }
-    switch (this._mode) {
-      case MODE.OVERWORLD: return OVERWORLD.describe();
-      case MODE.BATTLE: return [
-      ];
-      case MODE.POSTBATTLE: return [
-        this._postbattle,
-      ];
-    }
-  },
-
-  onMove() {
-    this._render(MODE.OVERWORLD);
-  },
-
-  onBattleStart() {
-    this._render(MODE.BATTLE);
-  },
-
-  onBattleEnd(daemon) {
-    this._postbattle = `Hello! My name is ~~~~~~~~. I'm a tortoise daemon. What would you like to call me?`;
-    this._render(MODE.POSTBATTLE);
-  },
-
-  onNickname() {
-    this._render(MODE.OVERWORLD);
-  },
 };
 
-document.getElementById('input').addEventListener('change', async function onInput() {
-  const value = this.value;
-  const lower = value.toLocaleLowerCase().trim();
-  this.value = '';
-  const dig = await sha(lower);
-  const parts = lower.split(/ +/);
-  const part0 = parts[0];
-  console.log('parts:', parts);
-
-  if (dig === 'a4a4db5d13cc2e00f26bd48597bfe25b43ff62c9ab66607568274f7b5af3222e') {
-    PLAYER._monsters = SPECIES.map(s => {
-      return {...s, name: s.species};
-    };
-    return;
-  }
-
-  if (['?', 'help'].includes(part0)) {
-    // TODO
-    return;
-  }
-    
-  if (SPECIES.filter(s => s.available).length === 0) {
-    for (const s of SPECIES) {
-      if (part0 === s.species) {
-        return;
-      }
-    }
-  }
-
-  if (part0 === 'go') {
-    // TODO
-    return;
-  }
-
-  if (part0 === 'approach') {
-    // TODO
-    return;
-  }
-
-  if (part0 === 'attack') {
-    // TODO
-    return;
-  }
-
-  if (TECH[part0]) {
-    // TODO
-    return;
-  }
-
-  if (part0 === 'switch') {
-    // TODO
-    return;
-  }
-
-  if (part0 === 'accept') {
-    // TODO
-    return;
-  }
-
-  if (part0 === 'reject') {
-    // TODO
-    return;
-  }
+window.addEventListener('load', () => {
+  FD.starter();
 });
-
-class Point {
-  constructor(x = 0, y = 0) {
-    this.x = x;
-    this.y = y;
-  }
-
-  distance(p) {
-    const dx = this.x - p.x;
-    const dy = this.y - p.y;
-    return Math.sqrt(dx * dx + dy * dy);
-  }
-}
-
-const TYPE = Object.fromEntries(`
-  WATER FIRE EARTH
-`.trim().split().map(v => [v, v]));
-
-// STRENGTH[attacker][defenender]
-const STRENGTH = {
-  [TYPE.WATER]: {
-    [TYPE.WATER]: 1,
-    [TYPE.FIRE]: 1,
-    [TYPE.EARTH]: 1,
-  },
-  [TYPE.FIRE]: {
-    [TYPE.WATER]: 1,
-    [TYPE.FIRE]: 1,
-    [TYPE.EARTH]: 1,
-  },
-  [TYPE.EARTH]: {
-    [TYPE.WATER]: 1,
-    [TYPE.FIRE]: 1,
-    [TYPE.EARTH]: 1,
-  },
-};
-
-const HEALTHINESS = [
-  [
-    'It might not be able to take any more.',
-  ],
-  [
-    'It could be worse.',
-  ],
-  [
-    'It could use a bandaid',
-  ],
-  [
-    'It could be better.',
-  ],
-  [
-    'It looks hale.',
-  ],
-];
-
-function randomChoice(s) {
-  return s[Math.round(Math.random() * s.length)];
-}
-
-class Daemon {
-  constructor() {
-  }
-
-  attack(defender) {
-    defender.health = Math.max(0, defender.health - STRENGTH[this.type][defender.type]
-      * this.attack / defender.defense);
-  }
-
-  defend(attacker) {
-    this.health = Math.max(0, this.health - STRENGTH[attacker.type][this.type]
-      * attacker.attack / this.defense);
-  }
-
-  get healthiness() {
-    return randomChoice(HEALTHINESS[
-      (this.health == this.maxHealth)
-      ? (HEALTHINESS.length - 1)
-      : Math.floor((HEALTHINESS.length - 1) * this.health / this.maxHealth)]);
-  }
-}
-  
-const SPECIES = [
-  {
-    species: 'frog',
-    type: TYPE.WATER,
-    power: 1,
-    tech: 'squirt',
-    available: false,
-  },
-  {
-    species: 'grasshopper',
-    type: TYPE.EARTH,
-    power: 1,
-    tech: 'seed',
-    available: false,
-  },
-  {
-    species: 'salamander',
-    type: TYPE.FIRE,
-    power: 1,
-    tech: 'ember',
-    available: false,
-  },
-];
-
-const PLAYER = {
-  location: {x: 0, y: 0},
-  team: [],
-};
-
-addEventListener('load', () => {
-  log(`
-    You awaken to the feeling of being watched.
-    As you open your eyes, you find three animal-shaped daemons sitting on your bed.
-  `);
-  MENU.onMove();
-});
-
 })();
 
 // https://www.mapeditor.org/
 // http://phaser.io/
-// screens: choose starter, overworld, battle, postbattle accept
 </script>
 
 <div style="display: none; white-space: pre;">
