@@ -186,7 +186,7 @@ const FD = {
       You awaken to the feeling of being watched.
       As you open your eyes, you find three animal-shaped daemons sitting on your bed.
     `);
-    this._MENU.innerText = `Which daemon catches your eye: ${commaOr(SPECIES.slice(0, 3).map(s => s.species))}?`;
+    this._MENU.innerText = `Which daemon catches your eye: ${commaOr(Daemon.SPECIES.slice(0, 3).map(s => s.species))}?`;
     this._onInput = this._onStarter;
   },
 
