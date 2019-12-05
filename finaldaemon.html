@@ -243,7 +243,7 @@ const FD = {
     p.y %= this._map.tiles.length;
     p.x %= this._map.tiles[p.y].length;
     if (!this._map.tiles[p.y][p.x]) {
-      this._map.tiles[p.y][p.x] = this._queue.shift();
+      this._map.tiles[p.y][p.x] = this._map.queue.shift();
     }
     const messages = [...this._map.tiles[p.y][p.x].messages || []];
     const dirs = 'north south east west'.split(' ');
