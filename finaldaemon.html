@@ -56,23 +56,20 @@ class Daemon {
   constructor(species, name) {
     Object.assign(this, species);
     this.name = name || this.species;
+    this.life = 5 * this.power;
+    this.health = this.life;
   }
 
   attack(defender) {
-    defender.health = Math.max(0, defender.health - STRENGTH[this.type][defender.type]
+    defender.health = Math.max(0, defender.health - Daemon.STRENGTH[this.type][defender.type]
       * this.attack / defender.defense);
-  }
-
-  defend(attacker) {
-    this.health = Math.max(0, this.health - STRENGTH[attacker.type][this.type]
-      * attacker.attack / this.defense);
   }
 
   get healthiness() {
     return randomChoice(Daemon.HEALTHINESS[
-      (this.health == this.maxHealth)
+      (this.health == this.life)
       ? (Daemon.HEALTHINESS.length - 1)
-      : Math.floor((Daemon.HEALTHINESS.length - 1) * this.health / this.maxHealth)]);
+      : Math.floor((Daemon.HEALTHINESS.length - 1) * this.health / this.life)]);
   }
 }
 
@@ -127,6 +124,9 @@ Daemon.SPECIES = [
     available: false,
   },
 ];
+for (const s of Daemon.SPECIES) {
+  Daemon.SPECIES[s.species] = s;
+}
 
 Daemon.HEALTHINESS = [
   [
@@ -173,7 +173,7 @@ const FD = {
   _MENU: document.getElementById('menu'),
   _INPUT: document.getElementById('input'),
   _onInput: () => {},
-  
+
   log(message) {
     const d = document.createElement('div');
     const t = document.createTextNode(message);
@@ -191,6 +191,20 @@ const FD = {
   },
 
   _onStarter(species) {
+    const s = Daemon.SPECIES[species];
+    if (!s) return;
+    this.log(`The ${species} daemon notices your gaze and introduces itself while the other two disappear.`);
+    this._daemons.push(new Daemon(s));
+    this.log(`The ${species} daemon says "Hello! I don't think I have a name yet. What will you call me?"`);
+    this._MENU.innerText = '';
+    this._onInput = this._onName;
+  },
+
+  _onName(name) {
+    // TODO check for similar names.
+    this._daemons[this._daemons.length - 1].name = name;
+    this.log(`"${name}? I like the sound of that!"`);
+    this.overworld();
   },
 
   overworld() {
@@ -208,16 +222,16 @@ const FD = {
     this._MENU.innerText = messages.join('\n');
     this._onInput = this._onOverworld;
   },
-  
+
   async _onOverworld(cmd) {
     const dig = await sha(cmd);
   },
-  
+
   battle() {
     this._MENU.innerText = '';
     this._onInput = this._onBattle;
   },
-  
+
   _onBattle(cmd) {
   },
 };
