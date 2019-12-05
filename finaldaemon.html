@@ -247,7 +247,7 @@ const FD = {
     }
     const messages = [...this._map.tiles[p.y][p.x].messages || []];
     const dirs = 'north south east west'.split(' ');
-    dirs.push(...this._tiles[p.y][p.x].dirs);
+    dirs.push(...this._map.tiles[p.y][p.x].dirs);
     dirs[dirs.length - 1] = 'or ' + dirs[dirs.length - 1];
     messages.push('You can go ' + dirs.join(', ') + '.');
     this._MENU.innerText = messages.join('\n');
