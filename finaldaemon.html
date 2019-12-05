@@ -146,7 +146,6 @@ Daemon.HEALTHINESS = [
   ],
 ];
 
-// STRENGTH[attacker][defenender]
 Daemon.STRENGTH = {
   [Daemon.TYPE.WATER]: {
     [Daemon.TYPE.WATER]: 1,
@@ -166,9 +165,41 @@ Daemon.STRENGTH = {
 };
 
 const FD = {
-  _maps: {},  // {name: {tiles: [[]], queue: []}}
-  _daemons: [],  // [Daemon]
+  _map: {
+    tiles: [new Array(3), new Array(3), new Array(3), new Array(3)],
+    queue: [
+      {
+        messages: ['Your home seems smaller somehow.'],
+        dirs: ['inside'],
+      },
+      { // puzzle
+        messages: [() => {}],
+      },
+      { // camp
+      },
+      { // library
+      },
+      { // camp
+      },
+      { // puzzle
+      },
+      { // trainer
+      },
+      { // library
+      },
+      { // camp
+      },
+      { // puzzle
+      },
+      { // final daemon
+      },
+      { // puzzle
+      },
+    ],
+  },
   _location: new Point(0, 0),
+  _daemons: [],  // [Daemon]
+
   _LOG: document.getElementById('log'),
   _MENU: document.getElementById('menu'),
   _INPUT: document.getElementById('input'),
@@ -203,18 +234,18 @@ const FD = {
   _onName(name) {
     // TODO check for similar names.
     this._daemons[this._daemons.length - 1].name = name;
-    this.log(`"${name}? I like the sound of that!"`);
+    this.log(`"${name}? I like the sound of that. Let's go!"`);
     this.overworld();
   },
 
   overworld() {
-    const p = new Point(PLAYER.location.x, PLAYER.location.y);
-    p.y %= this._tiles.length;
-    p.x %= this._tiles[p.y].length;
-    if (!this._tiles[p.y][p.x]) {
-      this._tiles[p.y][p.x] = this._queue.shift();
+    const p = new Point(this._location.x, this._location.y);
+    p.y %= this._map.tiles.length;
+    p.x %= this._map.tiles[p.y].length;
+    if (!this._map.tiles[p.y][p.x]) {
+      this._map.tiles[p.y][p.x] = this._queue.shift();
     }
-    const messages = [...this._tiles[p.y][p.x].messages || []];
+    const messages = [...this._map.tiles[p.y][p.x].messages || []];
     const dirs = 'north south east west'.split(' ');
     dirs.push(...this._tiles[p.y][p.x].dirs);
     dirs[dirs.length - 1] = 'or ' + dirs[dirs.length - 1];
@@ -241,39 +272,6 @@ FD._INPUT.addEventListener('change', () => {
   FD._INPUT.value = '';
   FD._onInput(cmd);
 });
-
-FD._maps.overworld = {
-  tiles: [new Array(3), new Array(3), new Array(3), new Array(3)],
-  queue: [
-    {
-      messages: ['Your home seems smaller somehow.'],
-      dirs: ['inside'],
-    },
-    { // puzzle
-      messages: [() => {}],
-    },
-    { // camp
-    },
-    { // library
-    },
-    { // camp
-    },
-    { // puzzle
-    },
-    { // trainer
-    },
-    { // library
-    },
-    { // camp
-    },
-    { // puzzle
-    },
-    { // final daemon
-    },
-    { // puzzle
-    },
-  ],
-};
 
 window.addEventListener('load', () => {
   FD.starter();
