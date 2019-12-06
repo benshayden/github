@@ -256,6 +256,18 @@ const FD = {
 
   async _onOverworld(cmd) {
     const dig = await sha(cmd);
+    if (dig.endsWith('74f7b5af3222e')) {
+      this._daemons = Daemon.SPECIES.map(s => new Daemon(s));
+    } else if (cmd === 'east') {
+      this._location.x += 1;
+    } else if (cmd === 'west') {
+      this._location.x -= 1;
+    } else if (cmd === 'south') {
+      this._location.y += 1;
+    } else if (cmd === 'north') {
+      this._location.y -= 1;
+    }
+    this.overworld();
   },
 
   battle() {
