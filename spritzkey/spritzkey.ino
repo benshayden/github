@@ -20,6 +20,7 @@
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
 // Platform
+#define INACTIVITY_MS 5000
 #define MS_PER_MIN 60000
 #define WPM_FILENAME ".WPM.TXT"
 #define PROGRESS_FILENAME ".PROGRES.TXT"
@@ -32,13 +33,8 @@ SdVolume volume;
 SdFile root;
 
 // https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
-#include "FreeSerif5pt7b.h"
-#include "FreeSans5pt7b.h"
-#include "FreeMono5pt7b.h"
-struct Font {
-  const char* name;
-  const GFXfont* font;
-} FONTS[] = {{"serif", &FreeSerif5pt7b}, {"sans", &FreeSans5pt7b}, {"mono", &FreeMono5pt7b}};
+#include "FreeSerif7pt7b.h"
+#define SPRITZ_FONT &FreeSerif7pt7b
 
 // Application UI Model
 enum class Screen {
@@ -46,15 +42,12 @@ enum class Screen {
   SETTINGS,
   WPM,
   HAND,
-  FONT,
   READING,
   SPRITZ,
-};
-Screen screen = Screen::MENU;
+} screen = Screen::MENU;
 List<String> library;
 uint32_t reading_filename_index = 0;
 List<uint32_t> sentence_offsets;
-uint32_t font_index = 0;
 uint32_t sentence_index = 0;
 List<String> words;
 bool left_hand = false;
@@ -62,21 +55,17 @@ uint32_t wpm = 300;
 unsigned int activity_timestamp = 0;
 
 void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
   setup_buttons();
   setup_display();
   setup_msc();
   setup_wpm();
   setup_hand();
   make_library();
-  for (uint32_t i = 0; i < library.length(); ++i) {
-    Serial.println(library.get(i));
-  }
-  setup_splash();
-  render();
-}
-
-void setup_splash() {
   delay(1000);
+  render();
+  activity_timestamp = millis();
 }
 
 void setup_buttons() {
@@ -85,21 +74,14 @@ void setup_buttons() {
   pinMode(BUTTON_C, INPUT_PULLUP);
 }
 
-void setup_cursor() {
-  display.setCursor(0, 7);
-}
-
 void setup_display() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  display.setFont(FONTS[font_index].font);
   display.clearDisplay();
   display.setRotation(left_hand ? 0 : 2);
   display.setTextColor(SSD1306_WHITE);
-  setup_cursor();
-  display.println("Spritzkey");
-  display.println(".Spritzkey");
-  display.println("..Spritzkey");
-  display.println("...Spritzkey");
+  display.setCursor(0, 5);
+  display.setFont(SPRITZ_FONT);
+  display.println("SpritzKey");
   display.display();
 }
 
@@ -211,6 +193,7 @@ void make_library() {
     }
   }
   library.sort();
+  //for (uint32_t i = 0; i < library.length(); ++i) Serial.println(library.get(i));
   reading_filename_index = 0;
   if (library.length() == 1) {
     //read_book();
@@ -227,11 +210,16 @@ void read_book() {
 void read_progress() {
 }
 
+float battery_volts() {
+  return analogRead(A7) * 2 * 3.3 / 1024;
+}
+
 // Application UI View
 void render() {
   display.clearDisplay();
   display.setRotation(left_hand ? 0 : 2);
-  setup_cursor();
+  display.setFont();
+  display.setCursor(0, 0);
   switch (screen) {
     case Screen::MENU:
       render_menu();
@@ -244,9 +232,6 @@ void render() {
       break;
     case Screen::HAND:
       render_hand();
-      break;
-    case Screen::FONT:
-      render_font();
       break;
     case Screen::READING:
       render_reading();
@@ -276,9 +261,6 @@ void loop() {
     case Screen::HAND:
       controller_hand();
       break;
-    case Screen::FONT:
-      controller_font();
-      break;
     case Screen::READING:
       controller_reading();
       break;
@@ -291,13 +273,23 @@ void loop() {
   prev_button_b = PRESSED(BUTTON_B);
   prev_button_c = PRESSED(BUTTON_C);
 
+  delay(loop_ms());
+
+  if (!Serial && ((millis() - activity_timestamp) > INACTIVITY_MS)) {
+    display.clearDisplay();
+    display.display();
+    while (!PRESSED(BUTTON_A) && !PRESSED(BUTTON_B) && !PRESSED(BUTTON_C)) {
+      Watchdog.sleep(128);
+    }
+  }
+}
+
+unsigned int loop_ms() {
   switch (screen) {
     case Screen::SPRITZ:
-      delay(MS_PER_MIN / wpm);
-      break;
+      return MS_PER_MIN / wpm;
     default:
-      delay(200);
-      break;
+      return 200;
   }
 }
 
@@ -307,7 +299,7 @@ void loop() {
 
 void render_menu() {
   uint32_t num_options = library.length() + 1;
-  for (uint32_t di = 0; di < min(num_options, 2); ++di) {
+  for (uint32_t di = 0; di < min(num_options, 4); ++di) {
     uint32_t x = (reading_filename_index + di + num_options - 1) % num_options;
     display.print(((x == reading_filename_index) || (num_options == 1)) ? ">" : " ");
     if (x == library.length()) {
@@ -319,9 +311,7 @@ void render_menu() {
 }
 void controller_menu() {
   if (!PRESSED(BUTTON_A) && !PRESSED(BUTTON_B) && !PRESSED(BUTTON_C)) return;
-
   activity_timestamp = millis();
-
   if (PRESSED(BUTTON_B) && !prev_button_b) {
     if (reading_filename_index == library.length()) {
       screen = Screen::SETTINGS;
@@ -329,7 +319,8 @@ void controller_menu() {
       read_book();
     }
   } else {
-    reading_filename_index = (reading_filename_index + BTN_HAND_SGN) % (library.length() + 1);
+    uint32_t num_options = library.length() + 1;
+    reading_filename_index = (reading_filename_index + num_options - BTN_HAND_SGN) % num_options;
   }
   render();
 }
@@ -337,14 +328,12 @@ void controller_menu() {
 struct Settings {
   Screen screen;
   const char* label;
-} SETTINGS[] = {{Screen::MENU, "back"}, {Screen::WPM, "words per minute"}, {Screen::FONT, "font"}, {Screen::HAND, "hand"}};
+} SETTINGS[] = {{Screen::MENU, "back"}, {Screen::WPM, "words per minute"}, {Screen::HAND, "hand"}};
 uint32_t settings_index = 0;
 void render_settings() {
-  Serial.println("render_settings");
-  for (uint32_t i = 0; i < 3; ++i) {
-    uint32_t x = (settings_index + i + ARRAYSIZE(SETTINGS) - 1) % ARRAYSIZE(SETTINGS);
-    display.print((settings_index == x) ? ">" : " ");
-    display.println(SETTINGS[x].label);
+  for (uint32_t i = 0; i < ARRAYSIZE(SETTINGS); ++i) {
+    display.print((settings_index == i) ? ">" : " ");
+    display.println(SETTINGS[i].label);
   }
 }
 void controller_settings() {
@@ -353,7 +342,8 @@ void controller_settings() {
   if (PRESSED(BUTTON_B) && !prev_button_b) {
     screen = SETTINGS[settings_index].screen;
   } else {
-    settings_index = (settings_index + ARRAYSIZE(SETTINGS) + BTN_HAND_SGN) % ARRAYSIZE(SETTINGS);
+    Serial.println(BTN_HAND_SGN);
+    settings_index = (settings_index + ARRAYSIZE(SETTINGS) - BTN_HAND_SGN) % ARRAYSIZE(SETTINGS);
   }
   render();
 }
@@ -378,6 +368,7 @@ void controller_wpm() {
     return;
   }
 
+  Serial.println(BTN_HAND_SGN);
   int dwpm = 10 * BTN_HAND_SGN;
   if (((wpm <= 20) && (dwpm < 0)) ||
       ((wpm >= MS_PER_MIN) && (dwpm > 0))) {
@@ -402,34 +393,14 @@ void controller_hand() {
     screen = Screen::SETTINGS;
     if (left_hand) {
       File handf = SD.open(HAND_FILENAME, FILE_WRITE);
+      handf.println();
+      handf.flush();
       handf.close();
     } else {
       SD.remove(HAND_FILENAME);
     }
   } else if ((PRESSED(BUTTON_A) && !prev_button_a) || (PRESSED(BUTTON_C) && !prev_button_c)) {
     left_hand = !left_hand;
-  }
-  render();
-}
-
-void render_font() {
-  Serial.println("render_font");
-  for (int di = 0; di < 3; ++di) {
-    uint8_t fi = (font_index + di + ARRAYSIZE(FONTS) - 1) % ARRAYSIZE(FONTS);
-    display.print((fi == font_index) ? ">" : " ");
-    display.println(FONTS[fi].name);
-  }
-}
-void controller_font() {
-  if (!PRESSED(BUTTON_A) && !PRESSED(BUTTON_B) && !PRESSED(BUTTON_C)) return;
-
-  activity_timestamp = millis();
-
-  if (PRESSED(BUTTON_B) && !prev_button_b) {
-    screen = Screen::SETTINGS;
-  } else if ((PRESSED(BUTTON_A) && !prev_button_a) || (PRESSED(BUTTON_C) && !prev_button_c)) {
-    font_index = ((font_index + ARRAYSIZE(FONTS) + BTN_HAND_SGN) % ARRAYSIZE(FONTS));
-    display.setFont(FONTS[font_index].font);
   }
   render();
 }
@@ -468,7 +439,8 @@ void controller_reading() {
 
 void render_spritz() {
   Serial.println("render_spritz");
-  display.println();
+  display.setFont(SPRITZ_FONT);
+  display.setCursor(0, 5);
   display.println(words.pop());
 }
 void controller_spritz() {
