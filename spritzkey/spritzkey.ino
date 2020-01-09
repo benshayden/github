@@ -202,7 +202,7 @@ void make_library() {
         str = name;
         str.toLowerCase();
       }
-      if (str.length() > 0 && str.charAt(0) != '.') {
+      if (str.length() > 0 && str.charAt(0) != '.' && str.charAt(0) != '~') {
         library.prepend(str);
       }
       haveLong = false;
