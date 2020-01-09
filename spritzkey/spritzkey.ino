@@ -37,6 +37,35 @@ SdFile root;
 #define INFO1(x) PREINFO; INFO_(x); POSTINFO
 #define INFO2(x, y) PREINFO; INFO_(x); INFO_(y); POSTINFO
 #define INFO3(x, y, z) PREINFO; INFO_(x); INFO_(y); INFO_(z); POSTINFO
+class Book {
+ public:
+  Book(String t, String fn) : title(t), filename(fn), num_sentences(0), sentence(0) {}
+  String title;
+  String filename;
+  uint32_t num_sentences;
+  uint32_t sentence;
+  uint32_t remaining_mins() const {
+    // TODO count words after current sentence
+    return 0;
+  }
+  friend bool operator> (const Book& a, const Book& b) {
+    return a.title > b.title;
+  }
+  friend bool operator< (const Book& a, const Book& b) {
+    return a.title < b.title;
+  }
+  friend bool operator== (const Book& a, const Book& b) {
+    return a.title == b.title;
+  }
+  friend bool operator!= (const Book& a, const Book& b) {
+    return a.title != b.title;
+  }
+};
+class Sentence {
+ public:
+  uint32_t offset;
+  uint8_t word_count;
+};
 
 // https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
 #include "FreeSerif7pt7b.h"
@@ -51,9 +80,9 @@ enum class Screen {
   READING,
   SPRITZ,
 } screen = Screen::MENU;
-List<String> library;
+List<Book> books;
 uint32_t reading_filename_index = 0;
-List<uint32_t> sentence_offsets;
+List<Sentence> sentences;
 uint32_t sentence_index = 0;
 List<String> words;
 bool left_hand = false;
@@ -68,7 +97,9 @@ void setup() {
   setup_wpm();
   setup_hand();
   setup_display();
-  make_library();
+  setup_books();
+  setup_progress();
+  INFO1(battery_volts());
   delay(1000);
   render();
   activity_timestamp = millis();
@@ -152,7 +183,7 @@ void setup_hand() {
   if (left_hand) handf.close();
 }
 
-void make_library() {
+void setup_books() {
   uint8_t offset[] = {1, 3, 5, 7, 9, 14, 16, 18, 20, 22, 24, 28, 30};
   char name[13];
   char lfn[131];
@@ -203,7 +234,7 @@ void make_library() {
         str.toLowerCase();
       }
       if (str.length() > 0 && str.charAt(0) != '.' && str.charAt(0) != '~') {
-        library.prepend(str);
+        books.prepend(Book(str, name));
       }
       haveLong = false;
     } else {
@@ -211,19 +242,53 @@ void make_library() {
       haveLong = false;
     }
   }
-  library.sort();
-  //for (uint32_t i = 0; i < library.length(); ++i) INFO1(library.get(i));
+  books.sort();
   reading_filename_index = 0;
-  if (library.length() == 1) {
+  if (books.length() == 1) {
     //read_book();
   }
+}
+
+void setup_progress() {
+  SdFile f;
+  if (!f.open(root, PROGRESS_FILENAME, O_READ)) {
+    write_progress();
+    return;
+  }
+  char buf[1 << 12];
+  // TODO read f into books
+}
+
+void write_progress() {
+  SdFile f;
+  if (!f.open(root, PROGRESS_FILENAME, O_WRITE | O_CREAT)) {
+    INFO1("unable to open progress file for writing");
+    return;
+  }
+  for (uint32_t i = 0; i < books.length(); ++i) {
+    const Book& book = books.get(i);
+    f.print(book.filename);
+    f.print(":");
+    f.print(book.sentence);
+    f.print("/");
+    f.print(book.num_sentences);
+    f.println();
+  }
+  f.flush();
+  f.close();
 }
 
 void read_book() {
   screen = Screen::READING;
   sentence_index = 0;
-  // TODO build sentence_offsets and words in a scheduler task
-  // TODO read sentence_index from .PROGRES.TXT
+  SdFile book;
+  if (!book.open(root, books.get(reading_filename_index).filename.c_str(), O_READ)) {
+    INFO1("Unable to open");
+    return;
+  }
+  char buf[1 << 12];
+  int bytes_read = book.read(buf, ARRAYSIZE(buf));
+  // TODO setup_sentences() and words in a scheduler task
 }
 
 void read_progress() {
@@ -317,14 +382,14 @@ unsigned int loop_ms() {
 #define BTN_HAND_SGN ((PRESSED(BUTTON_A) ? 1 : -1) * (left_hand ? 1 : -1))
 
 void render_menu() {
-  uint32_t num_options = library.length() + 1;
+  uint32_t num_options = books.length() + 1;
   for (uint32_t di = 0; di < min(num_options, 4); ++di) {
     uint32_t x = (reading_filename_index + di + num_options - 1) % num_options;
     display.print(((x == reading_filename_index) || (num_options == 1)) ? ">" : " ");
-    if (x == library.length()) {
+    if (x == books.length()) {
       display.println("|Settings|");
     } else {
-      display.println(library.get(x));
+      display.println(books.get(x).title);
     }
   }
 }
@@ -332,13 +397,13 @@ void controller_menu() {
   if (!PRESSED(BUTTON_A) && !PRESSED(BUTTON_B) && !PRESSED(BUTTON_C)) return;
   activity_timestamp = millis();
   if (PRESSED(BUTTON_B) && !prev_button_b) {
-    if (reading_filename_index == library.length()) {
+    if (reading_filename_index == books.length()) {
       screen = Screen::SETTINGS;
     } else {
       read_book();
     }
   } else {
-    uint32_t num_options = library.length() + 1;
+    uint32_t num_options = books.length() + 1;
     reading_filename_index = (reading_filename_index + num_options - BTN_HAND_SGN) % num_options;
   }
   render();
@@ -429,10 +494,25 @@ void controller_hand() {
 }
 
 void render_reading() {
-  display.println("TODO render_reading");
-  // TODO scroll library.get(reading_filename_index);
-  // TODO print sentence_index / sentence_offsets.length() = %f%%
-  // TODO print HHhMMm remaining
+  const Book& book = books.get(reading_filename_index);
+  display.println(book.title); // TODO scroll
+  display.print(book.sentence);
+  display.print(" / ");
+  display.print(book.num_sentences);
+  display.print(" = ");
+  uint32_t r = (book.sentence * 1000) / book.num_sentences;
+  display.print(r / 100);
+  display.print(".");
+  display.print(r % 100);
+  display.println("%");
+
+  uint32_t mins = book.remaining_mins();
+  if (mins >= 60) {
+    display.print(mins / 60);
+    display.print("h");
+  }
+  display.print(mins % 60);
+  display.println("m remaining");
   // TODO scroll current sentence
   // TODO spritz definition of previously spritzed word
 }
@@ -451,7 +531,7 @@ void controller_reading() {
 
   int dsi = BTN_HAND_SGN;
   if (((sentence_index == 0) && (dsi < 0)) ||
-      ((sentence_index == sentence_offsets.length()) && (dsi > 0))) {
+      ((sentence_index == sentences.length()) && (dsi > 0))) {
     return;
   }
 
@@ -484,7 +564,7 @@ int32_t msc_read_cb(uint32_t lba, void* buffer, uint32_t bufsize) {
 int32_t msc_write_cb(uint32_t lba, uint8_t* buffer, uint32_t bufsize) {
   (void) bufsize;
   int32_t bytes_written = card.writeBlock(lba, buffer) ? 512 : -1;
-  // TODO after timeout: make_library();
+  // TODO after timeout: setup_books();
   return bytes_written;
 }
 
