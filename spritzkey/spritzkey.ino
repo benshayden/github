@@ -22,15 +22,21 @@ Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 // Platform
 #define INACTIVITY_MS 5000
 #define MS_PER_MIN 60000
-#define WPM_FILENAME ".WPM.TXT"
-#define PROGRESS_FILENAME ".PROGRES.TXT"
-#define HAND_FILENAME ".LEFT.TXT"
+#define WPM_FILENAME "~WPM.TXT"
+#define PROGRESS_FILENAME "~PROGRES.TXT"
+#define HAND_FILENAME "~LEFT.TXT"
 #define PRESSED(btn) (!digitalRead(btn))
 #define ARRAYSIZE(a) (sizeof(a) / sizeof(a[0]))
 Adafruit_USBD_MSC usb_msc;
 Sd2Card card;
 SdVolume volume;
 SdFile root;
+#define INFO_(x) Serial.print(x)
+#define POSTINFO Serial.println()
+#define PREINFO INFO_(__FILE__); INFO_(":"); INFO_(__LINE__); INFO_("> ")
+#define INFO1(x) PREINFO; INFO_(x); POSTINFO
+#define INFO2(x, y) PREINFO; INFO_(x); INFO_(y); POSTINFO
+#define INFO3(x, y, z) PREINFO; INFO_(x); INFO_(y); INFO_(z); POSTINFO
 
 // https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
 #include "FreeSerif7pt7b.h"
@@ -58,10 +64,10 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
   setup_buttons();
-  setup_display();
   setup_msc();
   setup_wpm();
   setup_hand();
+  setup_display();
   make_library();
   delay(1000);
   render();
@@ -116,21 +122,34 @@ void setup_msc() {
 }
 
 void setup_wpm() {
-  File wpmf = SD.open(WPM_FILENAME);
-  if (!wpmf) return;
-  String s = wpmf.readString();
+  SdFile wpmf;
+  if (!wpmf.open(root, WPM_FILENAME, O_READ)) {
+    INFO1("no wpm file");
+    return;
+  }
+  char buf[6];
+  int bytes_read = wpmf.read(buf, ARRAYSIZE(buf));
+  if (bytes_read <= 0) {
+    INFO1("wpm file empty");
+    return;
+  }
+  String s = String(buf);
+  INFO1(s);
   wpmf.close();
-  wpm = s.toInt() || wpm;
-  Serial.print(wpm);
-  Serial.println(" wpm");
+  long si = s.toInt();
+  if (si) {
+    wpm = si;
+  } else {
+    INFO1("toInt failed");
+  }
+  INFO2(wpm, " wpm");
 }
 
 void setup_hand() {
-  File handf = SD.open(HAND_FILENAME);
-  left_hand = !!handf;
-  Serial.println(left_hand ? "left hand" : "right hand");
-  if (!handf) return;
-  handf.close();
+  SdFile handf;
+  left_hand = !!handf.open(root, HAND_FILENAME, O_READ);
+  INFO1(left_hand ? "left hand" : "right hand");
+  if (left_hand) handf.close();
 }
 
 void make_library() {
@@ -193,7 +212,7 @@ void make_library() {
     }
   }
   library.sort();
-  //for (uint32_t i = 0; i < library.length(); ++i) Serial.println(library.get(i));
+  //for (uint32_t i = 0; i < library.length(); ++i) INFO1(library.get(i));
   reading_filename_index = 0;
   if (library.length() == 1) {
     //read_book();
@@ -342,16 +361,14 @@ void controller_settings() {
   if (PRESSED(BUTTON_B) && !prev_button_b) {
     screen = SETTINGS[settings_index].screen;
   } else {
-    Serial.println(BTN_HAND_SGN);
     settings_index = (settings_index + ARRAYSIZE(SETTINGS) - BTN_HAND_SGN) % ARRAYSIZE(SETTINGS);
   }
   render();
 }
 
 void render_wpm() {
-  Serial.println("render_wpm");
   display.println("words per minute");
-  display.print(wpm);
+  display.println(wpm);
 }
 void controller_wpm() {
   if (!PRESSED(BUTTON_A) && !PRESSED(BUTTON_B) && !PRESSED(BUTTON_C)) return;
@@ -361,14 +378,17 @@ void controller_wpm() {
     screen = Screen::SETTINGS;
     render();
 
-    File wpmf = SD.open(WPM_FILENAME, FILE_WRITE);
+    SdFile wpmf;
+    if (!wpmf.open(root, WPM_FILENAME, O_WRITE | O_CREAT)) {
+      INFO1("unable to open wpm file for writing");
+      return;
+    }
     wpmf.println(wpm);
     wpmf.flush();
     wpmf.close();
     return;
   }
 
-  Serial.println(BTN_HAND_SGN);
   int dwpm = 10 * BTN_HAND_SGN;
   if (((wpm <= 20) && (dwpm < 0)) ||
       ((wpm >= MS_PER_MIN) && (dwpm > 0))) {
@@ -380,7 +400,6 @@ void controller_wpm() {
 }
 
 void render_hand() {
-  Serial.println("render_hand");
   display.println();
   display.println(left_hand ? "Left" : "Right");
 }
@@ -392,12 +411,16 @@ void controller_hand() {
   if (PRESSED(BUTTON_B) && !prev_button_b) {
     screen = Screen::SETTINGS;
     if (left_hand) {
-      File handf = SD.open(HAND_FILENAME, FILE_WRITE);
-      handf.println();
-      handf.flush();
-      handf.close();
+      SdFile handf;
+      if (!handf.open(root, HAND_FILENAME, O_WRITE | O_CREAT)) {
+        INFO1("unable to open hand file for writing");
+      } else {
+        handf.close();
+      }
     } else {
-      SD.remove(HAND_FILENAME);
+      if (!SdFile::remove(&root, HAND_FILENAME)) {
+        INFO1("unable to remove hand file");
+      }
     }
   } else if ((PRESSED(BUTTON_A) && !prev_button_a) || (PRESSED(BUTTON_C) && !prev_button_c)) {
     left_hand = !left_hand;
@@ -406,7 +429,6 @@ void controller_hand() {
 }
 
 void render_reading() {
-  Serial.println("render_reading");
   display.println("TODO render_reading");
   // TODO scroll library.get(reading_filename_index);
   // TODO print sentence_index / sentence_offsets.length() = %f%%
@@ -438,7 +460,6 @@ void controller_reading() {
 }
 
 void render_spritz() {
-  Serial.println("render_spritz");
   display.setFont(SPRITZ_FONT);
   display.setCursor(0, 5);
   display.println(words.pop());
