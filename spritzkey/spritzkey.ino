@@ -125,6 +125,7 @@ void setup_buttons() {
 void setup_display() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
+  display.dim(true);
   display.setRotation(left_hand ? 0 : 2);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 5);
