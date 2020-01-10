@@ -520,13 +520,30 @@ void render_reading() {
   // Display title and progress.
   const Book* book = books.get(reading_filename_index);
   display.println(book->title); // TODO scroll
-  uint32_t r = (bookf.curPosition() * 10000) / bookf.fileSize();
-  display.print(r / 100);
+
+  double frac = bookf.curPosition();
+  frac /= bookf.fileSize();
+  frac *= 100;
+  uint8_t pct = floor(frac);
+  display.print(pct);
+
+  frac -= pct;
+  frac *= 10;
+  pct = floor(frac);
   display.print(".");
-  display.print(r % 100);
+  display.print(pct);
+
+  frac -= pct;
+  frac *= 10;
+  pct = floor(frac);
+  display.print(pct);
+
+  frac -= pct;
+  frac *= 10;
+  pct = floor(frac);
+  display.print(pct);
+
   display.println("%");
-  // TODO display hours/minutes remaining
-  // TODO spritz definition of previously spritzed word
 }
 void controller_reading() {
   if (PRESSED(BUTTON_B)) {
@@ -557,8 +574,8 @@ void controller_reading() {
   int16_t c = bookf.read();
   while ((c >= 0) && !is_punctuation(c)) {
     if (dsi < 0) {
-      if (bookf.curPosition() < 2) break;
-      bookf.seekSet(bookf.curPosition() - 2);
+      bookf.seekSet(max(2, bookf.curPosition()) - 2);
+      if (bookf.curPosition() == 0) break;
     }
     c = bookf.read();
   }
