@@ -31,12 +31,13 @@ Adafruit_USBD_MSC usb_msc;
 Sd2Card card;
 SdVolume volume;
 SdFile root;
-#define INFO_(x) Serial.print(x)
-#define POSTINFO Serial.println()
+#define INFO_(x) if (Serial) Serial.print(x)
+#define POSTINFO if (Serial) Serial.println()
 #define PREINFO INFO_(__FILE__); INFO_(":"); INFO_(__LINE__); INFO_("> ")
 #define INFO1(x) PREINFO; INFO_(x); POSTINFO
 #define INFO2(x, y) PREINFO; INFO_(x); INFO_(y); POSTINFO
 #define INFO3(x, y, z) PREINFO; INFO_(x); INFO_(y); INFO_(z); POSTINFO
+#define INFO4(w, x, y, z) PREINFO; INFO_(w); INFO_(x); INFO_(y); INFO_(z); POSTINFO
 class Book {
  public:
   Book(String t, String fn) : title(t), filename(fn), num_sentences(0), sentence(0) {}
@@ -63,6 +64,7 @@ class Book {
 };
 class Sentence {
  public:
+  Sentence(uint32_t o = 0, uint8_t w = 0) : offset(o), word_count(w) {}
   uint32_t offset;
   uint8_t word_count;
 };
@@ -80,10 +82,9 @@ enum class Screen {
   READING,
   SPRITZ,
 } screen = Screen::MENU;
-List<Book> books;
+List<Book*> books;
 uint32_t reading_filename_index = 0;
-List<Sentence> sentences;
-uint32_t sentence_index = 0;
+List<Sentence*> sentences;
 List<String> words;
 bool left_hand = false;
 uint32_t wpm = 300;
@@ -128,15 +129,13 @@ void setup_msc() {
   usb_msc.setUnitReady(false);
   usb_msc.begin();
 
-  // TODO does this preclude charging from wall wart?
   Serial.begin(115200);
-  while (!Serial) delay(10);
+  unsigned long start = millis();
+  while (!Serial && (3000 > (millis() - start)));
 
   if (!card.init(SPI_HALF_SPEED, CHIP_SELECT)) {
-    Serial.println("initialization failed. Things to check:");
-    Serial.println("* is a card inserted?");
-    Serial.println("* is your wiring correct?");
-    Serial.println("* did you change the CHIP_SELECT pin to match your shield or module?");
+    INFO1("Unable to init card");
+    // Is a card inserted? Is the wiring correct? Is CHIP_SELECT correct?
     while (1) delay(1);
   }
 
@@ -165,7 +164,6 @@ void setup_wpm() {
     return;
   }
   String s = String(buf);
-  INFO1(s);
   wpmf.close();
   long si = s.toInt();
   if (si) {
@@ -234,7 +232,7 @@ void setup_books() {
         str.toLowerCase();
       }
       if (str.length() > 0 && str.charAt(0) != '.' && str.charAt(0) != '~') {
-        books.prepend(Book(str, name));
+        books.prepend(new Book(str, name));
       }
       haveLong = false;
     } else {
@@ -244,9 +242,6 @@ void setup_books() {
   }
   books.sort();
   reading_filename_index = 0;
-  if (books.length() == 1) {
-    //read_book();
-  }
 }
 
 void setup_progress() {
@@ -256,7 +251,7 @@ void setup_progress() {
     return;
   }
   char buf[1 << 12];
-  // TODO read f into books
+  INFO1("TODO read progress file");
 }
 
 void write_progress() {
@@ -266,32 +261,106 @@ void write_progress() {
     return;
   }
   for (uint32_t i = 0; i < books.length(); ++i) {
-    const Book& book = books.get(i);
-    f.print(book.filename);
+    const Book* book = books.get(i);
+    f.print(book->filename);
     f.print(":");
-    f.print(book.sentence);
+    f.print(book->sentence);
     f.print("/");
-    f.print(book.num_sentences);
+    f.print(book->num_sentences);
     f.println();
   }
   f.flush();
   f.close();
 }
 
+#define BOOK_BUF_SIZE (1 << 12)
+#define sentence_ending(c) (c == '.' || c == '!' || c == '?')
+#define word_ending(c) ((c == ' ') || (c == '\n') || (c == '\t'))
+#define sentence_index books.get(reading_filename_index)->sentence
+
 void read_book() {
   screen = Screen::READING;
-  sentence_index = 0;
+  sentences.clear();
   SdFile book;
-  if (!book.open(root, books.get(reading_filename_index).filename.c_str(), O_READ)) {
+  if (!book.open(root, books.get(reading_filename_index)->filename.c_str(), O_READ)) {
     INFO1("Unable to open");
     return;
   }
-  char buf[1 << 12];
-  int bytes_read = book.read(buf, ARRAYSIZE(buf));
-  // TODO setup_sentences() and words in a scheduler task
+
+  book.seekSet(0);
+  Sentence* sentence = new Sentence();
+  uint32_t block_i = 0;
+  char prev_c = 0;
+  while (true) {
+    char buf[BOOK_BUF_SIZE];
+    int bytes_read = book.read(buf, ARRAYSIZE(buf));
+    for (uint32_t buf_i = 0; buf_i < min(bytes_read, BOOK_BUF_SIZE); ++buf_i) {
+      uint32_t byte_i = buf_i + (block_i * BOOK_BUF_SIZE);
+      char c = buf[buf_i];
+      if (sentence_ending(c) && !sentence_ending(prev_c)) {
+        INFO4("sentence ", sentence->offset, " ", sentence->word_count);
+        sentences.append(sentence);
+        sentence = new Sentence(byte_i);
+      } else if ((word_ending(c) || ((bytes_read < BOOK_BUF_SIZE) && (buf_i == (bytes_read - 1)))) && !word_ending(prev_c)) {
+        ++sentence->word_count;
+      }
+      prev_c = c;
+    }
+    if (bytes_read < BOOK_BUF_SIZE) {
+      break;
+    }
+    ++block_i;
+  }
+  if (sentence->word_count) {
+    sentences.append(sentence);
+    INFO4("sentence ", sentence->offset, " ", sentence->word_count);
+  }
+
+  books.get(reading_filename_index)->num_sentences = sentences.length();
+  read_sentence();
 }
 
-void read_progress() {
+void read_sentence() {
+  words.clear();
+  SdFile book;
+  if (!book.open(root, books.get(reading_filename_index)->filename.c_str(), O_READ)) {
+    INFO1("Unable to open");
+    return;
+  }
+  if (sentence_index >= sentences.length()) {
+    INFO2("Not enough sentences", sentence_index);
+    return;
+  }
+  if (!book.seekSet(sentences.get(sentence_index)->offset)) {
+    INFO1("Unable to seek");
+    return;
+  }
+
+  bool sentence_ended = false;
+  String word;
+  char prev_c = 0;
+  while (true) {
+    char buf[BOOK_BUF_SIZE];
+    int bytes_read = book.read(buf, ARRAYSIZE(buf));
+    for (uint32_t buf_i = 0; buf_i < min(bytes_read, BOOK_BUF_SIZE); ++buf_i) {
+      char c = buf[buf_i];
+      if (!word_ending(c)) {
+        word += c;
+      } else if (!word_ending(prev_c)) {
+        INFO2("word ", word);
+        words.append(word);
+        if (sentence_ended) return;
+        word = "";
+      }
+      if (sentence_ending(c)) {
+        sentence_ended = true;
+      }
+      prev_c = c;
+    }
+    if (bytes_read < BOOK_BUF_SIZE) {
+      break;
+    }
+  }
 }
 
 float battery_volts() {
@@ -384,12 +453,12 @@ unsigned int loop_ms() {
 void render_menu() {
   uint32_t num_options = books.length() + 1;
   for (uint32_t di = 0; di < min(num_options, 4); ++di) {
-    uint32_t x = (reading_filename_index + di + num_options - 1) % num_options;
+    uint32_t x = (reading_filename_index - (reading_filename_index % 4) + di + num_options - 1) % num_options;
     display.print(((x == reading_filename_index) || (num_options == 1)) ? ">" : " ");
     if (x == books.length()) {
       display.println("|Settings|");
     } else {
-      display.println(books.get(x).title);
+      display.println(books.get(x)->title);
     }
   }
 }
@@ -494,19 +563,19 @@ void controller_hand() {
 }
 
 void render_reading() {
-  const Book& book = books.get(reading_filename_index);
-  display.println(book.title); // TODO scroll
-  display.print(book.sentence);
+  const Book* book = books.get(reading_filename_index);
+  display.println(book->title); // TODO scroll
+  display.print(book->sentence);
   display.print(" / ");
-  display.print(book.num_sentences);
+  display.print(book->num_sentences);
   display.print(" = ");
-  uint32_t r = (book.sentence * 1000) / book.num_sentences;
+  uint32_t r = (book->sentence * 10000) / book->num_sentences;
   display.print(r / 100);
   display.print(".");
   display.print(r % 100);
   display.println("%");
 
-  uint32_t mins = book.remaining_mins();
+  uint32_t mins = book->remaining_mins();
   if (mins >= 60) {
     display.print(mins / 60);
     display.print("h");
@@ -518,8 +587,11 @@ void render_reading() {
 }
 void controller_reading() {
   if (PRESSED(BUTTON_B)) {
-    // TODO if momentary press, screen = menu
-    // TODO if hold, screen = spritz
+    unsigned long start = millis();
+    while (((millis() - start) < 400) && PRESSED(BUTTON_B)) {
+      delay(10);
+    }
+    screen = PRESSED(BUTTON_B) ? Screen::SPRITZ : Screen::MENU;
     render();
     activity_timestamp = millis();
     return;
@@ -541,8 +613,18 @@ void controller_reading() {
 
 void render_spritz() {
   display.setFont(SPRITZ_FONT);
-  display.setCursor(0, 5);
-  display.println(words.pop());
+  display.setCursor(0, 10);
+  if (words.length() < 1) {
+    ++sentence_index;
+    if (sentence_index >= sentences.length()) {
+      screen = Screen::READING;
+      render();
+    } else {
+      read_sentence();
+    }
+  }
+  String word = words.pop();
+  display.println(word);
 }
 void controller_spritz() {
   activity_timestamp = millis();
