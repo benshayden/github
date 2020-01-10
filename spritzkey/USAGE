@@ -1,0 +1,8 @@
+SpritzKey can store any number of text files on a microSD card and display them one word at a time. It records progress at sentence intervals.
+There are six screens: menu, reading, spritz, settings, wpm, hand.
+The menu screen displays book titles (FAT long filenames) and `|Settings|`, with a cursor to select options. Press A or C to scroll the cursor `>` through the options or B to select the option by the cursor.
+When a book title is selected at the menu screen, the reading screen displays the title and progress through the book. Press A or C to skip forward or backward through the book by one sentence. Press B quickly to return to the menu screen, or hold B to read (spritz) the book.
+The spritz screen flashes one word at a time until the B button is released, then returns to the reading screen.
+When `|Settings|` is selected, the settings screen displays a cursor and options to open the wpm or hand screen, or go back to the menu.
+The `words per minute` screen displays the current spritzing speed. Press A or C to increase or decrease the speed, or B to go back to the settings screen.
+The `hand` screen displays `Left` or `Right`. Press A or C to toggle it, or B to go back to the settings screen.
