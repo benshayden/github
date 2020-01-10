@@ -387,7 +387,7 @@ void loop() {
 unsigned int loop_ms() {
   if (screen == Screen::SPRITZ) {
     uint32_t ms = MS_PER_MIN / wpm;
-    return (sentence_end && (sentence_words > 1)) ? (ms + (ms / 2)): ms;
+    return (sentence_end && (sentence_words > 1)) ? (ms * 2) : ms;
   }
   return 200;
 }
@@ -554,6 +554,8 @@ void controller_reading() {
       delay(10);
     }
     screen = PRESSED(BUTTON_B) ? Screen::SPRITZ : Screen::MENU;
+    const Book* book = books.get(reading_filename_index);
+    bookf.seekSet(book->position);
     render();
     activity_timestamp = millis();
     return;
@@ -572,12 +574,26 @@ void controller_reading() {
   // Skip forward/backward a sentence.
   int dsi = BTN_HAND_SGN;
   int16_t c = bookf.read();
-  while ((c >= 0) && !is_punctuation(c)) {
-    if (dsi < 0) {
+  if (dsi < 0) {
+    while ((c >= 0) && !is_punctuation(c)) {
       bookf.seekSet(max(2, bookf.curPosition()) - 2);
       if (bookf.curPosition() == 0) break;
+      c = bookf.read();
     }
-    c = bookf.read();
+    while ((c >= 0) && is_punctuation(c)) {
+      bookf.seekSet(max(2, bookf.curPosition()) - 2);
+      if (bookf.curPosition() == 0) break;
+      c = bookf.read();
+    }
+    while ((c >= 0) && !is_punctuation(c)) {
+      bookf.seekSet(max(2, bookf.curPosition()) - 2);
+      if (bookf.curPosition() == 0) break;
+      c = bookf.read();
+    }
+  } else {
+    while ((c >= 0) && !is_punctuation(c)) {
+      c = bookf.read();
+    }
   }
 
   Book* book = books.get(reading_filename_index);
