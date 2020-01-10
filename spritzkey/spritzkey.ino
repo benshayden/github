@@ -40,15 +40,10 @@ SdFile root;
 #define INFO4(w, x, y, z) PREINFO; INFO_(w); INFO_(x); INFO_(y); INFO_(z); POSTINFO
 class Book {
  public:
-  Book(String t, String fn) : title(t), filename(fn), num_sentences(0), sentence(0) {}
+  Book(String t, String fn) : title(t), filename(fn), position(0) {}
   String title;
   String filename;
-  uint32_t num_sentences;
-  uint32_t sentence;
-  uint32_t remaining_mins() const {
-    // TODO count words after current sentence
-    return 0;
-  }
+  uint32_t position;
   friend bool operator> (const Book& a, const Book& b) {
     return a.title > b.title;
   }
@@ -62,12 +57,28 @@ class Book {
     return a.title != b.title;
   }
 };
-class Sentence {
- public:
-  Sentence(uint32_t o = 0, uint8_t w = 0) : offset(o), word_count(w) {}
-  uint32_t offset;
-  uint8_t word_count;
-};
+#define is_punctuation(c) (c == '.' || c == '!' || c == '?')
+#define is_nl(c) (c == '\n')
+#define is_whitespace(c) ((c == ' ') || is_nl(c) || (c == '\t'))
+bool sentence_end = false;
+uint32_t sentence_words = 0;
+
+#ifdef __arm__
+// should use uinstd.h to define sbrk but Due causes a conflict
+extern "C" char* sbrk(int incr);
+#else  // __ARM__
+extern char *__brkval;
+#endif  // __arm__
+int freeMemory() {
+  char top;
+#ifdef __arm__
+  return &top - reinterpret_cast<char*>(sbrk(0));
+#elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
+  return &top - __brkval;
+#else  // __arm__
+  return __brkval ? &top - __brkval : &top - __malloc_heap_start;
+#endif  // __arm__
+}
 
 // https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
 #include "FreeSerif7pt7b.h"
@@ -84,11 +95,10 @@ enum class Screen {
 } screen = Screen::MENU;
 List<Book*> books;
 uint32_t reading_filename_index = 0;
-List<Sentence*> sentences;
-List<String> words;
 bool left_hand = false;
 uint32_t wpm = 300;
 unsigned int activity_timestamp = 0;
+SdFile bookf;
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -245,122 +255,59 @@ void setup_books() {
 }
 
 void setup_progress() {
-  SdFile f;
-  if (!f.open(root, PROGRESS_FILENAME, O_READ)) {
+  SdFile pf;
+  if (!pf.open(root, PROGRESS_FILENAME, O_READ)) {
     write_progress();
     return;
   }
-  char buf[1 << 12];
-  INFO1("TODO read progress file");
+  char line[300];
+  uint16_t linei = 0;
+  int16_t c = pf.read();
+  while (c >= 0) {
+    if (is_nl(c)) {
+      set_progress(line, linei);
+      linei = 0;
+      memset(line, 0, ARRAYSIZE(line));
+    } else {
+      line[linei++] = (char)c;
+      if (linei >= ARRAYSIZE(line)) linei = 0;
+    }
+    c = pf.read();
+  }
+  if (linei) set_progress(line, linei);
+}
+
+void set_progress(const char* line, uint16_t size) {
+  for (uint16_t booki = 0; booki < books.length(); ++booki) {
+    Book* book = books.get(booki);
+    for (uint8_t ci = 0; ci < size && ci < book->title.length(); ++ci) {
+      if (line[ci] != book->title.charAt(ci)) {
+        book = nullptr;
+        break;
+      }
+    }
+    if (book == nullptr) continue;
+    String offs(line + book->title.length() + 1);
+    book->position = offs.toInt();
+  }
+  // Find book with title, set its progress
 }
 
 void write_progress() {
-  SdFile f;
-  if (!f.open(root, PROGRESS_FILENAME, O_WRITE | O_CREAT)) {
+  SdFile pf;
+  if (!pf.open(root, PROGRESS_FILENAME, O_WRITE | O_CREAT)) {
     INFO1("unable to open progress file for writing");
     return;
   }
   for (uint32_t i = 0; i < books.length(); ++i) {
     const Book* book = books.get(i);
-    f.print(book->filename);
-    f.print(":");
-    f.print(book->sentence);
-    f.print("/");
-    f.print(book->num_sentences);
-    f.println();
+    pf.print(book->title);
+    pf.print(":");
+    pf.print(book->position);
+    pf.println();
   }
-  f.flush();
-  f.close();
-}
-
-#define BOOK_BUF_SIZE (1 << 12)
-#define sentence_ending(c) (c == '.' || c == '!' || c == '?')
-#define word_ending(c) ((c == ' ') || (c == '\n') || (c == '\t'))
-#define sentence_index books.get(reading_filename_index)->sentence
-
-void read_book() {
-  screen = Screen::READING;
-  sentences.clear();
-  SdFile book;
-  if (!book.open(root, books.get(reading_filename_index)->filename.c_str(), O_READ)) {
-    INFO1("Unable to open");
-    return;
-  }
-
-  book.seekSet(0);
-  Sentence* sentence = new Sentence();
-  uint32_t block_i = 0;
-  char prev_c = 0;
-  while (true) {
-    char buf[BOOK_BUF_SIZE];
-    int bytes_read = book.read(buf, ARRAYSIZE(buf));
-    for (uint32_t buf_i = 0; buf_i < min(bytes_read, BOOK_BUF_SIZE); ++buf_i) {
-      uint32_t byte_i = buf_i + (block_i * BOOK_BUF_SIZE);
-      char c = buf[buf_i];
-      if (sentence_ending(c) && !sentence_ending(prev_c)) {
-        INFO4("sentence ", sentence->offset, " ", sentence->word_count);
-        sentences.append(sentence);
-        sentence = new Sentence(byte_i);
-      } else if ((word_ending(c) || ((bytes_read < BOOK_BUF_SIZE) && (buf_i == (bytes_read - 1)))) && !word_ending(prev_c)) {
-        ++sentence->word_count;
-      }
-      prev_c = c;
-    }
-    if (bytes_read < BOOK_BUF_SIZE) {
-      break;
-    }
-    ++block_i;
-  }
-  if (sentence->word_count) {
-    sentences.append(sentence);
-    INFO4("sentence ", sentence->offset, " ", sentence->word_count);
-  }
-
-  books.get(reading_filename_index)->num_sentences = sentences.length();
-  read_sentence();
-}
-
-void read_sentence() {
-  words.clear();
-  SdFile book;
-  if (!book.open(root, books.get(reading_filename_index)->filename.c_str(), O_READ)) {
-    INFO1("Unable to open");
-    return;
-  }
-  if (sentence_index >= sentences.length()) {
-    INFO2("Not enough sentences", sentence_index);
-    return;
-  }
-  if (!book.seekSet(sentences.get(sentence_index)->offset)) {
-    INFO1("Unable to seek");
-    return;
-  }
-
-  bool sentence_ended = false;
-  String word;
-  char prev_c = 0;
-  while (true) {
-    char buf[BOOK_BUF_SIZE];
-    int bytes_read = book.read(buf, ARRAYSIZE(buf));
-    for (uint32_t buf_i = 0; buf_i < min(bytes_read, BOOK_BUF_SIZE); ++buf_i) {
-      char c = buf[buf_i];
-      if (!word_ending(c)) {
-        word += c;
-      } else if (!word_ending(prev_c)) {
-        INFO2("word ", word);
-        words.append(word);
-        if (sentence_ended) return;
-        word = "";
-      }
-      if (sentence_ending(c)) {
-        sentence_ended = true;
-      }
-      prev_c = c;
-    }
-    if (bytes_read < BOOK_BUF_SIZE) {
-      break;
-    }
-  }
+  pf.flush();
+  pf.close();
 }
 
 float battery_volts() {
@@ -438,12 +385,11 @@ void loop() {
 }
 
 unsigned int loop_ms() {
-  switch (screen) {
-    case Screen::SPRITZ:
-      return MS_PER_MIN / wpm;
-    default:
-      return 200;
+  if (screen == Screen::SPRITZ) {
+    uint32_t ms = MS_PER_MIN / wpm;
+    return (sentence_end && (sentence_words > 1)) ? (ms + (ms / 2)): ms;
   }
+  return 200;
 }
 
 // Evaluates to 1 or -1 depending on left_hand and which of buttons A or C is
@@ -451,6 +397,7 @@ unsigned int loop_ms() {
 #define BTN_HAND_SGN ((PRESSED(BUTTON_A) ? 1 : -1) * (left_hand ? 1 : -1))
 
 void render_menu() {
+  bookf.close();
   uint32_t num_options = books.length() + 1;
   for (uint32_t di = 0; di < min(num_options, 4); ++di) {
     uint32_t x = (reading_filename_index - (reading_filename_index % 4) + di + num_options - 1) % num_options;
@@ -469,7 +416,15 @@ void controller_menu() {
     if (reading_filename_index == books.length()) {
       screen = Screen::SETTINGS;
     } else {
-      read_book();
+      const Book* book = books.get(reading_filename_index);
+      if (!bookf.open(root, book->filename.c_str(), O_READ)) {
+        INFO1("Unable to open");
+        return;
+      }
+      screen = Screen::READING;
+      if (book->position < bookf.fileSize()) {
+        bookf.seekSet(book->position);
+      }
     }
   } else {
     uint32_t num_options = books.length() + 1;
@@ -534,7 +489,6 @@ void controller_wpm() {
 }
 
 void render_hand() {
-  display.println();
   display.println(left_hand ? "Left" : "Right");
 }
 void controller_hand() {
@@ -563,30 +517,21 @@ void controller_hand() {
 }
 
 void render_reading() {
+  // Display title and progress.
   const Book* book = books.get(reading_filename_index);
   display.println(book->title); // TODO scroll
-  display.print(book->sentence);
-  display.print(" / ");
-  display.print(book->num_sentences);
-  display.print(" = ");
-  uint32_t r = (book->sentence * 10000) / book->num_sentences;
+  uint32_t r = (bookf.curPosition() * 10000) / bookf.fileSize();
   display.print(r / 100);
   display.print(".");
   display.print(r % 100);
   display.println("%");
-
-  uint32_t mins = book->remaining_mins();
-  if (mins >= 60) {
-    display.print(mins / 60);
-    display.print("h");
-  }
-  display.print(mins % 60);
-  display.println("m remaining");
-  // TODO scroll current sentence
+  // TODO display hours/minutes remaining
   // TODO spritz definition of previously spritzed word
 }
 void controller_reading() {
   if (PRESSED(BUTTON_B)) {
+    // Wait a bit to see if this is a short click (back to menu) or a long press
+    // (spritz).
     unsigned long start = millis();
     while (((millis() - start) < 400) && PRESSED(BUTTON_B)) {
       delay(10);
@@ -597,41 +542,78 @@ void controller_reading() {
     return;
   }
 
-  if (!PRESSED(BUTTON_A) && !PRESSED(BUTTON_C)) return;
-
-  activity_timestamp = millis();
-
-  int dsi = BTN_HAND_SGN;
-  if (((sentence_index == 0) && (dsi < 0)) ||
-      ((sentence_index == sentences.length()) && (dsi > 0))) {
+  if (!PRESSED(BUTTON_A) && !PRESSED(BUTTON_C)) {
+    if (prev_button_a || prev_button_c) {
+      // Finished skipping forward/backward, so save the new progress position.
+      write_progress();
+    }
     return;
   }
 
-  sentence_index += dsi;
+  activity_timestamp = millis();
+
+  // Skip forward/backward a sentence.
+  int dsi = BTN_HAND_SGN;
+  int16_t c = bookf.read();
+  while ((c >= 0) && !is_punctuation(c)) {
+    if (dsi < 0) {
+      if (bookf.curPosition() < 2) break;
+      bookf.seekSet(bookf.curPosition() - 2);
+    }
+    c = bookf.read();
+  }
+
+  Book* book = books.get(reading_filename_index);
+  book->position = bookf.curPosition();
   render();
 }
 
 void render_spritz() {
   display.setFont(SPRITZ_FONT);
   display.setCursor(0, 10);
-  if (words.length() < 1) {
-    ++sentence_index;
-    if (sentence_index >= sentences.length()) {
-      screen = Screen::READING;
-      render();
-    } else {
-      read_sentence();
-    }
+
+  if (sentence_end) sentence_words = 0;
+  sentence_end = false;
+  ++sentence_words;
+
+  int16_t c = bookf.read();
+  // Skip to the start of the next word.
+  while (c >= 0 && (is_whitespace(c) || is_punctuation(c))) {
+    c = bookf.read();
   }
-  String word = words.pop();
-  display.println(word);
+
+  if (c < 0) {
+    // end of file
+    screen = Screen::READING;
+    render();
+    return;
+  }
+
+  // Display this word, and remember if this is the last word in the sentence.
+  while (c >= 0 && !is_whitespace(c)) {
+    if (is_punctuation(c)) sentence_end = true;
+    display.print((char)c);
+    c = bookf.read();
+  }
+
+  if (sentence_end) {
+    // Finished a sentence, so update book->position.
+    Book* book = books.get(reading_filename_index);
+    book->position = bookf.curPosition();
+  }
 }
 void controller_spritz() {
   activity_timestamp = millis();
   if (!PRESSED(BUTTON_B)) {
     screen = Screen::READING;
     render();
+    write_progress();
     return;
+  }
+
+  if (!prev_button_b) {
+    const Book* book = books.get(reading_filename_index);
+    bookf.seekSet(book->position);
   }
 
   // Continue spritzing
