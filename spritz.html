@@ -134,7 +134,6 @@ input[type="text"], input[type="number"] {
 
 const URL_REGEX = /^(blob|https?|ftp):/;
 const CLIPBOARD_HASH = '!clipboard';
-const BLINK_MS = 600;
 let SENTENCES = [];
 let TOTAL_BYTES = 0;
 
@@ -258,8 +257,9 @@ function setTimeOutput() {
   for (let s = getProgressSentence(); s < SENTENCES.length; ++s) {
     words += SENTENCES[s].length - 1;
   }
-  let mins = words / parseInt(wpm.value);
-  mins += BLINK_MS * (SENTENCES.length - getProgressSentence()) / 6e4;
+  const wpmi = parseInt(wpm.value);
+  let mins = words / wpmi;
+  mins += (SENTENCES.length - getProgressSentence()) / wpmi;
   time_output.textContent = '';
   if (mins > 60) time_output.textContent += Math.floor(mins / 60) + ' hours, ';
   time_output.textContent += Math.round(mins % 60) + ' minutes remaining';
@@ -272,6 +272,9 @@ function reticleIndex(w) {
   if (m[0].length < 6) return 1 + m.index;
   return 2 + m.index;
 }
+  
+const AVG_WORD_LENGTH = 5;
+const CHAR_ADJUST = 5;
 
 async function start() {
   if (word.style.display === 'flex') return;
@@ -289,12 +292,12 @@ async function start() {
     prereticle.textContent = w.substr(0, i);
     reticle.textContent = w[i];
     postreticle.textContent = w.substr(i + 1);
-    await timeout(starting ? BLINK_MS : ms);
+    await timeout(ms * ((w.length + CHAR_ADJUST) / (CHAR_ADJUST + AVG_WORD_LENGTH) * (starting ? 2 : 1));
     starting = false;
     ++wordIndex;
     if (wordIndex >= SENTENCES[sentenceIndex].length) {
-      if (SENTENCES[sentenceIndex].length > 3) {
-        await timeout(BLINK_MS - ms);
+      if (SENTENCES[sentenceIndex].length > 2) {
+        await timeout(ms);
       }
       wordIndex = 0;
       sentenceIndex = (sentenceIndex + 1) % SENTENCES.length;
