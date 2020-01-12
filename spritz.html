@@ -248,7 +248,7 @@ function addToLibrary(url) {
   keys.sort((x, y) => basename(x).localeCompare(basename(y)));
 
   for (const k of keys) {
-    addToLibrary(url);
+    addToLibrary(k);
   }
 })();
 
