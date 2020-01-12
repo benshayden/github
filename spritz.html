@@ -165,7 +165,16 @@ function parse(txt) {
   for (let s of txt.match(/[^\.!\?]+[\.!\?"”']*/g)) {
     s = s.match(/[^ \n]+ */g);
     if (!s) continue;
-    SENTENCES.push(s.map(w => w.trim()));
+    const sentence = [];
+    for (let w of s) {
+      w = w.trim();
+      const parts = w.split('-');
+      for (let pi = 0; pi < parts.length - 1; ++pi) {
+        parts[pi] += '-';
+      }
+      sentence.push(...parts);
+    }
+    SENTENCES.push(sentence);
   }
   total_sentences.textContent = SENTENCES.length;
   TOTAL_BYTES = 0;
