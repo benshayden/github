@@ -292,7 +292,7 @@ async function start() {
     prereticle.textContent = w.substr(0, i);
     reticle.textContent = w[i];
     postreticle.textContent = w.substr(i + 1);
-    await timeout(ms * ((w.length + CHAR_ADJUST) / (CHAR_ADJUST + AVG_WORD_LENGTH) * (starting ? 2 : 1));
+    await timeout(ms * (starting ? 2 : 1) * (w.length + CHAR_ADJUST) / (CHAR_ADJUST + AVG_WORD_LENGTH));
     starting = false;
     ++wordIndex;
     if (wordIndex >= SENTENCES[sentenceIndex].length) {
