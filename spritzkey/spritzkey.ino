@@ -61,6 +61,7 @@ class Book {
 #define is_whitespace(c) ((c == ' ') || is_nl(c) || (c == '\t'))
 bool sentence_end = false;
 uint32_t sentence_words = 0;
+uint8_t word_chars = 0;
 
 // Application UI Model
 enum class Screen {
@@ -74,7 +75,7 @@ enum class Screen {
 List<Book*> books;
 uint32_t reading_filename_index = 0;
 bool left_hand = false;
-uint32_t wpm = 300;
+float wpm = 300.0;
 unsigned int activity_timestamp = 0;
 SdFile bookf;
 
@@ -365,17 +366,26 @@ void loop() {
     display.clearDisplay();
     display.display();
     while (!PRESSED(BUTTON_A) && !PRESSED(BUTTON_B) && !PRESSED(BUTTON_C)) {
-      Watchdog.sleep(128);
+      Watchdog.sleep(256);
     }
   }
 }
 
+#define CHAR_ADJUST 5.0
+#define AVG_WORD_LENGTH 5.0
 unsigned int loop_ms() {
-  if (screen == Screen::SPRITZ) {
-    uint32_t ms = MS_PER_MIN / wpm;
-    return (sentence_end && (sentence_words > 1)) ? (ms * 2) : ms;
-  }
-  return 200;
+  if (screen != Screen::SPRITZ) return 200;
+
+  float ms = MS_PER_MIN / wpm;
+
+  // Hold the ends of long sentences a bit longer.
+  if (sentence_end && (sentence_words > 2)) ms *= 2.0;
+
+  // Hold long words longer than shorter words.
+  // https://www.desmos.com/calculator/m0befj6uhr
+  ms *= (word_chars + CHAR_ADJUST) / (AVG_WORD_LENGTH + CHAR_ADJUST);
+
+  return round(ms);
 }
 
 // Evaluates to 1 or -1 depending on left_hand and which of buttons A or C is
@@ -458,7 +468,7 @@ void controller_wpm() {
       INFO1("unable to open wpm file for writing");
       return;
     }
-    wpmf.println(wpm);
+    wpmf.println((unsigned int)wpm);
     wpmf.flush();
     wpmf.close();
     return;
@@ -594,6 +604,7 @@ void render_spritz() {
   if (sentence_end) sentence_words = 0;
   sentence_end = false;
   ++sentence_words;
+  word_chars = 0;
 
   int16_t c = bookf.read();
   // Skip to the start of the next word.
@@ -612,6 +623,11 @@ void render_spritz() {
   while (c >= 0 && !is_whitespace(c)) {
     if (is_punctuation(c)) sentence_end = true;
     display.print((char)c);
+    ++word_chars;
+
+    // Split hyphenated words, but display the hyphen unlike whitespace.
+    if (c == '-') break;
+
     c = bookf.read();
   }
 
