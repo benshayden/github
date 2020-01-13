@@ -19,6 +19,10 @@
 #define BUTTON_C  5
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
+// https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
+#include "Helvetica10pt7b.h"
+#define SPRITZ_FONT &Helvetica_40010pt7b
+
 // Platform
 #define INACTIVITY_MS 5000
 #define MS_PER_MIN 60000
@@ -63,27 +67,6 @@ class Book {
 bool sentence_end = false;
 uint32_t sentence_words = 0;
 
-#ifdef __arm__
-// should use uinstd.h to define sbrk but Due causes a conflict
-extern "C" char* sbrk(int incr);
-#else  // __ARM__
-extern char *__brkval;
-#endif  // __arm__
-int freeMemory() {
-  char top;
-#ifdef __arm__
-  return &top - reinterpret_cast<char*>(sbrk(0));
-#elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
-  return &top - __brkval;
-#else  // __arm__
-  return __brkval ? &top - __brkval : &top - __malloc_heap_start;
-#endif  // __arm__
-}
-
-// https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
-#include "FreeSerif7pt7b.h"
-#define SPRITZ_FONT &FreeSerif7pt7b
-
 // Application UI Model
 enum class Screen {
   MENU,
@@ -122,13 +105,20 @@ void setup_buttons() {
   pinMode(BUTTON_C, INPUT_PULLUP);
 }
 
+void setup_cursor() {
+  int16_t x1, y1;
+  uint16_t w, h;
+  display.getTextBounds("A", 0, 0, &x1, &y1, &w, &h);
+  display.setCursor(0, 16 + (h / 2) - y1);
+}
+
 void setup_display() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
   display.dim(true);
   display.setRotation(left_hand ? 0 : 2);
   display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 5);
+  setup_cursor();
   display.setFont(SPRITZ_FONT);
   display.println("SpritzKey");
   display.display();
@@ -527,24 +517,24 @@ void render_reading() {
   frac *= 100;
   uint8_t pct = floor(frac);
   display.print(pct);
-
-  frac -= pct;
-  frac *= 10;
-  pct = floor(frac);
   display.print(".");
-  display.print(pct);
-
-  frac -= pct;
-  frac *= 10;
-  pct = floor(frac);
-  display.print(pct);
-
-  frac -= pct;
-  frac *= 10;
-  pct = floor(frac);
-  display.print(pct);
-
+  for (int i = 0; i < 4; ++i) {
+    frac = (frac - pct) * 10;
+    pct = floor(frac);
+    display.print(pct);
+  }
   display.println("%");
+
+  frac = battery_volts();
+  pct = floor(frac);
+  display.print(pct);
+  display.print(".");
+
+  frac -= pct;
+  frac *= 10;
+  pct = floor(frac);
+  display.print(pct);
+  display.println("V");
 }
 void controller_reading() {
   if (PRESSED(BUTTON_B)) {
@@ -603,8 +593,8 @@ void controller_reading() {
 }
 
 void render_spritz() {
+  setup_cursor();
   display.setFont(SPRITZ_FONT);
-  display.setCursor(0, 10);
 
   if (sentence_end) sentence_words = 0;
   sentence_end = false;
@@ -667,4 +657,21 @@ int32_t msc_write_cb(uint32_t lba, uint8_t* buffer, uint32_t bufsize) {
 }
 
 void msc_flush_cb (void) {
+}
+
+#ifdef __arm__
+// should use uinstd.h to define sbrk but Due causes a conflict
+extern "C" char* sbrk(int incr);
+#else  // __ARM__
+extern char *__brkval;
+#endif  // __arm__
+int freeMemory() {
+  char top;
+#ifdef __arm__
+  return &top - reinterpret_cast<char*>(sbrk(0));
+#elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
+  return &top - __brkval;
+#else  // __arm__
+  return __brkval ? &top - __brkval : &top - __malloc_heap_start;
+#endif  // __arm__
 }
