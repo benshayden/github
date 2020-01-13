@@ -21,7 +21,7 @@ Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
 // https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
 #include "Helvetica10pt7b.h"
-#define SPRITZ_FONT &Helvetica_40010pt7b
+#define SPRITZ_FONT &Helvetica10pt7b
 
 // Platform
 #define INACTIVITY_MS 5000
