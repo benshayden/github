@@ -62,6 +62,7 @@ class Book {
 bool sentence_end = false;
 uint32_t sentence_words = 0;
 uint8_t word_chars = 0;
+uint16_t reticle_x = 0;
 
 // Application UI Model
 enum class Screen {
@@ -101,11 +102,21 @@ void setup_buttons() {
   pinMode(BUTTON_C, INPUT_PULLUP);
 }
 
+uint16_t getCharWidth(char c) {
+  int16_t x1, y1;
+  uint16_t w, h;
+  display.getTextBounds(&c, 0, 0, &x1, &y1, &w, &h);
+  return w;
+}
+
 void setup_cursor() {
+  // NB setFont() adjusts cursor_y when switching between the default font and a
+  // custom font, so be consistent about whether this is called before or after
+  // setFont().
   int16_t x1, y1;
   uint16_t w, h;
   display.getTextBounds("A", 0, 0, &x1, &y1, &w, &h);
-  display.setCursor(0, 16 + (h / 2) - y1);
+  display.setCursor(0, (display.height() / 2) + (h / 2) - y1 - 4);
 }
 
 void setup_display() {
@@ -118,6 +129,8 @@ void setup_display() {
   display.setFont(SPRITZ_FONT);
   display.println("SpritzKey");
   display.display();
+  reticle_x = getCharWidth('a');
+  reticle_x += (reticle_x / 2) + getCharWidth('A');
 }
 
 void setup_msc() {
@@ -127,8 +140,7 @@ void setup_msc() {
   usb_msc.begin();
 
   Serial.begin(115200);
-  unsigned long start = millis();
-  while (!Serial && (3000 > (millis() - start)));
+  unsigned long start = millis();while (!Serial && (3000 > (millis() - start)));
 
   if (!card.init(SPI_HALF_SPEED, CHIP_SELECT)) {
     INFO1("Unable to init card");
@@ -550,8 +562,14 @@ void controller_reading() {
       delay(10);
     }
     screen = PRESSED(BUTTON_B) ? Screen::SPRITZ : Screen::MENU;
+
+    if (screen == Screen::SPRITZ) {
+      flash_reticle();
+    }
+
     const Book* book = books.get(reading_filename_index);
     bookf.seekSet(book->position);
+
     render();
     activity_timestamp = millis();
     return;
@@ -597,7 +615,31 @@ void controller_reading() {
   render();
 }
 
+void translateY(int16_t dy) {
+  translate(0, dy);
+}
+void translateX(int16_t dx) {
+  translate(dx, 0);
+}
+void translate(int16_t dx, int16_t dy) {
+  display.setCursor(display.getCursorX() + dx, display.getCursorY() + dy);
+}
+
+#define RETICLE_PX 6
+void render_reticle() {
+  display.drawFastVLine(reticle_x, 0, RETICLE_PX, SSD1306_WHITE);
+  display.drawFastVLine(reticle_x, display.height() - RETICLE_PX, RETICLE_PX, SSD1306_WHITE);
+}
+void flash_reticle() {
+  display.clearDisplay();
+  display.setRotation(left_hand ? 0 : 2);
+  display.drawFastVLine(reticle_x, 0, display.height(), SSD1306_WHITE);
+  display.drawFastHLine(0, display.height() / 2, display.width(), SSD1306_WHITE);
+  display.display();
+  delay(round(MS_PER_MIN / wpm));
+}
 void render_spritz() {
+  render_reticle();
   setup_cursor();
   display.setFont(SPRITZ_FONT);
 
@@ -619,17 +661,29 @@ void render_spritz() {
     return;
   }
 
+  char buf[20];
+
   // Display this word, and remember if this is the last word in the sentence.
-  while (c >= 0 && !is_whitespace(c)) {
+  while ((c >= 0) && !is_whitespace(c) && (word_chars < ARRAYSIZE(buf))) {
     if (is_punctuation(c)) sentence_end = true;
-    display.print((char)c);
-    ++word_chars;
+    buf[word_chars++] = c;
 
     // Split hyphenated words, but display the hyphen unlike whitespace.
     if (c == '-') break;
 
     c = bookf.read();
   }
+  buf[word_chars] = 0;
+
+  if (word_chars >= 5) {
+    translateX(reticle_x - (getCharWidth(buf[0]) + getCharWidth(buf[1]) + (getCharWidth(buf[2]) / 2)));
+  } else if (word_chars >= 3) {
+    translateX(reticle_x - (getCharWidth(buf[0]) + (getCharWidth(buf[1]) / 2)));
+  } else  {
+    translateX(reticle_x - (getCharWidth(buf[0]) / 2));
+  }
+
+  display.print(buf);
 
   if (sentence_end) {
     // Finished a sentence, so update book->position.
