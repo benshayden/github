@@ -1,8 +1,3 @@
-// Spritzkey is an e-reader that displays one word at a time on a tiny OLED
-// display. It reads books from an SD card. It enumerates as a flash storage
-// drive when plugged into a USB host so you can copy text files containing
-// books to its SD card.
-
 #include <SPI.h>
 #include <Wire.h>
 #include "SD.h"
