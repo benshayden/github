@@ -90,7 +90,8 @@ void setup() {
   setup_display();
   setup_books();
   setup_progress();
-  INFO1(battery_volts());
+  INFO2("battery_volts ", battery_volts());
+  INFO2("free_memory ", free_memory());
   delay(1000);
   render();
   activity_timestamp = millis();
@@ -103,9 +104,13 @@ void setup_buttons() {
 }
 
 uint16_t getCharWidth(char c) {
+  char t = c;
+  return getTextWidth(&t);
+}
+uint16_t getTextWidth(const char* c) {
   int16_t x1, y1;
   uint16_t w, h;
-  display.getTextBounds(&c, 0, 0, &x1, &y1, &w, &h);
+  display.getTextBounds(c, 0, 0, &x1, &y1, &w, &h);
   return w;
 }
 
@@ -129,8 +134,13 @@ void setup_display() {
   display.setFont(SPRITZ_FONT);
   display.println("SpritzKey");
   display.display();
+
+  // This is the x-position of the reticle, where the user's eye will be
+  // looking. render_spritz() may put about 2.5 letters to the left of the
+  // reticle.
   reticle_x = getCharWidth('a');
   reticle_x += (reticle_x / 2) + getCharWidth('A');
+  INFO2("reticle_x ", reticle_x);
 }
 
 void setup_msc() {
@@ -180,7 +190,7 @@ void setup_wpm() {
   } else {
     INFO1("toInt failed");
   }
-  INFO2(wpm, " wpm");
+  INFO2("wpm ", wpm);
 }
 
 void setup_hand() {
@@ -372,6 +382,9 @@ void loop() {
   prev_button_b = PRESSED(BUTTON_B);
   prev_button_c = PRESSED(BUTTON_C);
 
+  // TODO Does a library mess with these pins or something?
+  setup_buttons();
+
   delay(loop_ms());
 
   if (!Serial && ((millis() - activity_timestamp) > INACTIVITY_MS)) {
@@ -546,11 +559,11 @@ void render_reading() {
   pct = floor(frac);
   display.print(pct);
   display.print(".");
-
-  frac -= pct;
-  frac *= 10;
-  pct = floor(frac);
-  display.print(pct);
+  for (int i = 0; i < 2; ++i) {
+    frac = (frac - pct) * 10;
+    pct = floor(frac);
+    display.print(pct);
+  }
   display.println("V");
 }
 void controller_reading() {
@@ -615,17 +628,7 @@ void controller_reading() {
   render();
 }
 
-void translateY(int16_t dy) {
-  translate(0, dy);
-}
-void translateX(int16_t dx) {
-  translate(dx, 0);
-}
-void translate(int16_t dx, int16_t dy) {
-  display.setCursor(display.getCursorX() + dx, display.getCursorY() + dy);
-}
-
-#define RETICLE_PX 6
+#define RETICLE_PX 4
 void render_reticle() {
   display.drawFastVLine(reticle_x, 0, RETICLE_PX, SSD1306_WHITE);
   display.drawFastVLine(reticle_x, display.height() - RETICLE_PX, RETICLE_PX, SSD1306_WHITE);
@@ -661,6 +664,8 @@ void render_spritz() {
     return;
   }
 
+  // Read the next word into a buffer before displaying it so that it can be
+  // positioned under the reticle.
   char buf[20];
 
   // Display this word, and remember if this is the last word in the sentence.
@@ -675,14 +680,36 @@ void render_spritz() {
   }
   buf[word_chars] = 0;
 
+  // Position the word so that the first, second, or third letter is in the
+  // reticle, where the user is already looking, depending on the length of the
+  // word.
+  int16_t left = reticle_x;
   if (word_chars >= 5) {
-    translateX(reticle_x - (getCharWidth(buf[0]) + getCharWidth(buf[1]) + (getCharWidth(buf[2]) / 2)));
+    left -= (getCharWidth(buf[0]) + getCharWidth(buf[1]) + (getCharWidth(buf[2]) / 2));
   } else if (word_chars >= 3) {
-    translateX(reticle_x - (getCharWidth(buf[0]) + (getCharWidth(buf[1]) / 2)));
+    left -= (getCharWidth(buf[0]) + (getCharWidth(buf[1]) / 2));
   } else  {
-    translateX(reticle_x - (getCharWidth(buf[0]) / 2));
+    left -= (getCharWidth(buf[0]) / 2);
   }
 
+  // reticle_x is based on a typical char width, but some chars may be wider,
+  // which cause left to go negative.
+  if (left < 0) left = 0;
+
+  if (display.width() < (getTextWidth(buf) + left)) {
+    // Shorten the word so it will fit on the screen, and display the rest of
+    // the word in the next frame. A better hyphenation algorithm might consider
+    // sounds or word roots.
+    INFO2((getTextWidth(buf) + left), buf);
+    while (display.width() < (getTextWidth(buf) + left)) {
+      buf[--word_chars] = 0;
+      bookf.seekSet(bookf.curPosition() - 1);
+    }
+    buf[--word_chars] = '-';
+    bookf.seekSet(bookf.curPosition() - 1);
+  }
+
+  display.setCursor(left, display.getCursorY());
   display.print(buf);
 
   if (sentence_end) {
@@ -730,7 +757,7 @@ extern "C" char* sbrk(int incr);
 #else  // __ARM__
 extern char *__brkval;
 #endif  // __arm__
-int freeMemory() {
+int free_memory() {
   char top;
 #ifdef __arm__
   return &top - reinterpret_cast<char*>(sbrk(0));
