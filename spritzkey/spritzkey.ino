@@ -4,8 +4,83 @@
 #include "Adafruit_TinyUSB.h"
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <Adafruit_SleepyDog.h>
-#include "list.h"
+#include "LowPower.h"
+
+template<class T>
+class List {
+ private:
+  class ListNode {
+   public:
+    T value;
+    ListNode* next;
+    ListNode(T v, ListNode* n) : value(v), next(n) {}
+  };
+  uint32_t length_;
+  ListNode* head_;
+
+ public:
+  List() : length_(0), head_(nullptr) {}
+
+  void clear() {
+    while (length_) {
+      pop();
+    }
+  }
+
+  void prepend(T element) {
+    ++length_;
+    head_ = new ListNode(element, head_);
+  }
+
+  void append(T element) {
+    if (length_ == 0) {
+      prepend(element);
+      return;
+    }
+    ++length_;
+    ListNode* node = head_;
+    while (node->next) node = node->next;
+    node->next = new ListNode(element, nullptr);
+  }
+
+  uint32_t length() { return length_; }
+
+  T get(uint32_t index) {
+    ListNode* node = head_;
+    while (index) {
+      --index;
+      node = node->next;
+    }
+    return node->value;
+  }
+
+  T pop() {
+    ListNode* node = head_;
+    T value = node->value;
+    head_ = node->next;
+    delete node;
+    --length_;
+    return value;
+  }
+
+  void sort() {
+    if (length_ < 2) return;
+    for (uint32_t pass = 0; pass < length_ - 1; ++pass) {
+      bool sorted = true;
+      ListNode* current = head_;
+      for (uint32_t index = 0; index < length_ - pass - 1; ++index) {
+        if (current->value > current->next->value) {
+          sorted = false;
+          T temp = current->value;
+          current->value = current->next->value;
+          current->next->value = temp;
+        }
+        current = current->next;
+      }
+      if (sorted) break;
+    }
+  }
+};
 
 // Configuration variables depend on your board and display.
 #define CHIP_SELECT 4
@@ -80,14 +155,22 @@ unsigned int seeking_timestamp = 0;
 SdFile bookf;
 
 void setup() {
+  setup_buttons();
   setup_display();
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-  setup_buttons();
   setup_msc();
   setup_wpm();
   setup_books();
   setup_progress();
+
+  // This is the x-position of the reticle, where the user's eye will be
+  // looking. render_spritz() may put about 2.5 letters to the left of the
+  // reticle.
+  reticle_x = getCharWidth('a');
+  INFO2("width a ", reticle_x);
+  reticle_x += (reticle_x / 2) + getCharWidth('A');
+  INFO2("reticle_x ", reticle_x);
   INFO2("battery_volts ", battery_volts());
   INFO2("free_memory ", free_memory());
   delay(2 * MS_PER_MIN / wpm);
@@ -132,13 +215,6 @@ void setup_display() {
   display.setFont(SPRITZ_FONT);
   display.println("SpritzKey");
   display.display();
-
-  // This is the x-position of the reticle, where the user's eye will be
-  // looking. render_spritz() may put about 2.5 letters to the left of the
-  // reticle.
-  reticle_x = getCharWidth('a');
-  reticle_x += (reticle_x / 2) + getCharWidth('A');
-  INFO2("reticle_x ", reticle_x);
 }
 
 void setup_msc() {
@@ -377,12 +453,22 @@ void loop() {
   delay(loop_ms());
 
   if (!Serial && ((millis() - activity_timestamp) > INACTIVITY_MS)) {
-    display.clearDisplay();
-    display.display();
-    while (!PRESSED(BUTTON_A) && !PRESSED(BUTTON_B) && !PRESSED(BUTTON_C)) {
-      Watchdog.sleep(256);
-    }
+    sleepUntilB();
   }
+}
+
+void sleepUntilB() {
+  display.clearDisplay();
+  display.display();
+  attachInterrupt(BUTTON_B, handleInterruptB, LOW);
+  LowPower.standby();
+  detachInterrupt(BUTTON_B);
+  render();
+  while (PRESSED(BUTTON_B)) delay(10);
+  activity_timestamp = millis();
+}
+
+void handleInterruptB(void) {
 }
 
 #define CHAR_ADJUST 5.0
@@ -399,10 +485,9 @@ unsigned int loop_ms() {
     // https://www.desmos.com/calculator/m0befj6uhr
     ms *= (max(2, word_chars) + CHAR_ADJUST) / (AVG_WORD_LENGTH + CHAR_ADJUST);
   } else if (screen == Screen::READING && seeking_timestamp != 0) {
-    // Exponential speedup when seeking through sentences.
     float dms = millis() - seeking_timestamp;
-    // Double speed about every 2s.
-    ms = 200.0 * exp(-dms / 2900);
+    // Double speed about every 2s while seeking through sentences.
+    ms *= exp(-dms / 2900);
   }
   return round(ms);
 }
@@ -718,7 +803,6 @@ void msc_flush_cb (void) {
 }
 
 #ifdef __arm__
-// should use uinstd.h to define sbrk but Due causes a conflict
 extern "C" char* sbrk(int incr);
 #else  // __ARM__
 extern char *__brkval;
