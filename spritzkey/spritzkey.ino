@@ -12,6 +12,7 @@
 #define BUTTON_A  9
 #define BUTTON_B  6
 #define BUTTON_C  5
+#define BATTERY_PIN A7
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
 // https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
@@ -23,7 +24,6 @@ Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 #define MS_PER_MIN 60000
 #define WPM_FILENAME "~WPM.TXT"
 #define PROGRESS_FILENAME "~PROGRES.TXT"
-#define HAND_FILENAME "~LEFT.TXT"
 #define PRESSED(btn) (!digitalRead(btn))
 #define ARRAYSIZE(a) (sizeof(a) / sizeof(a[0]))
 Adafruit_USBD_MSC usb_msc;
@@ -69,30 +69,28 @@ enum class Screen {
   MENU,
   SETTINGS,
   WPM,
-  HAND,
   READING,
   SPRITZ,
 } screen = Screen::MENU;
 List<Book*> books;
 uint32_t reading_filename_index = 0;
-bool left_hand = false;
 float wpm = 300.0;
 unsigned int activity_timestamp = 0;
+unsigned int seeking_timestamp = 0;
 SdFile bookf;
 
 void setup() {
+  setup_display();
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
   setup_buttons();
   setup_msc();
   setup_wpm();
-  setup_hand();
-  setup_display();
   setup_books();
   setup_progress();
   INFO2("battery_volts ", battery_volts());
   INFO2("free_memory ", free_memory());
-  delay(1000);
+  delay(2 * MS_PER_MIN / wpm);
   render();
   activity_timestamp = millis();
 }
@@ -128,7 +126,7 @@ void setup_display() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
   display.dim(true);
-  display.setRotation(left_hand ? 0 : 2);
+  display.setRotation(2);
   display.setTextColor(SSD1306_WHITE);
   setup_cursor();
   display.setFont(SPRITZ_FONT);
@@ -149,8 +147,11 @@ void setup_msc() {
   usb_msc.setUnitReady(false);
   usb_msc.begin();
 
-  Serial.begin(115200);
-  unsigned long start = millis();while (!Serial && (3000 > (millis() - start)));
+  if (PRESSED(BUTTON_A) && PRESSED(BUTTON_C)) {
+    Serial.begin(115200);
+    while (!Serial) delay(10);
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
 
   if (!card.init(SPI_HALF_SPEED, CHIP_SELECT)) {
     INFO1("Unable to init card");
@@ -191,13 +192,6 @@ void setup_wpm() {
     INFO1("toInt failed");
   }
   INFO2("wpm ", wpm);
-}
-
-void setup_hand() {
-  SdFile handf;
-  left_hand = !!handf.open(root, HAND_FILENAME, O_READ);
-  INFO1(left_hand ? "left hand" : "right hand");
-  if (left_hand) handf.close();
 }
 
 void setup_books() {
@@ -320,13 +314,14 @@ void write_progress() {
 }
 
 float battery_volts() {
-  return analogRead(A7) * 2 * 3.3 / 1024;
+  while (analogRead(BATTERY_PIN) < 10) delay(1);
+  return analogRead(BATTERY_PIN) * 2 * 3.3 / 1024;
 }
 
 // Application UI View
 void render() {
   display.clearDisplay();
-  display.setRotation(left_hand ? 0 : 2);
+  display.setRotation(2);
   display.setFont();
   display.setCursor(0, 0);
   switch (screen) {
@@ -338,9 +333,6 @@ void render() {
       break;
     case Screen::WPM:
       render_wpm();
-      break;
-    case Screen::HAND:
-      render_hand();
       break;
     case Screen::READING:
       render_reading();
@@ -366,9 +358,6 @@ void loop() {
       break;
     case Screen::WPM:
       controller_wpm();
-      break;
-    case Screen::HAND:
-      controller_hand();
       break;
     case Screen::READING:
       controller_reading();
@@ -399,23 +388,27 @@ void loop() {
 #define CHAR_ADJUST 5.0
 #define AVG_WORD_LENGTH 5.0
 unsigned int loop_ms() {
-  if (screen != Screen::SPRITZ) return 200;
+  float ms = 200.0;
+  if (screen == Screen::SPRITZ) {
+    ms = MS_PER_MIN / wpm;
 
-  float ms = MS_PER_MIN / wpm;
+    // Hold the ends of long sentences a bit longer.
+    if (sentence_end && (sentence_words > 2)) ms *= 2.0;
 
-  // Hold the ends of long sentences a bit longer.
-  if (sentence_end && (sentence_words > 2)) ms *= 2.0;
-
-  // Hold long words longer than shorter words.
-  // https://www.desmos.com/calculator/m0befj6uhr
-  ms *= (word_chars + CHAR_ADJUST) / (AVG_WORD_LENGTH + CHAR_ADJUST);
-
+    // Hold long words longer than shorter words.
+    // https://www.desmos.com/calculator/m0befj6uhr
+    ms *= (max(2, word_chars) + CHAR_ADJUST) / (AVG_WORD_LENGTH + CHAR_ADJUST);
+  } else if (screen == Screen::READING && seeking_timestamp != 0) {
+    // Exponential speedup when seeking through sentences.
+    float dms = millis() - seeking_timestamp;
+    // Double speed about every 2s.
+    ms = 200.0 * exp(-dms / 2900);
+  }
   return round(ms);
 }
 
-// Evaluates to 1 or -1 depending on left_hand and which of buttons A or C is
-// pressed.
-#define BTN_HAND_SGN ((PRESSED(BUTTON_A) ? 1 : -1) * (left_hand ? 1 : -1))
+// Evaluates to 1 or -1 depending on which of buttons A or C is pressed.
+#define BUTTON_SIGN (PRESSED(BUTTON_A) ? -1 : 1)
 
 void render_menu() {
   bookf.close();
@@ -449,7 +442,7 @@ void controller_menu() {
     }
   } else {
     uint32_t num_options = books.length() + 1;
-    reading_filename_index = (reading_filename_index + num_options - BTN_HAND_SGN) % num_options;
+    reading_filename_index = (reading_filename_index + num_options - BUTTON_SIGN) % num_options;
   }
   render();
 }
@@ -457,7 +450,7 @@ void controller_menu() {
 struct Settings {
   Screen screen;
   const char* label;
-} SETTINGS[] = {{Screen::MENU, "back"}, {Screen::WPM, "words per minute"}, {Screen::HAND, "hand"}};
+} SETTINGS[] = {{Screen::MENU, "back"}, {Screen::WPM, "words per minute"}};
 uint32_t settings_index = 0;
 void render_settings() {
   for (uint32_t i = 0; i < ARRAYSIZE(SETTINGS); ++i) {
@@ -471,7 +464,7 @@ void controller_settings() {
   if (PRESSED(BUTTON_B) && !prev_button_b) {
     screen = SETTINGS[settings_index].screen;
   } else {
-    settings_index = (settings_index + ARRAYSIZE(SETTINGS) - BTN_HAND_SGN) % ARRAYSIZE(SETTINGS);
+    settings_index = (settings_index + ARRAYSIZE(SETTINGS) - BUTTON_SIGN) % ARRAYSIZE(SETTINGS);
   }
   render();
 }
@@ -499,41 +492,13 @@ void controller_wpm() {
     return;
   }
 
-  int dwpm = 10 * BTN_HAND_SGN;
+  int dwpm = 10 * BUTTON_SIGN;
   if (((wpm <= 20) && (dwpm < 0)) ||
       ((wpm >= MS_PER_MIN) && (dwpm > 0))) {
     return;
   }
 
   wpm += dwpm;
-  render();
-}
-
-void render_hand() {
-  display.println(left_hand ? "Left" : "Right");
-}
-void controller_hand() {
-  if (!PRESSED(BUTTON_A) && !PRESSED(BUTTON_B) && !PRESSED(BUTTON_C)) return;
-
-  activity_timestamp = millis();
-
-  if (PRESSED(BUTTON_B) && !prev_button_b) {
-    screen = Screen::SETTINGS;
-    if (left_hand) {
-      SdFile handf;
-      if (!handf.open(root, HAND_FILENAME, O_WRITE | O_CREAT)) {
-        INFO1("unable to open hand file for writing");
-      } else {
-        handf.close();
-      }
-    } else {
-      if (!SdFile::remove(&root, HAND_FILENAME)) {
-        INFO1("unable to remove hand file");
-      }
-    }
-  } else if ((PRESSED(BUTTON_A) && !prev_button_a) || (PRESSED(BUTTON_C) && !prev_button_c)) {
-    left_hand = !left_hand;
-  }
   render();
 }
 
@@ -589,6 +554,7 @@ void controller_reading() {
   }
 
   if (!PRESSED(BUTTON_A) && !PRESSED(BUTTON_C)) {
+    seeking_timestamp = 0;
     if (prev_button_a || prev_button_c) {
       // Finished skipping forward/backward, so save the new progress position.
       write_progress();
@@ -597,11 +563,11 @@ void controller_reading() {
   }
 
   activity_timestamp = millis();
+  if (seeking_timestamp == 0) seeking_timestamp = millis();
 
   // Skip forward/backward a sentence.
-  int dsi = BTN_HAND_SGN;
   int16_t c = bookf.read();
-  if (dsi < 0) {
+  if (BUTTON_SIGN < 0) {
     while ((c >= 0) && !is_punctuation(c)) {
       bookf.seekSet(max(2, bookf.curPosition()) - 2);
       if (bookf.curPosition() == 0) break;
@@ -635,7 +601,7 @@ void render_reticle() {
 }
 void flash_reticle() {
   display.clearDisplay();
-  display.setRotation(left_hand ? 0 : 2);
+  display.setRotation(2);
   display.drawFastVLine(reticle_x, 0, display.height(), SSD1306_WHITE);
   display.drawFastHLine(0, display.height() / 2, display.width(), SSD1306_WHITE);
   display.display();
