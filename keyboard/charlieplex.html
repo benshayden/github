@@ -50,7 +50,7 @@ for (let cat = 0; cat < NUM_PINS; ++cat) {
     
     td = document.createElement('td');
     tr.appendChild(td);
-    let done = document.createElement('input');
+    done = document.createElement('input');
     done.type = 'checkbox';
     done.id = 'c' + b;
     done.checked = !!localStorage.getItem(done.id);
