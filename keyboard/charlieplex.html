@@ -66,6 +66,7 @@ for (let an = 0; an < NUM_PINS; ++an) {
     done.id = 'c' + b;
     done.checked = !!localStorage.getItem(done.id);
     done.onchange = handleDone;
+    tr.onclick = toggleDone(done);
     td.appendChild(done);
 
     td = document.createElement('td');
