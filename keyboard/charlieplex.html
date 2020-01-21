@@ -12,8 +12,12 @@ const NUM_PINS = 6;
 function charlie(an, cat) {
   return ((an * (NUM_PINS - 1)) + cat - ((cat > an) ? 1 : 0));
 }
-function handleDone() {
-  console.log(Array.from(arguments));
+function handleDone(event) {
+  if (event.target.checked) {
+    localStorage.setItem(event.target.id, true);
+  } else {
+    localStorage.removeItem(event.target.id);
+  }
 }
 for (let an = 0; an < NUM_PINS; ++an) {
   for (let cat = 0; cat < NUM_PINS; ++cat) {
