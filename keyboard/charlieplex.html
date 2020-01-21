@@ -19,6 +19,12 @@ function handleDone(event) {
     localStorage.removeItem(event.target.id);
   }
 }
+function toggleDone(done) {
+  return function() {
+    done.checked = !done.checked;
+    done.onchange({target: done});
+  };
+}
 for (let an = 0; an < NUM_PINS; ++an) {
   for (let cat = 0; cat < NUM_PINS; ++cat) {
     if (an === cat) continue;
@@ -35,6 +41,7 @@ for (let an = 0; an < NUM_PINS; ++an) {
     done.id = 'a' + b;
     done.checked = !!localStorage.getItem(done.id);
     done.onchange = handleDone;
+    tr.onclick = toggleDone(done);
     td.appendChild(done);
 
     td = document.createElement('td');
