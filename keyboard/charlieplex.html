@@ -15,8 +15,8 @@ function charlie(an, cat) {
 function handleDone() {
   console.log(Array.from(arguments));
 }
-for (let cat = 0; cat < NUM_PINS; ++cat) {
-  for (let an = 0; an < NUM_PINS; ++an) {
+for (let an = 0; an < NUM_PINS; ++an) {
+  for (let cat = 0; cat < NUM_PINS; ++cat) {
     if (an === cat) continue;
 
     const b = charlie(an, cat);
