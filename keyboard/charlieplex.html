@@ -1,0 +1,73 @@
+<!doctype html>
+<table id=table>
+  <tr>
+    <td>done</td>
+    <td>button</td>
+    <td>node</td>
+    <td>pin</td>
+  </tr>
+</table>
+<script>
+const PINS = 6;
+function charlie(an, cat) {
+  return ((an * (NUM_PINS - 1)) + cat - ((cat > an) ? 1 : 0));
+}
+function handleDone() {
+  console.log(Array.from(arguments));
+}
+for (let cat = 0; cat < NUM_PINS; ++cat) {
+  for (let an = 0; an < NUM_PINS; ++an) {
+    if (an === cat) continue;
+
+    const b = charlie(an, cat);
+
+    let tr = document.createElement('tr');
+    table.appendChild(tr);
+
+    let td = document.createElement('td');
+    tr.appendChild(td);
+    let done = document.createElement('input');
+    done.type = 'checkbox';
+    done.id = 'a' + b;
+    done.checked = !!localStorage.getItem(done.id);
+    done.onchange = handleDone;
+    td.appendChild(done);
+
+    td = document.createElement('td');
+    tr.appendChild(td);
+    td.innerText = b;
+
+    td = document.createElement('td');
+    tr.appendChild(td);
+    td.innerText = 'a';
+
+    td = document.createElement('td');
+    tr.appendChild(td);
+    td.innerText = an;
+
+    tr = document.createElement('tr');
+    table.appendChild(tr);
+    
+    let td = document.createElement('td');
+    tr.appendChild(td);
+    let done = document.createElement('input');
+    done.type = 'checkbox';
+    done.id = 'c' + b;
+    done.checked = !!localStorage.getItem(done.id);
+    done.onchange = handleDone;
+    td.appendChild(done);
+
+    td = document.createElement('td');
+    tr.appendChild(td);
+    td.innerText = b;
+
+    td = document.createElement('td');
+    tr.appendChild(td);
+    td.innerText = 'c';
+
+    td = document.createElement('td');
+    tr.appendChild(td);
+    td.innerText = cat;
+  }
+}
+</script>
