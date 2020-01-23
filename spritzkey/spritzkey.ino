@@ -5,82 +5,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "LowPower.h"
-
-template<class T>
-class List {
- private:
-  class ListNode {
-   public:
-    T value;
-    ListNode* next;
-    ListNode(T v, ListNode* n) : value(v), next(n) {}
-  };
-  uint32_t length_;
-  ListNode* head_;
-
- public:
-  List() : length_(0), head_(nullptr) {}
-
-  void clear() {
-    while (length_) {
-      pop();
-    }
-  }
-
-  void prepend(T element) {
-    ++length_;
-    head_ = new ListNode(element, head_);
-  }
-
-  void append(T element) {
-    if (length_ == 0) {
-      prepend(element);
-      return;
-    }
-    ++length_;
-    ListNode* node = head_;
-    while (node->next) node = node->next;
-    node->next = new ListNode(element, nullptr);
-  }
-
-  uint32_t length() { return length_; }
-
-  T get(uint32_t index) {
-    ListNode* node = head_;
-    while (index) {
-      --index;
-      node = node->next;
-    }
-    return node->value;
-  }
-
-  T pop() {
-    ListNode* node = head_;
-    T value = node->value;
-    head_ = node->next;
-    delete node;
-    --length_;
-    return value;
-  }
-
-  void sort() {
-    if (length_ < 2) return;
-    for (uint32_t pass = 0; pass < length_ - 1; ++pass) {
-      bool sorted = true;
-      ListNode* current = head_;
-      for (uint32_t index = 0; index < length_ - pass - 1; ++index) {
-        if (current->value > current->next->value) {
-          sorted = false;
-          T temp = current->value;
-          current->value = current->next->value;
-          current->next->value = temp;
-        }
-        current = current->next;
-      }
-      if (sorted) break;
-    }
-  }
-};
+#include "list.h"
 
 // Configuration variables depend on your board and display.
 #define CHIP_SELECT 4
@@ -91,6 +16,8 @@ class List {
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
 // https://learn.adafruit.com/adafruit-gfx-graphics-library/using-fonts
+#include "Helvetica8pt7b.h"
+#define MENU_FONT &Helvetica8pt7b
 #include "Helvetica10pt7b.h"
 #define SPRITZ_FONT &Helvetica10pt7b
 
@@ -142,7 +69,6 @@ uint16_t reticle_x = 0;
 // Application UI Model
 enum class Screen {
   MENU,
-  SETTINGS,
   WPM,
   READING,
   SPRITZ,
@@ -394,6 +320,13 @@ float battery_volts() {
   return analogRead(BATTERY_PIN) * 2 * 3.3 / 1024;
 }
 
+uint8_t battery_percent() {
+#define MIN_VOLTS 3.4
+#define MAX_VOLTS 4.22
+#define NORMALIZE(x, fromMin, fromMax, toMin, toMax) ((((toMax) - (toMin)) * ((x) - (fromMin)) / ((fromMax) - (fromMin))) + (toMin))
+  return round(NORMALIZE(constrain(battery_volts(), MIN_VOLTS, MAX_VOLTS), MIN_VOLTS, MAX_VOLTS, 0.0, 100.0));
+}
+
 // Application UI View
 void render() {
   display.clearDisplay();
@@ -403,9 +336,6 @@ void render() {
   switch (screen) {
     case Screen::MENU:
       render_menu();
-      break;
-    case Screen::SETTINGS:
-      render_settings();
       break;
     case Screen::WPM:
       render_wpm();
@@ -428,9 +358,6 @@ void loop() {
   switch (screen) {
     case Screen::MENU:
       controller_menu();
-      break;
-    case Screen::SETTINGS:
-      controller_settings();
       break;
     case Screen::WPM:
       controller_wpm();
@@ -502,7 +429,8 @@ void render_menu() {
     uint32_t x = (reading_filename_index - (reading_filename_index % 4) + di + num_options - 1) % num_options;
     display.print(((x == reading_filename_index) || (num_options == 1)) ? ">" : " ");
     if (x == books.length()) {
-      display.println("|Settings|");
+      display.print(":wpm: ");
+      display.println((int)round(wpm));
     } else {
       display.println(books.get(x)->title);
     }
@@ -513,7 +441,7 @@ void controller_menu() {
   activity_timestamp = millis();
   if (PRESSED(BUTTON_B) && !prev_button_b) {
     if (reading_filename_index == books.length()) {
-      screen = Screen::SETTINGS;
+      screen = Screen::WPM;
     } else {
       const Book* book = books.get(reading_filename_index);
       if (!bookf.open(root, book->filename.c_str(), O_READ)) {
@@ -532,28 +460,6 @@ void controller_menu() {
   render();
 }
 
-struct Settings {
-  Screen screen;
-  const char* label;
-} SETTINGS[] = {{Screen::MENU, "back"}, {Screen::WPM, "words per minute"}};
-uint32_t settings_index = 0;
-void render_settings() {
-  for (uint32_t i = 0; i < ARRAYSIZE(SETTINGS); ++i) {
-    display.print((settings_index == i) ? ">" : " ");
-    display.println(SETTINGS[i].label);
-  }
-}
-void controller_settings() {
-  if (!PRESSED(BUTTON_A) && !PRESSED(BUTTON_B) && !PRESSED(BUTTON_C)) return;
-  activity_timestamp = millis();
-  if (PRESSED(BUTTON_B) && !prev_button_b) {
-    screen = SETTINGS[settings_index].screen;
-  } else {
-    settings_index = (settings_index + ARRAYSIZE(SETTINGS) - BUTTON_SIGN) % ARRAYSIZE(SETTINGS);
-  }
-  render();
-}
-
 void render_wpm() {
   display.println("words per minute");
   display.println(wpm);
@@ -563,7 +469,7 @@ void controller_wpm() {
   activity_timestamp = millis();
 
   if (PRESSED(BUTTON_B) && !prev_button_b) {
-    screen = Screen::SETTINGS;
+    screen = Screen::MENU;
     render();
 
     SdFile wpmf;
@@ -605,16 +511,8 @@ void render_reading() {
   }
   display.println("%");
 
-  frac = battery_volts();
-  pct = floor(frac);
-  display.print(pct);
-  display.print(".");
-  for (int i = 0; i < 2; ++i) {
-    frac = (frac - pct) * 10;
-    pct = floor(frac);
-    display.print(pct);
-  }
-  display.println("V");
+  display.print((int)floor(battery_percent()));
+  display.println("%");
 }
 void controller_reading() {
   if (PRESSED(BUTTON_B)) {
@@ -653,22 +551,22 @@ void controller_reading() {
   // Skip forward/backward a sentence.
   int16_t c = bookf.read();
   if (BUTTON_SIGN < 0) {
-    while ((c >= 0) && !is_punctuation(c)) {
-      bookf.seekSet(max(2, bookf.curPosition()) - 2);
-      if (bookf.curPosition() == 0) break;
-      c = bookf.read();
-    }
-    while ((c >= 0) && is_punctuation(c)) {
-      bookf.seekSet(max(2, bookf.curPosition()) - 2);
-      if (bookf.curPosition() == 0) break;
-      c = bookf.read();
-    }
-    while ((c >= 0) && !is_punctuation(c)) {
-      bookf.seekSet(max(2, bookf.curPosition()) - 2);
-      if (bookf.curPosition() == 0) break;
-      c = bookf.read();
+    for (int i = 0; i < 3; ++i) {
+      while ((c >= 0) && is_punctuation(c)) {
+        bookf.seekSet(max(2, bookf.curPosition()) - 2);
+        if (bookf.curPosition() > 0) break;
+        c = bookf.read();
+      }
+      while ((c >= 0) && !is_punctuation(c)) {
+        bookf.seekSet(max(2, bookf.curPosition()) - 2);
+        if (bookf.curPosition() > 0) break;
+        c = bookf.read();
+      }
     }
   } else {
+    while ((c >= 0) && is_punctuation(c)) {
+      c = bookf.read();
+    }
     while ((c >= 0) && !is_punctuation(c)) {
       c = bookf.read();
     }
@@ -799,7 +697,7 @@ int32_t msc_write_cb(uint32_t lba, uint8_t* buffer, uint32_t bufsize) {
   return bytes_written;
 }
 
-void msc_flush_cb (void) {
+void msc_flush_cb(void) {
 }
 
 #ifdef __arm__
