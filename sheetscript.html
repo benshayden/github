@@ -90,9 +90,9 @@ async function evalScript() {
   for (const kv of window.location.hash.replace(/#/g, '').split('&')) {
     if (!kv) continue;
     if (kv.startsWith('s=')) {
-      sheetIds.append(kv.substr(2));
+      sheetIds.push(kv.substr(2));
     } else if (kv.startsWith('j=')) {
-      jss.append(kv.substr(2));
+      jss.push(kv.substr(2));
     }
   }
 
