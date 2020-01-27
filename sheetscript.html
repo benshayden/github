@@ -29,6 +29,7 @@ function normalPercentile(x, mean=0, stddev=1) {
   return (1.0 + erf((x - mean) / (stddev * Math.sqrt(2.0)))) / 2.0;
 }
 function saferEval(js) {
+  js = decodeURIComponent(js);
   console.log(js);
   const D = document;
   const T = (d) => {
