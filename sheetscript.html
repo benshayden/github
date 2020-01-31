@@ -88,8 +88,10 @@ async function evalScript() {
     return;
   }
 
-  document.getElementById('help').style.display = 'none';
-  document.getElementById('loading').style.display = 'block';
+  const help = document.getElementById('help');
+  if (help) help.style.display = 'none';
+  const loading = document.getElementById('loading');
+  if (loading) loading.style.display = 'block';
 
   const sheets = sheetIds.map(id => new Spreadsheet(id));
   window.sheets = sheets;
