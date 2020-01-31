@@ -4,50 +4,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
-function erf(x) {
-  // save the sign of x
-  // erf(-x) = -erf(x);
-  const sign = (x >= 0) ? 1 : -1;
-  x = Math.abs(x);
-
-  // constants
-  const a1 = 0.254829592;
-  const a2 = -0.284496736;
-  const a3 = 1.421413741;
-  const a4 = -1.453152027;
-  const a5 = 1.061405429;
-  const p = 0.3275911;
-
-  // Abramowitz and Stegun formula 7.1.26
-  // maximum error: 1.5e-7
-  const t = 1.0 / (1.0 + p * x);
-  const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t *
-    Math.exp(-x * x);
-  return sign * y;
-}
-function normalPercentile(x, mean=0, stddev=1) {
-  return (1.0 + erf((x - mean) / (stddev * Math.sqrt(2.0)))) / 2.0;
-}
 function saferEval(js) {
   js = decodeURIComponent(js);
-  console.log(js);
-  const D = document;
-  const T = (d) => {
-    const t = D.createElement('table');
-    D.body.appendChild(t);
-    for (const r of d) {
-      const tr = D.createElement('tr');
-      t.appendChild(tr);
-      for (const c of r) {
-        const td = D.createElement('td');
-        tr.appendChild(td);
-        td.innerHTML = c;
-      }
-    }
-  };
-  const R = () => Math.random();
-  const P = normalPercentile;
-  const L = localStorage;
   eval(js);
 }
 (function() {
@@ -139,9 +97,6 @@ async function evalScript() {
   await Promise.all(sheets.map(s => s.loaded));
 
   document.getElementById('loading').style.display = 'none';
-
-  window.S = sheets.map(s => s.data);
-  if (window.S.length === 1) window.S = window.S[0];
 
   for (const js of jss) saferEval(js);
 }
