@@ -26,11 +26,17 @@ function toggleDone(done) {
     done.onchange({target: done});
   };
 }
+const bundles = {};
+for (let i = 0; i < NUM_PINS; ++i) {
+  bundles[i] = [];
+}
 for (let an = 0; an < NUM_PINS; ++an) {
   for (let cat = 0; cat < NUM_PINS; ++cat) {
     if (an === cat) continue;
 
     const b = charlie(an, cat);
+    bundles[an].push(b + 'a');
+    bundles[cat].push(b + 'c');
 
     let tr = document.createElement('tr');
     table.appendChild(tr);
