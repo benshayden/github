@@ -11,22 +11,31 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   const lon = parseInt(pos.coords.longitude * 10) / 10;
   const cacheKey = `${lat} ${lon}`;
   const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+  const metric = localStorage.getItem('metric') !== null;
   const now = new Date();
-  let result;
-  if (cached && (MS_PER_HOUR > (cached && (now - new Date(cached.ts))))) {
+  let result = {date: now, hours: [], days: [], minima: {}, maxima: {}};
+  if (cached && (MS_PER_HOUR > (cached && (now - new Date(cached.date))))) {
     result = cached.result;
   } else {
-    result = await (await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`)).json();
-    result.uvforecast = (await (await fetch(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}`, {
+    const owm = await (await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`)).json();
+    const uvforecast = (await (await fetch(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}`, {
       headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
     })).json()).result.map(h => ({t: new Date(h.uv_time), uv: h.uv}));
-    localStorage.setItem(cacheKey, JSON.stringify({ts: now, result}));
+    for (let h = now.getHours(); h < 24; ++h) {
+      result.hours[h] = {};
+    }
+    for (let d = 0; d < 5; ++d) {
+      result.days[d] = {};
+    }
+    // TODO {date: iso8601, maxima: {uv, temp, feels, wind, humidity, pressure}, minima: {uv, temp, feels, wind, humidity, pressure}, hours: {n: {uv: i, temp: k, feels: k, wind: ?, humidity: ?, pressure: ?}}, days: {n: {uv: max, temp: [min, max], feels: [min, max], wind: [min, max], humidity: [min, max], pressure: [min, max]}}}
+    localStorage.setItem(cacheKey, JSON.stringify(result));
   }
-  const metric = localStorage.getItem('metric') !== null;
   console.log(result);
   const ctx = canvas.getContext('2d');
 
   for (const k of ['temp', 'feels_like']) {
+    result.maxima[k] = convertTemp(result.maxima[k], metric);
+    result.minima[k] = convertTemp(result.minima[k], metric);
     for (const h of result.hourly) {
       h[k] = convertTemp(h[k], metric);
     }
