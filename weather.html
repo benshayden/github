@@ -129,7 +129,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   
   // TODO draw axes
   
-  for (let h = now.getHours(); h < 20; ++h) {
+  for (let h = now.getHours(); h < 24; ++h) {
     const datum = result.hours[h];
     console.log({h, datum});
     ctx.fillText(h % 12, 0, 20 * (h - now.getHours()));
