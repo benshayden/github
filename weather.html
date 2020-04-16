@@ -17,17 +17,32 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   if (cached && (MS_PER_HOUR > (cached && (now - new Date(cached.date))))) {
     result = cached.result;
   } else {
-    const owm = await (await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`)).json();
-    const uvforecast = (await (await fetch(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}`, {
-      headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
-    })).json()).result.map(h => ({t: new Date(h.uv_time), uv: h.uv}));
+    const [openweathermap, openuv, purpleair] = await Promise.all([
+      fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`)),
+      fetch(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}`, {
+        headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
+      }),
+      // TODO search https://www.purpleair.com/json for lat,lon
+      fetch('https://www.purpleair.com/json?show=37521|40071'),
+    ].map(p => p.then(r => r.json())));
+    console.log({openweathermap, openuv, purpleair});
+
     for (let h = now.getHours(); h < 24; ++h) {
       result.hours[h] = {};
     }
     for (let d = 0; d < 5; ++d) {
       result.days[d] = {};
     }
-    // TODO {date: iso8601, maxima: {uv, temp, feels, wind, humidity, pressure}, minima: {uv, temp, feels, wind, humidity, pressure}, hours: {n: {uv: i, temp: k, feels: k, wind: ?, humidity: ?, pressure: ?}}, days: {n: {uv: max, temp: [min, max], feels: [min, max], wind: [min, max], humidity: [min, max], pressure: [min, max]}}}
+
+    // TODO copy data to result
+
+    for (const datum of openuv) {
+      // TODO adjust for clouds
+      if (!result.hours[datum.t.getHours()]) continue;
+      result.hours[datum.t.getHours()].uv = datum.uv;
+      if (datum.t.getHours() > 20) break;
+    }
+
     localStorage.setItem(cacheKey, JSON.stringify(result));
   }
   console.log(result);
@@ -57,12 +72,6 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       result.minima[k] = Math.min(result.minima[k] || 1000000, h[k]);
     }
     if (h.date.getHours() > 20) break;
-  }
-  for (const datum of result.uvforecast) {
-    // TODO adjust for clouds
-    if (!result.hours[datum.t.getHours()]) continue;
-    result.hours[datum.t.getHours()].uv = datum.uv;
-    if (datum.t.getHours() > 20) break;
   }
   
   // TODO draw axes
