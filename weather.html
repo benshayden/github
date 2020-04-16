@@ -13,6 +13,11 @@ function mean(s) {
   for (const e of s) sum += e;
   return sum / s.length;
 }
+  
+async function fetchJson(url, options) {
+  const response = await fetch(url, options);
+  return await response.json();
+}
 
 navigator.geolocation.getCurrentPosition(async (pos) => {
   const lat = parseInt(pos.coords.latitude * 10) / 10;
@@ -26,12 +31,13 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
     result = cached;
   } else {
     const [openweathermap, openuv, purpleair] = await Promise.all([
-      fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`),
-      fetch(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}`, {
+      fetchJson(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`),
+      Promise.all([0, 1, 2, 3, 4, 5].map(d => fetchJson(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}`, {
         headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
-      }),
-      fetch(`https://www.purpleair.com/data.json?fields=&nwlat=${lat+0.036}&selat=${lat-0.036}&nwlng=${lon+0.07}&selng=${lon-0.07}`),
-    ].map(p => p.then(r => r.json())));
+      })
+      // 1 degree = 69mi
+      fetchJson(`https://www.purpleair.com/data.json?fields=&nwlat=${lat+0.07}&selat=${lat-0.07}&nwlng=${lon+0.07}&selng=${lon-0.07}`),
+    ]);
     console.log({openweathermap, openuv, purpleair});
 
     for (let h = now.getHours(); h < 24; ++h) {
@@ -75,12 +81,17 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       result.maxima.temp = Math.max(result.maxima.temp, target.temp[1]);
     }
 
-    for (const datum of openuv.result) {
+    for (const datum of openuv[0].result) {
       const date = new Date(datum.uv_time);
       if (date.getDate() != now.getDate()) continue;
       if (!result.hours[date.getHours()]) continue;
       // TODO adjust for clouds
       result.hours[date.getHours()].uv = datum.uv;
+    }
+    for (const data of openuv.slice(1).map(r => r.result)) {
+      for (const datum of data) {
+        console.log(datum);
+      }
     }
 
     result.aqi = mean(purpleair.data.map(row => {
@@ -117,13 +128,13 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   for (let h = now.getHours(); h < 20; ++h) {
     const datum = result.hours[h];
     console.log({h, datum});
-    ctx.fillText(h, 0, 20 * (h - now.getHours()));
+    ctx.fillText(h % 12, 0, 20 * (h - now.getHours()));
     // TODO draw tick
   }
   for (let d = 0; d < 5; ++d) {
     const datum = result.days[d];
     console.log({d, datum});
-    ctx.fillText(d, 0, 20 * (d + 20 - now.getHours()));
+    ctx.fillText(datum.date.getDate(), 0, 20 * (d + 20 - now.getHours()));
     // TODO draw tick
   }
 });
