@@ -12,10 +12,6 @@ function mean(s) {
   for (const e of s) sum += e;
   return sum / s.length;
 }
-  
-function getAqi(datum) {
-  return 
-}
 
 navigator.geolocation.getCurrentPosition(async (pos) => {
   const lat = parseInt(pos.coords.latitude * 10) / 10;
@@ -54,7 +50,16 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       result.hours[date.getHours()].uv = datum.uv;
     }
 
-    result.aqi = mean(purpleair.results.map(r => getAqi(r)));
+    result.aqi = mean(purpleair.data.map(row => {
+      const datum = {};
+      for (let i = 0; i < purpleair.fields.length; ++i) {
+        datum[purpleair.fields[i]] = row[i];
+      }
+      return datum;
+    }).filter(datum => datum.Lat !== null && datum.Lon !== null).map(s => {
+      console.log(s);
+      return 0;
+    });
 
     localStorage.setItem(cacheKey, JSON.stringify(result));
   }
