@@ -10,14 +10,14 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   const lat = parseInt(pos.coords.latitude * 10) / 10;
   const lon = parseInt(pos.coords.longitude * 10) / 10;
   const cacheKey = `${lat} ${lon}`;
-  const cached = localStorage.getItem(cacheKey);
+  const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
   const now = new Date();
   let result;
   if (cached && (MS_PER_HOUR > (cached && (now - new Date(cached.ts))))) {
     result = cached.result;
   } else {
     result = await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${APIKEY}`);
-    localStorage.setItem(cacheKey, {ts: now, result});
+    localStorage.setItem(cacheKey, JSON.stringify({ts: now, result}));
   }
   console.log(result);
   const ctx = canvas.getContext('2d');
