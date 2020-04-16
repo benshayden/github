@@ -17,7 +17,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
     result = cached.result;
   } else {
     const [openweathermap, openuv, purpleair] = await Promise.all([
-      fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`)),
+      fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`),
       fetch(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}`, {
         headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
       }),
