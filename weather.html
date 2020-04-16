@@ -92,7 +92,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
     }).filter(datum => datum.Lat !== null && datum.Lon !== null).map(s => {
       console.log(s);
       return 0;
-    });
+    }));
 
     localStorage.setItem(cacheKey, JSON.stringify(result));
   }
