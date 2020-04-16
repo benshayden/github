@@ -16,7 +16,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   if (cached && (MS_PER_HOUR > (cached && (now - new Date(cached.ts))))) {
     result = cached.result;
   } else {
-    result = await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${APIKEY}`);
+    result = await (await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${APIKEY}`)).json();
     localStorage.setItem(cacheKey, JSON.stringify({ts: now, result}));
   }
   console.log(result);
