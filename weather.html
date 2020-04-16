@@ -65,10 +65,19 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
     if (datum.t.getHours() > 20) break;
   }
   
+  // TODO draw axes
+  
   for (let h = now.getHours(); h < 20; ++h) {
     const datum = result.hours[h];
     console.log({h, datum});
     ctx.fillText(h, 0, 20 * (h - now.getHours()));
+    // TODO draw tick
+  }
+  for (let d = 0; d < 5; ++d) {
+    const datum = result.days[d];
+    console.log({d, datum});
+    ctx.fillText(d, 0, 20 * (d + 20 - now.getHours()));
+    // TODO draw tick
   }
 });
 </script>
