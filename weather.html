@@ -39,6 +39,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
 
   result.maxima = {};
   result.minima = {};
+  result.hours = {};
   for (const h of result.hourly) {
     h.date = new Date(h.dt * 1000);
     result.hours[h.date.getHours()] = h;
@@ -52,6 +53,8 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   // TODO adjust uvforecast for clouds
 
   for (let h = now.getHours(); h < 20; ++h) {
+    const datum = result.hours[h];
+    console.log({h, datum});
     ctx.fillText(h, 0, 20 * (h - now.getHours()));
   }
 });
