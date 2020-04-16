@@ -20,7 +20,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
     localStorage.setItem(cacheKey, {ts: now, result});
   }
   console.log(result);
-  const ctx = canvas.getContext()
+  const ctx = canvas.getContext('2d');
   for (let h = now.getHours(); h < 20; ++h) {
     ctx.fillText(h, 0, 20 * (h - now.getHours()));
   }
