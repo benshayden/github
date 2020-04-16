@@ -102,7 +102,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   for (const k of ['temp', 'feels']) {
     result.maxima[k] = convertTemp(result.maxima[k], metric);
     result.minima[k] = convertTemp(result.minima[k], metric);
-    for (const h of result.hours) {
+    for (const h of Object.values(result.hours)) {
       h[k] = convertTemp(h[k], metric);
     }
   }
