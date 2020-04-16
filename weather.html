@@ -2,6 +2,10 @@
 <script>
 const MS_PER_HOUR = 1000 * 60 * 60;
 const APIKEY = '4f7a34d2b44e009df9246dbca025d0b5';
+function convertTemp(k, metric = true) {
+  const c = k - 273.15;
+  return metric ? c : (c * (9 / 5) + 32);
+}
 navigator.geolocation.getCurrentPosition(async (pos) => {
   const lat = parseInt(pos.coords.latitude * 10) / 10;
   const lon = parseInt(pos.coords.longitude * 10) / 10;
