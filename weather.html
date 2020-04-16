@@ -47,8 +47,8 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       const target = result.hours[date.getHours()];
       if (!target) continue;
       Object.assign(target, {
-        temp: convertTemp(datum.temp, metric),
-        feels: convertTemp(datum.feels_like, metric),
+        temp: datum.temp,
+        feels: datum.feels_like,
         clouds: datum.clouds,
         humidity: datum.humidity,
       });
@@ -63,7 +63,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       const target = result.days[parseInt((date - now) / MS_PER_DAY)];
       if (!target) continue;
       Object.assign(target, {
-        temp: [convertTemp(datum.temp.min, metric), convertTemp(datum.temp.max, metric)],
+        temp: [datum.temp.min, datum.temp.max],
         clouds: datum.clouds,
         humidity: datum.humidity,
       });
@@ -99,31 +99,18 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   console.log(result);
   const ctx = canvas.getContext('2d');
 
-  for (const k of ['temp', 'feels_like']) {
+  for (const k of ['temp', 'feels']) {
     result.maxima[k] = convertTemp(result.maxima[k], metric);
     result.minima[k] = convertTemp(result.minima[k], metric);
     for (const h of result.hours) {
       h[k] = convertTemp(h[k], metric);
     }
-    for (const d of result.daily) {
-      for (const x of Object.keys(d[k])) {
-        d[k][x] = convertTemp(d[k][x], metric);
-      }
-    }
   }
-
-  result.maxima = {};
-  result.minima = {};
-  result.hours = {};
-  for (const h of result.hours) {
-    h.date = new Date(h.dt * 1000);
-    result.hours[h.date.getHours()] = h;
-    for (const k of SCALAR_NAMES) {
-      result.maxima[k] = Math.max(result.maxima[k] || 0, h[k]);
-      result.minima[k] = Math.min(result.minima[k] || 1000000, h[k]);
-    }
-    if (h.date.getHours() > 20) break;
+  for (const d of result.days) {
+    d.temp = [convertTemp(d.temp[0], metric), convertTemp(d.temp[1], metric)];
   }
+  
+  console.log(result);
   
   // TODO draw axes
   
