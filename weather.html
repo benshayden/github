@@ -1,7 +1,6 @@
 <canvas id=canvas>
 <script>
 const MS_PER_HOUR = 1000 * 60 * 60;
-const APIKEY = '4f7a34d2b44e009df9246dbca025d0b5';
 function convertTemp(k, metric = true) {
   const c = k - 273.15;
   return metric ? c : (c * (9 / 5) + 32);
@@ -17,7 +16,10 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   if (cached && (MS_PER_HOUR > (cached && (now - new Date(cached.ts))))) {
     result = cached.result;
   } else {
-    result = await (await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${APIKEY}`)).json();
+    result = await (await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`)).json();
+    result.uvforecast = (await (await fetch(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}`, {
+      headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
+    })).json()).result.map(h => ({t: new Date(h.uv_time), uv: h.uv}));
     localStorage.setItem(cacheKey, JSON.stringify({ts: now, result}));
   }
   const metric = localStorage.getItem('metric') !== null;
@@ -46,6 +48,8 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
     }
     if (h.hour > 20) break;
   }
+  
+  // TODO adjust uvforecast for clouds
 
   for (let h = now.getHours(); h < 20; ++h) {
     ctx.fillText(h, 0, 20 * (h - now.getHours()));
