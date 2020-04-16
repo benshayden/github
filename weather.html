@@ -1,6 +1,7 @@
 <canvas id=canvas>
 <script>
 const MS_PER_HOUR = 1000 * 60 * 60;
+const MS_PER_DAY = MS_PER_HOUR * 24;
 
 function convertTemp(k, metric = true) {
   const c = k - 273.15;
@@ -40,7 +41,39 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       result.days[d] = {};
     }
 
-    // TODO copy data to result
+    for (const datum of openweathermap.hourly) {
+      const date = new Date(datum.dt * 1000);
+      if (date.getDate() != now.getDate()) continue;
+      const target = result.hours[date.getHours()];
+      if (!target) continue;
+      Object.assign(target, {
+        temp: convertTemp(datum.temp, metric),
+        feels: convertTemp(datum.feels_like, metric),
+        clouds: datum.clouds,
+        humidity: datum.humidity,
+      });
+      for (const k of Object.keys(target)) {
+        result.minima[k] = Math.min(result.minima[k] || 1000000, target[k]);
+        result.maxima[k] = Math.max(result.maxima[k] || -1000000, target[k]);
+      }
+    }
+    
+    for (const datum of openweathermap.daily) {
+      const date = new Date(datum.dt * 1000);
+      const target = result.days[parseInt((date - now) / MS_PER_DAY)];
+      if (!target) continue;
+      Object.assign(target, {
+        temp: [convertTemp(datum.temp.min, metric), convertTemp(datum.temp.max, metric)],
+        clouds: datum.clouds,
+        humidity: datum.humidity,
+      });
+      for (const k of ['clouds', 'humidity']) {
+        result.minima[k] = Math.min(result.minima[k] || 1000000, target[k]);
+        result.maxima[k] = Math.max(result.maxima[k] || -1000000, target[k]);
+      }
+      result.minima.temp = Math.min(result.minima.temp, target.temp[0]);
+      result.maxima.temp = Math.max(result.maxima.temp, target.temp[1]);
+    }
 
     for (const datum of openuv.result) {
       const date = new Date(datum.uv_time);
