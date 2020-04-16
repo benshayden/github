@@ -94,7 +94,9 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
     }
     for (const data of openuv.slice(1).map(r => r.result)) {
       for (const datum of data) {
-        console.log(datum);
+        const date = new Date(datum.uv_time);
+        const target = result.days[parseInt((date - now) / MS_PER_DAY)];
+        target.uv = Math.max(target.uv || 0, datum.uv);
       }
     }
 
