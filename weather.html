@@ -72,6 +72,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       const target = result.days[parseInt((date - now) / MS_PER_DAY)];
       if (!target) continue;
       Object.assign(target, {
+        date,
         temp: [datum.temp.min, datum.temp.max],
         clouds: datum.clouds,
         humidity: datum.humidity,
