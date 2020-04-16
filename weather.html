@@ -21,9 +21,9 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
   const metric = localStorage.getItem('metric') !== null;
   const now = new Date();
-  let result = {date: now, hours: [], days: [], minima: {}, maxima: {}, aqi: 0};
+  let result = {date: now, hours: {}, days: [], minima: {}, maxima: {}, aqi: 0};
   if (cached && (MS_PER_HOUR > (cached && (now - new Date(cached.date))))) {
-    result = cached.result;
+    result = cached;
   } else {
     const [openweathermap, openuv, purpleair] = await Promise.all([
       fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`),
