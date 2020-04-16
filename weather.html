@@ -47,11 +47,15 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       result.maxima[k] = Math.max(result.maxima[k] || 0, h[k]);
       result.minima[k] = Math.min(result.minima[k] || 1000000, h[k]);
     }
-    if (h.hour > 20) break;
+    if (h.date.getHours() > 20) break;
+  }
+  for (const datum of result.uvforecast) {
+    // TODO adjust for clouds
+    if (!result.hours[datum.t.getHours()]) continue;
+    result.hours[datum.t.getHours()].uv = datum.uv;
+    if (datum.t.getHours() > 20) break;
   }
   
-  // TODO adjust uvforecast for clouds
-
   for (let h = now.getHours(); h < 20; ++h) {
     const datum = result.hours[h];
     console.log({h, datum});
