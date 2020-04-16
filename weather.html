@@ -1,0 +1,24 @@
+<canvas id=canvas>
+<script>
+const MS_PER_HOUR = 1000 * 60 * 60;
+const APIKEY = '4f7a34d2b44e009df9246dbca025d0b5';
+navigator.geolocation.getCurrentPosition(async (pos) => {
+  const lat = parseInt(pos.coords.latitude * 10) / 10;
+  const lon = parseInt(pos.coords.longitude * 10) / 10;
+  const cacheKey = `${lat} ${lon}`;
+  const cached = localStorage.getItem(cacheKey);
+  const now = new Date();
+  let result;
+  if (cached && (MS_PER_HOUR > (cached && (now - new Date(cached.ts))))) {
+    result = cached.result;
+  } else {
+    result = await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${APIKEY}`);
+    localStorage.setItem(cacheKey, {ts: now, result});
+  }
+  console.log(result);
+  const ctx = canvas.getContext()
+  for (let h = now.getHours(); h < 20; ++h) {
+    ctx.fillText(h, 0, 20 * (h - now.getHours()));
+  }
+});
+</script>
