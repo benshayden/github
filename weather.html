@@ -33,8 +33,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       fetch(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}`, {
         headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
       }),
-      // TODO search https://www.purpleair.com/json.data?fields= for lat,lon
-      fetch('https://www.purpleair.com/json?show=37521|40071'),
+      fetch(`https://www.purpleair.com/data.json?fields=&nwlat=${lat+0.036}&selat=${lat-0.036}&nwlng=${lon+0.07}&selng=${lon-0.07}`),
     ].map(p => p.then(r => r.json())));
     console.log({openweathermap, openuv, purpleair});
 
@@ -54,7 +53,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       // TODO adjust for clouds
       result.hours[date.getHours()].uv = datum.uv;
     }
-    
+
     result.aqi = mean(purpleair.results.map(r => getAqi(r)));
 
     localStorage.setItem(cacheKey, JSON.stringify(result));
