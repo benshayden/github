@@ -110,10 +110,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       }
       console.log(datum);
       return datum;
-    }).filter(datum => datum.Lat !== null && datum.Lon !== null && datum.age < 30).map(s => {
-      console.log(s);
-      return 0;
-    }));
+    }).filter(datum => datum.Lat !== null && datum.Lon !== null && datum.age < 30).map(s => s.pm_1 || 0));
 
     localStorage.setItem(cacheKey, JSON.stringify(result));
   }
