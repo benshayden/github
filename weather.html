@@ -42,7 +42,6 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       // 1 degree = 69mi; 5mi = 0.07deg
       fetchJson(`https://www.purpleair.com/data.json?fields=&nwlat=${lat+0.07}&selat=${lat-0.07}&nwlng=${lon+0.07}&selng=${lon-0.07}`),
     ]);
-    console.log({openweathermap, openuv, purpleair});
 
     for (let h = now.getHours(); h < 24; ++h) {
       result.hours[h] = {};
@@ -99,7 +98,6 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
         const date = new Date(datum.uv_time);
         const target = result.days[parseInt((date - now) / MS_PER_DAY)];
         if (!target) continue;
-        console.log(datum.uv, date);
         target.uv = Math.max(target.uv || 0, datum.uv);
       }
     }
@@ -109,6 +107,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       for (let i = 0; i < purpleair.fields.length; ++i) {
         datum[purpleair.fields[i]] = row[i];
       }
+      console.log(datum);
       return datum;
     }).filter(datum => datum.Lat !== null && datum.Lon !== null).map(s => {
       console.log(s);
@@ -117,7 +116,6 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
 
     localStorage.setItem(cacheKey, JSON.stringify(result));
   }
-  console.log(result);
   const ctx = canvas.getContext('2d');
 
   for (const k of ['temp', 'feels']) {
@@ -130,20 +128,16 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   for (const d of result.days) {
     d.temp = [convertTemp(d.temp[0], metric), convertTemp(d.temp[1], metric)];
   }
-  
-  console.log(result);
-  
+
   // TODO draw axes
   
   for (let h = now.getHours(); h < 24; ++h) {
     const datum = result.hours[h];
-    console.log({h, datum});
     ctx.fillText(h % 12, 0, 20 * (h - now.getHours()));
     // TODO draw tick
   }
   for (let d = 0; d < 5; ++d) {
     const datum = result.days[d];
-    console.log({d, datum});
     ctx.fillText(datum.date.getDate(), 0, 20 * (d + 24 - now.getHours()));
     // TODO draw tick
   }
