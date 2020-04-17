@@ -61,7 +61,9 @@ function sweepStorage() {
 }
   
 class Forecast {
-  constructor() {
+  constructor(lat, lon) {
+    this.lat = parseInt(lat * 10) / 10;
+    this.lon = parseInt(lon * 10) / 10;
     this.now = new Date();
     this.hours = {};
     for (let h = now.getHours(); h < 24; ++h) {
@@ -218,9 +220,7 @@ class Forecast {
 }
 
 navigator.geolocation.getCurrentPosition(async (pos) => {
-  const lat = parseInt(pos.coords.latitude * 10) / 10;
-  const lon = parseInt(pos.coords.longitude * 10) / 10;
-  const f = new Forecast(lat, lon);
+  const f = new Forecast(pos.coords.latitude, pos.coords.longitude);
   sweepStorage();
   await f.loaded;
   canvas.width = innerWidth * (devicePixelRatio || 1);
