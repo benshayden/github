@@ -89,14 +89,16 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
     for (const datum of openuv[0].result) {
       const date = new Date(datum.uv_time);
       if (date.getDate() != now.getDate()) continue;
-      if (!result.hours[date.getHours()]) continue;
+      const target = result.hours[date.getHours()];
+      if (!target) continue;
       // TODO adjust for clouds
-      result.hours[date.getHours()].uv = datum.uv;
+      target.uv = datum.uv;
     }
     for (const data of openuv.slice(1).map(r => r.result)) {
       for (const datum of data) {
         const date = new Date(datum.uv_time);
         const target = result.days[parseInt((date - now) / MS_PER_DAY)];
+        if (!target) continue;
         console.log(datum.uv, date);
         target.uv = Math.max(target.uv || 0, datum.uv);
       }
