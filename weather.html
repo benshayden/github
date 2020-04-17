@@ -10,6 +10,7 @@
   }
 </style>
 <canvas id=canvas>
+
 <script>
 const MS_PER_HOUR = 1000 * 60 * 60;
 const MS_PER_DAY = MS_PER_HOUR * 24;
@@ -31,39 +32,64 @@ async function fetchJson(url, options) {
   const response = await fetch(url, options);
   return await response.json();
 }
-
-navigator.geolocation.getCurrentPosition(async (pos) => {
-  const lat = parseInt(pos.coords.latitude * 10) / 10;
-  const lon = parseInt(pos.coords.longitude * 10) / 10;
-  const cacheKey = `${lat} ${lon}`;
-  const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
-  const metric = localStorage.getItem('metric') !== null;
+  
+async function fetchCachedJson(options) {
   const now = new Date();
-  let result = {date: now, hours: {}, days: [], minima: {}, maxima: {}, pm25: 0};
-  if (cached && (MS_PER_HOUR > (cached && (now - new Date(cached.date))))) {
-    result = cached;
-    for (const d of result.days) {
-      d.date = new Date(d.date);
-    }
-  } else {
-    // TODO store weather for 1h, openuv for 24h, purpleair for 30m
-    const [openweathermap, openuv, purpleair] = await Promise.all([
-      fetchJson(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`),
-      Promise.all([0, 1, 2, 3, 4, 5].map(d =>
-        fetchJson(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}&dt=${new Date(now.getTime() + (d * MS_PER_DAY)).toISOString()}`, {
-          headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
-        }))),
-      fetchJson(`https://www.purpleair.com/data.json?fields=pm_1&opt=1/mAQI/a10/cC0&nwlat=${lat+AIR_SENSOR_DEGREES}&selat=${lat-AIR_SENSOR_DEGREES}&nwlng=${lon-AIR_SENSOR_DEGREES}&selng=${lon+AIR_SENSOR_DEGREES}`),
-    ]);
+  const url = options.url;
+  const expiryMs = options.expiryMs;
+  delete options.url;
+  delete options.expiryMs;
 
+  const cached = JSON.parse(localStorage.getItem(url) || 'null');
+  if (cached && ((now - cached.timestamp) < expiryMs) {
+    return cached.response;
+  }
+  const response = await fetchJson(url, options);
+  localStorage.setItem(url, JSON.stringify({timestamp: now.getTime(), response}));
+  return response;
+}
+
+function sweepStorage() {
+  const now = new Date();
+  for (let i = 0; i < localStorage.length; ++i) {
+    const k = localStorage.key(i);
+    const cached = JSON.parse(localStorage.getItem(k));
+    if ((now - cached.timestamp) > expiryMs) {
+      localStorage.removeItem(k);
+    }
+  }
+}
+  
+class Forecast {
+  constructor() {
+    this.now = new Date();
+    this.hours = {};
     for (let h = now.getHours(); h < 24; ++h) {
       result.hours[h] = {};
     }
+    this.days = {};
+    const date = new Date(this.now.toDateString()).getTime();
     for (let d = 0; d < 5; ++d) {
-      result.days[d] = {};
+      result.days[d] = {date: new Date(date + ((d + 1) * MS_PER_DAY))};
     }
-
-    for (const datum of openweathermap.hourly) {
+    this.minima = {};
+    this.maxima = {};
+    this.pm25 = 0;
+    this.weatherLoaded = this.fetchWeather();
+    this.uvLoaded = this.fetchUv();
+    this.airLoaded = this.fetchAir();
+    this.loaded = Promise.all([this.weatherLoaded, this.uvLoaded, this.airLoaded]);
+  }
+  
+  async fetchWeather() {
+    this.addWeather(await fetchCachedJson({
+      url: `https://api.openweathermap.org/data/2.5/onecall?lat=${this.lat}&lon=${this.lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`
+      expiryMs: MS_PER_HOUR,
+    }));
+  }
+  
+  addWeather(w) {
+    for (const datum of w.hourly) {
       const date = new Date(datum.dt * 1000);
       if (date.getDate() != now.getDate()) continue;
       const target = result.hours[date.getHours()];
@@ -80,7 +106,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       }
     }
     
-    for (const datum of openweathermap.daily) {
+    for (const datum of w.daily) {
       const date = new Date(datum.dt * 1000);
       const target = result.days[parseInt((date - now) / MS_PER_DAY)];
       if (!target) continue;
@@ -98,15 +124,38 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       result.maxima.temp = Math.max(result.maxima.temp, target.temp[1]);
     }
 
-    for (const datum of openuv[0].result) {
+    for (const k of ['temp', 'feels']) {
+      result.maxima[k] = convertTemp(result.maxima[k], metric);
+      result.minima[k] = convertTemp(result.minima[k], metric);
+      for (const h of Object.values(result.hours)) {
+        h[k] = convertTemp(h[k], metric);
+      }
+    }
+    for (const d of result.days) {
+      d.temp = [convertTemp(d.temp[0], metric), convertTemp(d.temp[1], metric)];
+    }
+  }
+
+  async fetchUv() {
+    const date = new Date(this.now.toDateString()).getTime();
+    const uvDays = await Promise.all([0, 1, 2, 3, 4, 5].map(d => fetchCachedJson({
+      url: `https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}&dt=${new Date(date + (d * MS_PER_DAY)).toISOString()}`,
+      headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
+      expiryMs: MS_PER_DAY,
+    });
+    await this.weatherLoaded;
+    this.addUv(uvDays);
+  }
+
+  addUv(uv) {
+    for (const datum of uv[0].result) {
       const date = new Date(datum.uv_time);
       if (date.getDate() != now.getDate()) continue;
       const target = result.hours[date.getHours()];
       if (!target) continue;
-      // TODO adjust for clouds: datum.uv *= 1 - (0.7 * clouds);
-      target.uv = datum.uv;
+      target.uv = datum.uv * (1 - (0.7 * ((target.clouds || 0) / 100));
     }
-    for (const data of openuv.slice(1).map(r => r.result)) {
+    for (const data of uv.slice(1).map(r => r.result)) {
       for (const datum of data) {
         const date = new Date(datum.uv_time);
         const target = result.days[parseInt((date - now) / MS_PER_DAY)];
@@ -114,58 +163,68 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
         target.uv = Math.max(target.uv || 0, datum.uv);
       }
     }
+  }
 
+  async fetchAir() {
+    const minlat = this.lat - AIR_SENSOR_DEGREES;
+    const maxlat = this.lat + AIR_SENSOR_DEGREES;
+    const minlon = this.lon - AIR_SENSOR_DEGREES;
+    const maxlon = this.lon + AIR_SENSOR_DEGREES;
+    this.addAir(await fetchCachedJson({
+      url: `https://www.purpleair.com/data.json?fields=pm_1&opt=1/mAQI/a10/cC0&nwlat=${maxlat}&selat=${minlat}&nwlng=${minlon}&selng=${maxlon}`,
+      expiryMs: MS_PER_HOUR / 2,
+    }));
+  }
+
+  addAir(a) {
     // Mean particulate mass < 2.5um in ug/m^3.
-    result.pm25 = mean(purpleair.data.map(row => {
+    this.pm25 = mean(a.data.map(row => {
       const datum = {};
-      for (let i = 0; i < purpleair.fields.length; ++i) {
-        datum[purpleair.fields[i]] = row[i];
+      for (let i = 0; i < a.fields.length; ++i) {
+        datum[a.fields[i]] = row[i];
       }
       return datum;
     }).filter(datum => datum.Lat !== null && datum.Lon !== null && datum.age < 30).map(s => s.pm_1 || 0));
-
-    localStorage.setItem(cacheKey, JSON.stringify(result));
+  }
+  
+  draw(ctx) {
+    this.drawAxes(ctx);
+    this.drawHours(ctx);
+    this.drawDays(ctx);
+    // TODO display purple air button when pm25 > 10
   }
 
-  for (const k of ['temp', 'feels']) {
-    result.maxima[k] = convertTemp(result.maxima[k], metric);
-    result.minima[k] = convertTemp(result.minima[k], metric);
-    for (const h of Object.values(result.hours)) {
-      h[k] = convertTemp(h[k], metric);
+  drawAxes(ctx) {
+    // TODO
+  }
+
+  drawHours(ctx) {
+    for (let h = now.getHours(); h < 24; ++h) {
+      const datum = result.hours[h];
+      ctx.fillText(h % 12, 0, 20 * (h - now.getHours()));
+      ctx.moveTo(20, 20 * (h - now.getHours()));
+      ctx.lineTo(20, canvas.width - 20);
     }
   }
-  for (const d of result.days) {
-    d.temp = [convertTemp(d.temp[0], metric), convertTemp(d.temp[1], metric)];
-  }
 
+  drawDays(ctx) {
+    for (let d = 0; d < 5; ++d) {
+      const datum = this.days[d];
+      ctx.fillText(datum.date.getDate(), 0, 20 * (d + 24 - now.getHours()));
+      ctx.moveTo(20, 20 * (d + 24 - now.getHours()));
+      ctx.lineTo(20, canvas.width - 20);
+    }
+  }
+}
+
+navigator.geolocation.getCurrentPosition(async (pos) => {
+  const lat = parseInt(pos.coords.latitude * 10) / 10;
+  const lon = parseInt(pos.coords.longitude * 10) / 10;
+  const f = new Forecast(lat, lon);
+  sweepStorage();
+  await f.loaded;
   canvas.width = innerWidth * (devicePixelRatio || 1);
   canvas.height = innerHeight * (devicePixelRatio || 1);
-  const ctx = canvas.getContext('2d');
-
-  drawAxes(result, ctx);
-  drawHours(result, ctx);
-  drawDays(result, ctx);
-  // TODO display purple air button when pm25 > 10
+  f.draw(canvas.getContext('2d'));
 });
-
-function drawAxes(result, ctx) {
-}
-
-function drawHours(result, ctx) {
-  for (let h = now.getHours(); h < 24; ++h) {
-    const datum = result.hours[h];
-    ctx.fillText(h % 12, 0, 20 * (h - now.getHours()));
-    ctx.moveTo(20, 20 * (h - now.getHours()));
-    ctx.lineTo(20, canvas.width - 20);
-  }
-}
-  
-function drawDays(result, ctx) {
-  for (let d = 0; d < 5; ++d) {
-    const datum = result.days[d];
-    ctx.fillText(datum.date.getDate(), 0, 20 * (d + 24 - now.getHours()));
-    ctx.moveTo(20, 20 * (d + 24 - now.getHours()));
-    ctx.lineTo(20, canvas.width - 20);
-  }
-}
 </script>
