@@ -35,10 +35,11 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   } else {
     const [openweathermap, openuv, purpleair] = await Promise.all([
       fetchJson(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`),
-      Promise.all([0, 1, 2, 3, 4, 5].map(d => fetchJson(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}&dt=${new Date(now + (d * MS_PER_DAY)).toISOString()}`, {
-        headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
-      }))),
-      // 1 degree = 69mi
+      Promise.all([0, 1, 2, 3, 4, 5].map(d =>
+        fetchJson(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}&dt=${new Date(now.getTime() + (d * MS_PER_DAY)).toISOString()}`, {
+          headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
+        }))),
+      // 1 degree = 69mi; 5mi = 0.07deg
       fetchJson(`https://www.purpleair.com/data.json?fields=&nwlat=${lat+0.07}&selat=${lat-0.07}&nwlng=${lon+0.07}&selng=${lon-0.07}`),
     ]);
     console.log({openweathermap, openuv, purpleair});
