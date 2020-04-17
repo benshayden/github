@@ -28,7 +28,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
   const metric = localStorage.getItem('metric') !== null;
   const now = new Date();
-  let result = {date: now, hours: {}, days: [], minima: {}, maxima: {}, aqi: 0};
+  let result = {date: now, hours: {}, days: [], minima: {}, maxima: {}, pm25: 0};
   if (cached && (MS_PER_HOUR > (cached && (now - new Date(cached.date))))) {
     result = cached;
     for (const d of result.days) {
@@ -103,7 +103,8 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       }
     }
 
-    result.aqi = mean(purpleair.data.map(row => {
+    // Mean particulate mass < 2.5um in ug/m^3.
+    result.pm25 = mean(purpleair.data.map(row => {
       const datum = {};
       for (let i = 0; i < purpleair.fields.length; ++i) {
         datum[purpleair.fields[i]] = row[i];
@@ -139,5 +140,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
     ctx.fillText(datum.date.getDate(), 0, 20 * (d + 24 - now.getHours()));
     // TODO draw tick
   }
+
+  // TODO display purple air button when pm25 > 10
 });
 </script>
