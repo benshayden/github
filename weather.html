@@ -96,6 +96,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       for (const datum of data) {
         const date = new Date(datum.uv_time);
         const target = result.days[parseInt((date - now) / MS_PER_DAY)];
+        console.log(datum.uv, date);
         target.uv = Math.max(target.uv || 0, datum.uv);
       }
     }
