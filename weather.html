@@ -42,6 +42,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       d.date = new Date(d.date);
     }
   } else {
+    // TODO store weather for 1h, openuv for 24h, purpleair for 30m
     const [openweathermap, openuv, purpleair] = await Promise.all([
       fetchJson(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`),
       Promise.all([0, 1, 2, 3, 4, 5].map(d =>
