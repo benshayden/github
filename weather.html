@@ -41,7 +41,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
         fetchJson(`https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}&dt=${new Date(now.getTime() + (d * MS_PER_DAY)).toISOString()}`, {
           headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
         }))),
-      fetchJson(`https://www.purpleair.com/data.json?fields=&nwlat=${lat+AIR_SENSOR_DEGREES}&selat=${lat-AIR_SENSOR_DEGREES}&nwlng=${lon+AIR_SENSOR_DEGREES}&selng=${lon-AIR_SENSOR_DEGREES}`),
+      fetchJson(`https://www.purpleair.com/data.json?fields=&nwlat=${lat+AIR_SENSOR_DEGREES}&selat=${lat-AIR_SENSOR_DEGREES}&nwlng=${lon-AIR_SENSOR_DEGREES}&selng=${lon+AIR_SENSOR_DEGREES}`),
     ]);
 
     for (let h = now.getHours(); h < 24; ++h) {
