@@ -222,9 +222,9 @@ class Forecast {
 navigator.geolocation.getCurrentPosition(async (pos) => {
   const f = new Forecast(pos.coords.latitude, pos.coords.longitude);
   sweepStorage();
-  await f.loaded;
   canvas.width = innerWidth * (devicePixelRatio || 1);
   canvas.height = innerHeight * (devicePixelRatio || 1);
+  await f.loaded;
   f.draw(canvas.getContext('2d'));
 });
 </script>
