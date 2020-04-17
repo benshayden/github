@@ -140,7 +140,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   for (let d = 0; d < 5; ++d) {
     const datum = result.days[d];
     console.log({d, datum});
-    ctx.fillText(datum.date.getDate(), 0, 20 * (d + 20 - now.getHours()));
+    ctx.fillText(datum.date.getDate(), 0, 20 * (d + 24 - now.getHours()));
     // TODO draw tick
   }
 });
