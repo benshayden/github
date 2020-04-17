@@ -1,3 +1,10 @@
+<!doctype html>
+<title>weather</title>
+<style>
+  body {
+    margin: 0;
+  }
+</style>
 <canvas id=canvas>
 <script>
 const MS_PER_HOUR = 1000 * 60 * 60;
@@ -109,13 +116,11 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       for (let i = 0; i < purpleair.fields.length; ++i) {
         datum[purpleair.fields[i]] = row[i];
       }
-      console.log(datum);
       return datum;
     }).filter(datum => datum.Lat !== null && datum.Lon !== null && datum.age < 30).map(s => s.pm_1 || 0));
 
     localStorage.setItem(cacheKey, JSON.stringify(result));
   }
-  const ctx = canvas.getContext('2d');
 
   for (const k of ['temp', 'feels']) {
     result.maxima[k] = convertTemp(result.maxima[k], metric);
@@ -127,6 +132,10 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   for (const d of result.days) {
     d.temp = [convertTemp(d.temp[0], metric), convertTemp(d.temp[1], metric)];
   }
+
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  const ctx = canvas.getContext('2d');
 
   // TODO draw axes
   
