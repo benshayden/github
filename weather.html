@@ -4,6 +4,10 @@
   body {
     margin: 0;
   }
+  canvas {
+    width: 100%;
+    height: 100%;
+  }
 </style>
 <canvas id=canvas>
 <script>
@@ -99,7 +103,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
       if (date.getDate() != now.getDate()) continue;
       const target = result.hours[date.getHours()];
       if (!target) continue;
-      // TODO adjust for clouds
+      // TODO adjust for clouds: datum.uv *= 1 - (0.7 * clouds);
       target.uv = datum.uv;
     }
     for (const data of openuv.slice(1).map(r => r.result)) {
@@ -134,23 +138,34 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
     d.temp = [convertTemp(d.temp[0], metric), convertTemp(d.temp[1], metric)];
   }
 
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
+  canvas.width = innerWidth * (devicePixelRatio || 1);
+  canvas.height = innerHeight * (devicePixelRatio || 1);
   const ctx = canvas.getContext('2d');
 
-  // TODO draw axes
-  
+  drawAxes(result, ctx);
+  drawHours(result, ctx);
+  drawDays(result, ctx);
+  // TODO display purple air button when pm25 > 10
+});
+
+function drawAxes(result, ctx) {
+}
+
+function drawHours(result, ctx) {
   for (let h = now.getHours(); h < 24; ++h) {
     const datum = result.hours[h];
     ctx.fillText(h % 12, 0, 20 * (h - now.getHours()));
-    // TODO draw tick
+    ctx.moveTo(20, 20 * (h - now.getHours()));
+    ctx.lineTo(20, canvas.width - 20);
   }
+}
+  
+function drawDays(result, ctx) {
   for (let d = 0; d < 5; ++d) {
     const datum = result.days[d];
     ctx.fillText(datum.date.getDate(), 0, 20 * (d + 24 - now.getHours()));
-    // TODO draw tick
+    ctx.moveTo(20, 20 * (d + 24 - now.getHours()));
+    ctx.lineTo(20, canvas.width - 20);
   }
-
-  // TODO display purple air button when pm25 > 10
-});
+}
 </script>
