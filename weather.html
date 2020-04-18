@@ -41,7 +41,7 @@ async function fetchCachedJson(options) {
   delete options.expiryMs;
 
   const cached = JSON.parse(localStorage.getItem(url) || 'null');
-  if (cached && ((now - cached.timestamp) < expiryMs) {
+  if (cached && ((now - cached.timestamp) < expiryMs)) {
     return cached.response;
   }
   const response = await fetchJson(url, options);
