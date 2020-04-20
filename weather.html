@@ -144,7 +144,7 @@ class Forecast {
       url: `https://api.openuv.io/api/v1/forecast?lat=${lat}&lng=${lon}&dt=${new Date(date + (d * MS_PER_DAY)).toISOString()}`,
       headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
       expiryMs: MS_PER_DAY,
-    }));
+    })));
     await this.weatherLoaded;
     this.addUv(uvDays);
   }
