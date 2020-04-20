@@ -85,7 +85,7 @@ class Forecast {
   
   async fetchWeather() {
     this.addWeather(await fetchCachedJson({
-      url: `https://api.openweathermap.org/data/2.5/onecall?lat=${this.lat}&lon=${this.lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`
+      url: `https://api.openweathermap.org/data/2.5/onecall?lat=${this.lat}&lon=${this.lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`,
       expiryMs: MS_PER_HOUR,
     }));
   }
