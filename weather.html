@@ -41,11 +41,12 @@ async function fetchCachedJson(options) {
   delete options.expiryMs;
 
   const cached = JSON.parse(localStorage.getItem(url) || 'null');
-  if (cached && ((now - cached.timestamp) < expiryMs)) {
+  if (cached && (now < cached.expires)) {
     return cached.response;
   }
   const response = await fetchJson(url, options);
-  localStorage.setItem(url, JSON.stringify({timestamp: now.getTime(), response}));
+  const expires = now.getTime() + expiryMs;
+  localStorage.setItem(url, JSON.stringify({expires, response}));
   return response;
 }
 
@@ -54,7 +55,7 @@ function sweepStorage() {
   for (let i = 0; i < localStorage.length; ++i) {
     const k = localStorage.key(i);
     const cached = JSON.parse(localStorage.getItem(k));
-    if ((now - cached.timestamp) > expiryMs) {
+    if (now > cached.expires) {
       localStorage.removeItem(k);
     }
   }
@@ -93,7 +94,7 @@ class Forecast {
   addWeather(w) {
     for (const datum of w.hourly) {
       const date = new Date(datum.dt * 1000);
-      if (date.getDate() != now.getDate()) continue;
+      if (date.getDate() != this.now.getDate()) continue;
       const target = this.hours[date.getHours()];
       if (!target) continue;
       Object.assign(target, {
