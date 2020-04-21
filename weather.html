@@ -66,6 +66,7 @@ class Forecast {
     this.lat = parseInt(lat * 10) / 10;
     this.lon = parseInt(lon * 10) / 10;
     this.now = new Date();
+    this.metric = localStorage.get('metric') !== null;
     this.hours = {};
     for (let h = this.now.getHours(); h < 24; ++h) {
       this.hours[h] = {};
@@ -128,14 +129,14 @@ class Forecast {
     }
 
     for (const k of ['temp', 'feels']) {
-      this.maxima[k] = convertTemp(this.maxima[k], metric);
-      this.minima[k] = convertTemp(this.minima[k], metric);
+      this.maxima[k] = convertTemp(this.maxima[k], this.metric);
+      this.minima[k] = convertTemp(this.minima[k], this.metric);
       for (const h of Object.values(this.hours)) {
-        h[k] = convertTemp(h[k], metric);
+        h[k] = convertTemp(h[k], this.metric);
       }
     }
     for (const d of this.days) {
-      d.temp = [convertTemp(d.temp[0], metric), convertTemp(d.temp[1], metric)];
+      d.temp = [convertTemp(d.temp[0], this.metric), convertTemp(d.temp[1], this.metric)];
     }
   }
 
