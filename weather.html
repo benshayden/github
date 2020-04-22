@@ -240,7 +240,7 @@ class Forecast {
     let x = 70 + ((canvas.width - 70 - 70) * (this.hours[this.now.getHours()].temp - this.minima.temp) / (this.maxima.temp - this.minima.temp))
     ctx.moveTo(x, y);
     for (let h = this.now.getHours() + 1; h < 24; ++h) {
-      x = 70 + ((canvas.width - 70 - 70) * (this.hours[h].temp - this.minima.temp) / (this.maxima.temp - this.minima.temp))
+      x = 70 + ((canvas.width - 70 - 70) * (this.hours[h].temp - this.minima.temp) / (this.maxima.temp - this.minima.temp));
       y += 50;
       ctx.lineTo(x, y);
     }
@@ -256,6 +256,17 @@ class Forecast {
       ctx.beginPath();
       ctx.moveTo(70, y - 20);
       ctx.lineTo(canvas.width - 70, y - 20);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = '#000000';
+    for (let d = 0; d < 5; ++d) {
+      const datum = this.days[d];
+      const y = 120 + (50 * (d + 24 - this.now.getHours())) - 40;
+      const x = 70 + ((canvas.width - 70 - 70) * (datum.temp[0] - this.minima.temp) / (this.maxima.temp - this.minima.temp));
+      const w = 70 + ((canvas.width - 70 - 70) * (datum.temp[1] - this.minima.temp) / (this.maxima.temp - this.minima.temp)) - x;
+      ctx.beginPath();
+      ctx.rect(x, y, w, 30);
       ctx.stroke();
     }
   }
