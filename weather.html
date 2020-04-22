@@ -218,8 +218,8 @@ class Forecast {
   drawDays(ctx) {
     for (let d = 0; d < 5; ++d) {
       const datum = this.days[d];
-      ctx.fillText(datum.date.getDate(), 0, 20 * (d + 24 - this.now.getDate()));
-      ctx.moveTo(20, 20 * (d + 24 - this.now.getDate()));
+      ctx.fillText(datum.date.getDate(), 0, 20 * (d + 24 - this.now.getHours()));
+      ctx.moveTo(20, 20 * (d + 24 - this.now.getHours()));
       ctx.lineTo(20, canvas.width - 20);
     }
   }
