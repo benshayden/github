@@ -254,7 +254,7 @@ class Forecast {
     ctx.strokeStyle = '#888888';
     for (let d = 0; d < 5; ++d) {
       const datum = this.days[d];
-      const y = 120 + (50 * (d + 24 - this.now.getHours()));
+      const y = 170 + (50 * (d + 24 - this.now.getHours()));
       ctx.fillText(datum.date.getDate(), 60, y);
       ctx.beginPath();
       ctx.moveTo(70, y - 20);
@@ -265,7 +265,7 @@ class Forecast {
     ctx.strokeStyle = '#000000';
     for (let d = 0; d < 5; ++d) {
       const datum = this.days[d];
-      const y = 120 + (50 * (d + 24 - this.now.getHours())) - 40;
+      const y = 170 + (50 * (d + 24 - this.now.getHours())) - 30;
       const x = 70 + ((canvas.width - 70 - 70) * (datum.temp[0] - this.minima.temp) / (this.maxima.temp - this.minima.temp));
       const w = 70 + ((canvas.width - 70 - 70) * (datum.temp[1] - this.minima.temp) / (this.maxima.temp - this.minima.temp)) - x;
       ctx.beginPath();
