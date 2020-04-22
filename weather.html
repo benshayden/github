@@ -230,10 +230,6 @@ class Forecast {
     for (let uvi = 1; uvi < 12; uvi++) {
       const x = 70 + ((canvas.width - 70 - 70) * uvi / 12);
       ctx.fillText(uvi, x, 100);
-      ctx.beginPath();
-      ctx.moveTo(x, 140);
-      ctx.lineTo(x, canvas.height);
-      ctx.stroke();
     }
     
     ctx.strokeStyle = '#000000';
