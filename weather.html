@@ -284,6 +284,7 @@ class Forecast {
     }
     
     ctx.strokeStyle = '#ff00ff';
+    ctx.beginPath();
     for (let d = 0; d < 5; ++d) {
       const datum = this.days[d];
       const y = 170 + (50 * (d + 24 - this.now.getHours())) - 30 - 15;
