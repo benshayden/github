@@ -240,10 +240,22 @@ class Forecast {
     ctx.strokeStyle = '#000000';
     ctx.beginPath();
     let y = 100;
-    let x = 70 + ((canvas.width - 70 - 70) * (this.hours[this.now.getHours()].temp - this.minima.temp) / (this.maxima.temp - this.minima.temp))
+    let x = 70 + ((canvas.width - 70 - 70) * (this.hours[this.now.getHours()].temp - this.minima.temp) / (this.maxima.temp - this.minima.temp));
     ctx.moveTo(x, y);
     for (let h = this.now.getHours() + 1; h < 24; ++h) {
       x = 70 + ((canvas.width - 70 - 70) * (this.hours[h].temp - this.minima.temp) / (this.maxima.temp - this.minima.temp));
+      y += 50;
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    
+    ctx.strokeStyle = '#ff00ff';
+    ctx.beginPath();
+    let y = 100;
+    let x = 70 + ((canvas.width - 70 - 70) * this.hours[this.now.getHours()].uv / 12);
+    ctx.moveTo(x, y);
+    for (let h = this.now.getHours() + 1; h < 24; ++h) {
+      x = 70 + ((canvas.width - 70 - 70) * this.hours[h].uv / 12);
       y += 50;
       ctx.lineTo(x, y);
     }
@@ -270,20 +282,35 @@ class Forecast {
       const w = 70 + ((canvas.width - 70 - 70) * (datum.temp[1] - this.minima.temp) / (this.maxima.temp - this.minima.temp)) - x;
       ctx.fillRect(x, y, w, 30);
     }
+    
+    ctx.strokeStyle = '#ff00ff';
+    for (let d = 0; d < 5; ++d) {
+      const y = 170 + (50 * (d + 24 - this.now.getHours())) - 30 - 15;
+      const x = 70 + ((canvas.width - 70 - 70) * datum.uv / 12) - 15;
+      ctx.moveTo(x,y+15);
+      ctx.lineTo(x+30,y+15);
+      ctx.moveTo(x+15,y);
+      ctx.lineTo(15,y+30);
+      ctx.moveTo(x+5,y+5);
+      ctx.lineTo(x+25,y+25);
+      ctx.moveTo(x+25,y+5);
+      ctx.lineTo(x+5,y+25);
+    }
+    ctx.stroke();
   }
 }
 
 console.log('geolocating');
 navigator.geolocation.getCurrentPosition(async (pos) => {
   console.log(pos.coords);
-  const f = new Forecast(pos.coords.latitude, pos.coords.longitude);
+  window.forecast = new Forecast(pos.coords.latitude, pos.coords.longitude);
   sweepStorage();
   canvas.width = innerWidth * (devicePixelRatio || 1);
   canvas.height = innerHeight * (devicePixelRatio || 1);
   canvas.style.width = innerWidth + 'px';
   canvas.style.height = innerHeight + 'px';
-  await f.loaded;
+  await window.forecast.loaded;
   console.log('loaded, drawing')
-  f.draw(canvas.getContext('2d'));
+  window.forecast.draw(canvas.getContext('2d'));
 });
 </script>
