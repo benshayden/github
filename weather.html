@@ -179,7 +179,7 @@ class Forecast {
     const minlon = this.lon - AIR_SENSOR_DEGREES;
     const maxlon = this.lon + AIR_SENSOR_DEGREES;
     this.addAir(await fetchCachedJson({
-      url: `https://www.purpleair.com/data.json?fields=pm_1&opt=1/mAQI/a10/cC0&nwlat=${maxlat}&selat=${minlat}&nwlng=${minlon}&selng=${maxlon}`,
+      url: `https://www.purpleair.com/data.json?opt=1/mAQI/a10/cC0&fetch=true&nwlat=${maxlat}&selat=${minlat}&nwlng=${minlon}&selng=${maxlon}&fields=pm_1`,
       expiryMs: MS_PER_HOUR / 2,
     }));
   }
