@@ -3,6 +3,7 @@
 <style>
   body {
     margin: 0;
+    overflow: hidden;
   }
 </style>
 <canvas id=canvas></canvas>
@@ -223,7 +224,7 @@ class Forecast {
     ctx.textAlign = 'right';
     ctx.fillText(String.fromCharCode(0xb0) + (this.metric ? 'C' : 'F'), canvas.width - 10, 50);
 
-    ctx.strokeStyle = ctx.fillStyle = '#ff88ff';
+    ctx.strokeStyle = ctx.fillStyle = '#ff00ff';
     ctx.fillText('UV', canvas.width - 10, 100);
     
     ctx.textAlign = 'center';
