@@ -152,20 +152,18 @@ class Forecast {
   }
 
   addUv(uv) {
-    for (const datum of uv[0].result) {
-      const date = new Date(datum.uv_time);
-      console.log(date.getDate(), this.now.getDate(), this.hours[date.getHours()], datum.uv);
-      if (date.getDate() != this.now.getDate()) continue;
-      const target = this.hours[date.getHours()];
-      if (!target) continue;
-      target.uv = datum.uv * (1 - (0.7 * ((target.clouds || 0) / 100)));
-    }
-    for (const data of uv.slice(1).map(r => r.result)) {
-      for (const datum of data) {
-        const date = new Date(datum.uv_time);
-        const target = this.days[parseInt((date - this.now) / MS_PER_DAY)];
-        if (!target) continue;
-        target.uv = Math.max(target.uv || 0, datum.uv);
+    for (const dayDatum of uv) {
+      for (const hourDatum of dayDatum.result) {
+        const date = new Date(hourDatum.uv_time);
+        if (date.getDate() === this.now.getDate()) {
+          const target = this.hours[date.getHours()];
+          console.log('addUv hour', hourDatum.uv_time, hourDatum.uv, target);
+          if (!target) continue;
+        } else if (date > this.now) {
+          const target = this.days[parseInt((date - this.now) / MS_PER_DAY)];
+          console.log('addUv day', hourDatum.uv_time, hourDatum.uv, target);
+          if (!target) continue;
+        }
       }
     }
   }
