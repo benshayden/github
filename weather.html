@@ -42,9 +42,13 @@ async function fetchCachedJson(options) {
 
   const cached = JSON.parse(localStorage.getItem(url) || 'null');
   if (cached && (now < cached.expires)) {
+    console.log('cachehit', url, cached.response);
     return cached.response;
   }
+
+  console.log('fetching', url);
   const response = await fetchJson(url, options);
+  console.log('received', url, response.length);
   const expires = now.getTime() + expiryMs;
   localStorage.setItem(url, JSON.stringify({expires, response}));
   return response;
@@ -227,6 +231,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   canvas.width = innerWidth * (devicePixelRatio || 1);
   canvas.height = innerHeight * (devicePixelRatio || 1);
   await f.loaded;
+  console.log('loaded, drawing')
   f.draw(canvas.getContext('2d'));
 });
 </script>
