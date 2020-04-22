@@ -194,22 +194,38 @@ class Forecast {
   draw(ctx) {
     ctx.font = '40px Helvetica';
     ctx.lineWidth = 1;
-    ctx.textAlign = 'right';
     ctx.strokeStyle = '#888888';
+    ctx.textAlign = 'center';
     this.drawAxes(ctx);
+    ctx.textAlign = 'right';
     this.drawHours(ctx);
     this.drawDays(ctx);
     // TODO display purple air button when pm25 > 10
   }
 
   drawAxes(ctx) {
-    // TODO
+    let minTempTick = 10 + (10 * parseInt(this.minima.temp / 10));
+    let maxTempTick = 10 * parseInt(this.maxima.temp / 10);
+    let dTempTick = 10;
+    if (minTempTick === maxTempTick) {
+      minTempTick = 2 + (2 * parseInt(this.minima.temp / 2));
+      maxTempTick = 2 * parseInt(this.maxima.temp / 2);
+      dTempTick = 2;
+    }
+    for (let tick = minTempTick; tick <= maxTempTick; tick += dTempTick) {
+      const x = 70 + ((canvas.width - 70 - 70) * (tick - this.minima.temp) / (this.maxima.temp - this.minima.temp));
+      ctx.fillText(tick, x, 50);
+      ctx.beginPath();
+      ctx.moveTo(x, 70);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
   }
 
   drawHours(ctx) {
     for (let h = this.now.getHours(); h < 24; ++h) {
       const datum = this.hours[h];
-      const y = 50 * (h - this.now.getHours());
+      const y = 120 + (50 * (h - this.now.getHours()));
       ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 60, y);
       ctx.beginPath();
       ctx.moveTo(70, y - 20);
@@ -221,7 +237,7 @@ class Forecast {
   drawDays(ctx) {
     for (let d = 0; d < 5; ++d) {
       const datum = this.days[d];
-      const y = 50 * (d + 24 - this.now.getHours());
+      const y = 120 + (50 * (d + 24 - this.now.getHours()));
       ctx.fillText(datum.date.getDate(), 60, y);
       ctx.beginPath();
       ctx.moveTo(70, y - 20);
