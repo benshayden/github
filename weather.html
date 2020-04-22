@@ -220,7 +220,7 @@ class Forecast {
       const x = 70 + ((canvas.width - 70 - 70) * (tick - this.minima.temp) / (this.maxima.temp - this.minima.temp));
       ctx.fillText(tick, x, 50);
       ctx.beginPath();
-      ctx.moveTo(x, 140);
+      ctx.moveTo(x, 130);
       ctx.lineTo(x, canvas.height);
       ctx.stroke();
     }
