@@ -220,6 +220,9 @@ class Forecast {
       ctx.lineTo(x, canvas.height);
       ctx.stroke();
     }
+    
+    ctx.textAlign = 'right';
+    ctx.fillText(String.fromCharCode(0xb0) + (metric ? 'C' : 'F'), canvas.width - 10, 70);
   }
 
   drawHours(ctx) {
