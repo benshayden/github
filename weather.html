@@ -158,7 +158,7 @@ class Forecast {
   addUv(uv) {
     for (const datum of uv[0].result) {
       const date = new Date(datum.uv_time);
-      if (date.getDate() != now.getDate()) continue;
+      if (date.getDate() != this.now.getDate()) continue;
       const target = this.hours[date.getHours()];
       if (!target) continue;
       target.uv = datum.uv * (1 - (0.7 * ((target.clouds || 0) / 100)));
@@ -166,7 +166,7 @@ class Forecast {
     for (const data of uv.slice(1).map(r => r.result)) {
       for (const datum of data) {
         const date = new Date(datum.uv_time);
-        const target = this.days[parseInt((date - now) / MS_PER_DAY)];
+        const target = this.days[parseInt((date - this.now) / MS_PER_DAY)];
         if (!target) continue;
         target.uv = Math.max(target.uv || 0, datum.uv);
       }
