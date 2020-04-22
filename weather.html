@@ -12,6 +12,9 @@ const MS_PER_HOUR = 1000 * 60 * 60;
 const MS_PER_DAY = MS_PER_HOUR * 24;
 const AIR_SENSOR_MILES = 5;
 const AIR_SENSOR_DEGREES = parseInt((AIR_SENSOR_MILES * 360 / 24901) * 10000) / 10000;
+const FONT_PX = 40;
+const LINE_HEIGHT_PX = 50;
+const Y_AXIS_PX = 70;
 
 function convertTemp(k, metric = true) {
   const c = k - 273.15;
@@ -224,6 +227,17 @@ class Forecast {
     
     ctx.textAlign = 'right';
     ctx.fillText(String.fromCharCode(0xb0) + (this.metric ? 'C' : 'F'), canvas.width - 10, 50);
+
+    ctx.strokeStyle = ctx.fillStyle = '#ff00ff';
+    for (let uvi = 1; uvi <= 12; uvi++) {
+      const x = 70 + ((canvas.width - 70 - 70) * uvi / 12);
+      ctx.fillText(uvi, x, 100);
+      ctx.beginPath();
+      ctx.moveTo(x, 70);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    ctx.stroke();
   }
 
   drawHours(ctx) {
