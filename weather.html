@@ -208,13 +208,13 @@ class Forecast {
 
   drawAxes(ctx) {
     ctx.strokeStyle = '#888888';
-    let minTempTick = 10 + (10 * parseInt(this.minima.temp / 10));
-    let maxTempTick = 10 * parseInt(this.maxima.temp / 10);
-    let dTempTick = 10;
+    let dTempTick = 5;
+    let minTempTick = dTempTick + (dTempTick * parseInt(this.minima.temp / dTempTick));
+    let maxTempTick = dTempTick * parseInt(this.maxima.temp / dTempTick);
     if (minTempTick === maxTempTick) {
-      minTempTick = 2 + (2 * parseInt(this.minima.temp / 2));
-      maxTempTick = 2 * parseInt(this.maxima.temp / 2);
       dTempTick = 2;
+      minTempTick = dTempTick + (dTempTick * parseInt(this.minima.temp / dTempTick));
+      maxTempTick = dTempTick * parseInt(this.maxima.temp / dTempTick);
     }
     for (let tick = minTempTick; tick <= maxTempTick; tick += dTempTick) {
       const x = 70 + ((canvas.width - 70 - 70) * (tick - this.minima.temp) / (this.maxima.temp - this.minima.temp));
