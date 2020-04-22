@@ -192,6 +192,8 @@ class Forecast {
   }
   
   draw(ctx) {
+    ctx.font = '40px Helvetica';
+    ctx.lineWidth = devicePixelRatio || 1;
     this.drawAxes(ctx);
     this.drawHours(ctx);
     this.drawDays(ctx);
@@ -205,11 +207,11 @@ class Forecast {
   drawHours(ctx) {
     for (let h = this.now.getHours(); h < 24; ++h) {
       const datum = this.hours[h];
-      ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 0, 20 * (h - this.now.getHours()));
+      ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 8, 40 * (h - this.now.getHours()));
       ctx.beginPath();
-      const y = 20 * (h - this.now.getHours());
-      ctx.moveTo(20, y);
-      ctx.lineTo(canvas.width - 20, y);
+      const y = 20 + (40 * (h - this.now.getHours()));
+      ctx.moveTo(40, y);
+      ctx.lineTo(canvas.width - 40, y);
       ctx.stroke();
     }
   }
@@ -217,11 +219,11 @@ class Forecast {
   drawDays(ctx) {
     for (let d = 0; d < 5; ++d) {
       const datum = this.days[d];
-      ctx.fillText(datum.date.getDate(), 0, 20 * (d + 24 - this.now.getHours()));
+      ctx.fillText(datum.date.getDate(), 8, 40 * (d + 24 - this.now.getHours()));
       ctx.beginPath();
-      const y = 20 * (d + 24 - this.now.getHours());
-      ctx.moveTo(20, y);
-      ctx.lineTo(anvas.width - 20, y);
+      const y = 20 + (40 * (d + 24 - this.now.getHours()));
+      ctx.moveTo(40, y);
+      ctx.lineTo(anvas.width - 40, y);
       ctx.stroke();
     }
   }
@@ -234,6 +236,8 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   sweepStorage();
   canvas.width = innerWidth * (devicePixelRatio || 1);
   canvas.height = innerHeight * (devicePixelRatio || 1);
+  canvas.style.width = innerWidth + 'px';
+  canvas.style.height = innerHeight + 'px';
   await f.loaded;
   console.log('loaded, drawing')
   f.draw(canvas.getContext('2d'));
