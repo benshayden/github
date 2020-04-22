@@ -225,7 +225,9 @@ class Forecast {
   }
 }
 
+console.log('geolocating');
 navigator.geolocation.getCurrentPosition(async (pos) => {
+  console.log(pos.coords);
   const f = new Forecast(pos.coords.latitude, pos.coords.longitude);
   sweepStorage();
   canvas.width = innerWidth * (devicePixelRatio || 1);
