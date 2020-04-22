@@ -207,10 +207,10 @@ class Forecast {
   }
 
   drawHours(ctx) {
-    for (let h = now.getHours(); h < 24; ++h) {
+    for (let h = this.now.getHours(); h < 24; ++h) {
       const datum = this.hours[h];
-      ctx.fillText(h % 12, 0, 20 * (h - now.getHours()));
-      ctx.moveTo(20, 20 * (h - now.getHours()));
+      ctx.fillText(h % 12, 0, 20 * (h - this.now.getHours()));
+      ctx.moveTo(20, 20 * (h - this.now.getHours()));
       ctx.lineTo(20, canvas.width - 20);
     }
   }
@@ -218,8 +218,8 @@ class Forecast {
   drawDays(ctx) {
     for (let d = 0; d < 5; ++d) {
       const datum = this.days[d];
-      ctx.fillText(datum.date.getDate(), 0, 20 * (d + 24 - now.getHours()));
-      ctx.moveTo(20, 20 * (d + 24 - now.getHours()));
+      ctx.fillText(datum.date.getDate(), 0, 20 * (d + 24 - this.now.getDate()));
+      ctx.moveTo(20, 20 * (d + 24 - this.now.getDate()));
       ctx.lineTo(20, canvas.width - 20);
     }
   }
