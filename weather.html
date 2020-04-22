@@ -160,12 +160,10 @@ class Forecast {
         const date = new Date(hourDatum.uv_time);
         if (date.getDate() === this.now.getDate()) {
           const target = this.hours[date.getHours()];
-          console.log('addUv hour', hourDatum.uv_time, hourDatum.uv, target);
           if (!target) continue;
           target.uv = hourDatum.uv * (1 - 0.7 * (target.cloud || 0) / 100);
         } else if (date > this.now) {
           const target = this.days[parseInt((date - this.now) / MS_PER_DAY)];
-          console.log('addUv day', hourDatum.uv_time, hourDatum.uv, target);
           if (!target) continue;
           target.uv = Math.max(hourDatum.uv, target.uv || 0);
         }
@@ -208,14 +206,9 @@ class Forecast {
 
   drawAxes(ctx) {
     ctx.strokeStyle = '#888888';
-    let dTempTick = 5;
+    let dTempTick = this.metric ? 2 : 5;
     let minTempTick = dTempTick + (dTempTick * parseInt(this.minima.temp / dTempTick));
     let maxTempTick = dTempTick * parseInt(this.maxima.temp / dTempTick);
-    if (minTempTick === maxTempTick) {
-      dTempTick = 2;
-      minTempTick = dTempTick + (dTempTick * parseInt(this.minima.temp / dTempTick));
-      maxTempTick = dTempTick * parseInt(this.maxima.temp / dTempTick);
-    }
     for (let tick = minTempTick; tick <= maxTempTick; tick += dTempTick) {
       const x = 70 + ((canvas.width - 70 - 70) * (tick - this.minima.temp) / (this.maxima.temp - this.minima.temp));
       ctx.fillText(tick, x, 50);
