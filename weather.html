@@ -232,7 +232,7 @@ class Forecast {
     ctx.fillText('UV', canvas.width - 10, 100);
     
     ctx.textAlign = 'center';
-    for (let uvi = 1; uvi <= 12; uvi++) {
+    for (let uvi = 1; uvi < 12; uvi++) {
       const x = 70 + ((canvas.width - 70 - 70) * uvi / 12);
       ctx.fillText(uvi, x, 100);
       ctx.beginPath();
