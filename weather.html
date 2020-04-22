@@ -232,8 +232,8 @@ class Forecast {
       const y = 120 + (50 * (h - this.now.getHours()));
       ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 60, y);
       ctx.beginPath();
-      ctx.moveTo(70, y - 20);
-      ctx.lineTo(canvas.width - 70, y - 20);
+      ctx.moveTo(70, y - 15);
+      ctx.lineTo(canvas.width - 70, y - 15);
       ctx.stroke();
     }
     
@@ -257,20 +257,18 @@ class Forecast {
       const y = 170 + (50 * (d + 24 - this.now.getHours()));
       ctx.fillText(datum.date.getDate(), 60, y);
       ctx.beginPath();
-      ctx.moveTo(70, y - 20);
-      ctx.lineTo(canvas.width - 70, y - 20);
+      ctx.moveTo(70, y - 15);
+      ctx.lineTo(canvas.width - 70, y - 15);
       ctx.stroke();
     }
 
-    ctx.strokeStyle = '#000000';
+    ctx.fillStyle = '#888888';
     for (let d = 0; d < 5; ++d) {
       const datum = this.days[d];
       const y = 170 + (50 * (d + 24 - this.now.getHours())) - 30;
       const x = 70 + ((canvas.width - 70 - 70) * (datum.temp[0] - this.minima.temp) / (this.maxima.temp - this.minima.temp));
       const w = 70 + ((canvas.width - 70 - 70) * (datum.temp[1] - this.minima.temp) / (this.maxima.temp - this.minima.temp)) - x;
-      ctx.beginPath();
-      ctx.rect(x, y, w, 30);
-      ctx.stroke();
+      ctx.fillRect(x, y, w, 30);
     }
   }
 }
