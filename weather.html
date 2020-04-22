@@ -48,7 +48,7 @@ async function fetchCachedJson(options) {
 
   console.log('fetching', url);
   const response = await fetchJson(url, options);
-  console.log('received', url, response.length);
+  console.log('received', url, response);
   const expires = now.getTime() + expiryMs;
   localStorage.setItem(url, JSON.stringify({expires, response}));
   return response;
