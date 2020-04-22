@@ -192,6 +192,7 @@ class Forecast {
       }
       return datum;
     }).filter(datum => datum.Lat !== null && datum.Lon !== null && datum.age < 30).map(s => s.pm_1 || 0));
+    this.aqi = this.pm25 * 50 / 30;
   }
   
   draw(ctx) {
@@ -202,7 +203,10 @@ class Forecast {
     ctx.textAlign = 'right';
     this.drawHours(ctx);
     this.drawDays(ctx);
-    // TODO display purple air button when pm25 > 10
+ 
+    ctx.textAlign = 'right';
+    ctx.fillStyle = ['#00cc00', '#66cc00', '#ffff00', '#ff9900', '#ff0000', '#a52a2a'][parseInt(this.aqi / 50)];
+    ctx.fillText(parseInt(this.aqi), canvas.width - 10, 150);
   }
 
   drawAxes(ctx) {
