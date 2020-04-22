@@ -207,8 +207,9 @@ class Forecast {
       const datum = this.hours[h];
       ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 0, 20 * (h - this.now.getHours()));
       ctx.beginPath();
-      ctx.moveTo(20, 20 * (h - this.now.getHours()));
-      ctx.lineTo(20, canvas.width - 20);
+      const y = 20 * (h - this.now.getHours());
+      ctx.moveTo(20, y);
+      ctx.lineTo(canvas.width - 20, y);
       ctx.stroke();
     }
   }
@@ -218,8 +219,9 @@ class Forecast {
       const datum = this.days[d];
       ctx.fillText(datum.date.getDate(), 0, 20 * (d + 24 - this.now.getHours()));
       ctx.beginPath();
-      ctx.moveTo(20, 20 * (d + 24 - this.now.getHours()));
-      ctx.lineTo(20, canvas.width - 20);
+      const y = 20 * (d + 24 - this.now.getHours());
+      ctx.moveTo(20, y);
+      ctx.lineTo(anvas.width - 20, y);
       ctx.stroke();
     }
   }
