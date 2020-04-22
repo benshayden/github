@@ -285,6 +285,7 @@ class Forecast {
     
     ctx.strokeStyle = '#ff00ff';
     for (let d = 0; d < 5; ++d) {
+      const datum = this.days[d];
       const y = 170 + (50 * (d + 24 - this.now.getHours())) - 30 - 15;
       const x = 70 + ((canvas.width - 70 - 70) * datum.uv / 12) - 15;
       ctx.moveTo(x,y+15);
