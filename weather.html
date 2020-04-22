@@ -252,7 +252,7 @@ class Forecast {
     ctx.strokeStyle = '#ff00ff';
     ctx.beginPath();
     y = 100;
-    let x = 70 + ((canvas.width - 70 - 70) * this.hours[this.now.getHours()].uv / 12);
+    x = 70 + ((canvas.width - 70 - 70) * this.hours[this.now.getHours()].uv / 12);
     ctx.moveTo(x, y);
     for (let h = this.now.getHours() + 1; h < 24; ++h) {
       x = 70 + ((canvas.width - 70 - 70) * this.hours[h].uv / 12);
