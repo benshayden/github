@@ -205,6 +205,8 @@ class Forecast {
   }
 
   drawAxes(ctx) {
+    // TODO merge axes
+
     ctx.strokeStyle = '#888888';
     let dTempTick = this.metric ? 2 : 5;
     let minTempTick = dTempTick + (dTempTick * parseInt(this.minima.temp / dTempTick));
