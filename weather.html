@@ -139,7 +139,7 @@ class Forecast {
         h[k] = convertTemp(h[k], this.metric);
       }
     }
-    for (const d of this.days) {
+    for (const d of Object.values(this.days)) {
       d.temp = [convertTemp(d.temp[0], this.metric), convertTemp(d.temp[1], this.metric)];
     }
   }
