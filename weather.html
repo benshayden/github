@@ -159,10 +159,12 @@ class Forecast {
           const target = this.hours[date.getHours()];
           console.log('addUv hour', hourDatum.uv_time, hourDatum.uv, target);
           if (!target) continue;
+          target.uv = hourDatum.uv * (1 - 0.7 * (target.cloud || 0) / 100);
         } else if (date > this.now) {
           const target = this.days[parseInt((date - this.now) / MS_PER_DAY)];
           console.log('addUv day', hourDatum.uv_time, hourDatum.uv, target);
           if (!target) continue;
+          target.uv = Math.max(hourDatum.uv, target.uv || 0);
         }
       }
     }
