@@ -245,7 +245,7 @@ class Forecast {
     ctx.strokeStyle = '#888888';
     for (let h = this.now.getHours(); h < 24; ++h) {
       const datum = this.hours[h];
-      const y = 170 + (50 * (h - this.now.getHours()));
+      const y = 150 + (50 * (h - this.now.getHours()));
       ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 60, y);
       ctx.beginPath();
       ctx.moveTo(70, y - 15);
@@ -255,7 +255,7 @@ class Forecast {
     
     ctx.strokeStyle = '#000000';
     ctx.beginPath();
-    let y = 150;
+    let y = 130;
     let x = 70 + ((canvas.width - 70 - 70) * (this.hours[this.now.getHours()].temp - this.minima.temp) / (this.maxima.temp - this.minima.temp));
     ctx.moveTo(x, y);
     for (let h = this.now.getHours() + 1; h < 24; ++h) {
@@ -267,7 +267,7 @@ class Forecast {
     
     ctx.strokeStyle = '#ff00ff';
     ctx.beginPath();
-    y = 150;
+    y = 130;
     x = 70 + ((canvas.width - 70 - 70) * this.hours[this.now.getHours()].uv / 12);
     ctx.moveTo(x, y);
     for (let h = this.now.getHours() + 1; h < 24; ++h) {
@@ -282,7 +282,7 @@ class Forecast {
     ctx.strokeStyle = '#888888';
     for (let d = 0; d < 5; ++d) {
       const datum = this.days[d];
-      const y = 220 + (50 * (d + 24 - this.now.getHours()));
+      const y = 200 + (50 * (d + 24 - this.now.getHours()));
       ctx.fillText(datum.date.getDate(), 60, y);
       ctx.beginPath();
       ctx.moveTo(70, y - 15);
@@ -293,7 +293,7 @@ class Forecast {
     ctx.fillStyle = '#aaaaaa';
     for (let d = 0; d < 5; ++d) {
       const datum = this.days[d];
-      const y = 220 + (50 * (d + 24 - this.now.getHours())) - 30;
+      const y = 200 + (50 * (d + 24 - this.now.getHours())) - 30;
       const x = 70 + ((canvas.width - 70 - 70) * (datum.temp[0] - this.minima.temp) / (this.maxima.temp - this.minima.temp));
       const w = 70 + ((canvas.width - 70 - 70) * (datum.temp[1] - this.minima.temp) / (this.maxima.temp - this.minima.temp)) - x;
       ctx.fillRect(x, y, w, 30);
@@ -304,7 +304,7 @@ class Forecast {
     ctx.beginPath();
     for (let d = 0; d < 5; ++d) {
       const datum = this.days[d];
-      const y = 220 + (50 * (d + 24 - this.now.getHours())) - 30;
+      const y = 200 + (50 * (d + 24 - this.now.getHours())) - 30;
       const x = 70 + ((canvas.width - 70 - 70) * datum.uv / 12) - 15;
       ctx.moveTo(x,y+15);
       ctx.lineTo(x+30,y+15);
