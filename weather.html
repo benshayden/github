@@ -348,22 +348,32 @@ const W = {
   },
 };
 
-try {
-  const coords = JSON.parse(localStorage.getItem('geolocation') || 'null');
-  if (coords && (new Date().getTime() < coords.expires)) {
+addEventListener('load', async() => {
+  let coords = null;
+  try {
+    coords = JSON.parse(localStorage.getItem('geolocation') || 'null');
+  } catch (e) {
+  }
+  if (coords && (new Date().getTime() > coords.expires)) {
+    coords = null;
+  }
+  if (coords) {
     W.load(coords);
   }
-} catch (e) {
-}
-navigator.geolocation.getCurrentPosition(async (pos) => {
-  W.load(pos.coords);
-  localStorage.setItem('geolocation', JSON.stringify({
-    latitude: pos.coords.latitude,
-    longitude: pos.coords.longitude,
-    expires: new Date().getTime() + (1000 * 60 * 30),
-  }));
-}, e => {
-  document.body.innerText = e.message;
-}, {
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    if (!coords
+        || (Math.abs(coords.latitude - pos.coords.latitude) > 0.1)
+        || (Math.abs(coords.longitude - pos.coords.longitude) > 0.1)) {
+      W.load(pos.coords);
+    }
+    localStorage.setItem('geolocation', JSON.stringify({
+      latitude: pos.coords.latitude,
+      longitude: pos.coords.longitude,
+      expires: new Date().getTime() + (1000 * 60 * 30),
+    }));
+  }, e => {
+    document.body.innerText = e.message;
+  }, {
+  });
 });
 </script>
