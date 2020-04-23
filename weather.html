@@ -327,8 +327,9 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   try {
     window.forecast = new Forecast(pos.coords.latitude, pos.coords.longitude);
     sweepStorage();
-    const h = 130 + (50 * (6 + 24));
+    const h = 130 + (50 * (6 + 24 - forecast.now.getHours()));
     debug.innerText += `innerWidth = ${innerWidth}\n`;
+    debug.innerText += `devicePixelRatio = ${devicePixelRatio}\n`;
     canvas.width = innerWidth * (devicePixelRatio || 1);
     canvas.height = h * (devicePixelRatio || 1);
     canvas.style.width = innerWidth + 'px';
