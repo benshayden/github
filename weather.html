@@ -213,6 +213,13 @@ class Forecast {
     ctx.textAlign = 'right';
     this.drawHours(ctx);
     this.drawDays(ctx);
+    
+    ctx.strokeStyle = '#ff0000';
+    ctx.beginPath();
+    const timeY = 150 + (50 * this.now.getMinutes() / 60);
+    ctx.moveTo(70, timeY);
+    ctx.lineTo(canvas.width - 70, timeY);
+    ctx.stroke();
  
     if (this.aqi !== null) {
       ctx.textAlign = 'right';
