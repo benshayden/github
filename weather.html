@@ -170,7 +170,7 @@ class Forecast {
           if (!target) continue;
           target.uv = hourDatum.uv * (1 - 0.7 * (target.cloud || 0) / 100);
         } else if (date > this.now) {
-          const target = this.days[parseInt((date - this.now) / MS_PER_DAY)];
+          const target = this.days[parseInt((date - this.now) / MS_PER_DAY) - 1];
           if (!target) continue;
           target.uv = Math.max(hourDatum.uv, target.uv || 0);
         }
