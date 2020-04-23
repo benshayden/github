@@ -60,9 +60,12 @@ function sweepStorage() {
   const now = new Date();
   for (let i = 0; i < localStorage.length; ++i) {
     const k = localStorage.key(i);
-    const cached = JSON.parse(localStorage.getItem(k));
-    if (now > cached.expires) {
-      localStorage.removeItem(k);
+    try {
+      const cached = JSON.parse(localStorage.getItem(k));
+      if (now > cached.expires) {
+        localStorage.removeItem(k);
+      }
+    } catch(e) {
     }
   }
 }
@@ -84,7 +87,8 @@ class Forecast {
     }
     this.minima = {};
     this.maxima = {};
-    this.pm25 = 0;
+    this.pm25 = null;
+    this.aqi = null;
     this.weatherLoaded = this.fetchWeather();
     this.uvLoaded = this.fetchUv();
     this.airLoaded = this.fetchAir();
@@ -179,10 +183,14 @@ class Forecast {
     const maxlat = this.lat + AIR_SENSOR_DEGREES;
     const minlon = this.lon - AIR_SENSOR_DEGREES;
     const maxlon = this.lon + AIR_SENSOR_DEGREES;
-    this.addAir(await fetchCachedJson({
-      url: `https://www.purpleair.com/data.json?opt=1/mAQI/a10/cC0&fetch=true&nwlat=${maxlat}&selat=${minlat}&nwlng=${minlon}&selng=${maxlon}&fields=pm_1`,
-      expiryMs: MS_PER_HOUR / 2,
-    }));
+    try {
+      this.addAir(await fetchCachedJson({
+        url: `https://www.purpleair.com/data.json?opt=1/mAQI/a10/cC0&fetch=true&nwlat=${maxlat}&selat=${minlat}&nwlng=${minlon}&selng=${maxlon}&fields=pm_1`,
+        expiryMs: MS_PER_HOUR / 2,
+      }));
+    } catch(e) {
+      debug.innerText += `Error fetching air quality:\n${e.stack}\n`;
+    }
   }
 
   addAir(a) {
@@ -206,9 +214,11 @@ class Forecast {
     this.drawHours(ctx);
     this.drawDays(ctx);
  
-    ctx.textAlign = 'right';
-    ctx.fillStyle = ['#00cc00', '#66cc00', '#ffff00', '#ff9900', '#ff0000', '#a52a2a'][parseInt(this.aqi / 50)];
-    ctx.fillText(parseInt(this.aqi), canvas.width - 10, 150);
+    if (this.aqi !== null) {
+      ctx.textAlign = 'right';
+      ctx.fillStyle = ['#00cc00', '#66cc00', '#ffff00', '#ff9900', '#ff0000', '#a52a2a'][parseInt(this.aqi / 50)];
+      ctx.fillText(parseInt(this.aqi), canvas.width - 10, 150);
+    }
   }
 
   drawAxes(ctx) {
