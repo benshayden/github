@@ -23,18 +23,18 @@ const W = {
   _convertTemp(k, metric = true) {
     const c = k - 273.15;
     return metric ? c : (c * (9 / 5) + 32);
-  }
+  },
 
   _mean(s) {
     let sum = 0;
     for (const e of s) sum += e;
     return sum / s.length;
-  }
+  },
 
   async _fetchJson(url, options) {
     const response = await fetch(url, options);
     return await response.json();
-  }
+  },
 
   async _fetchCachedJson(options) {
     const now = new Date();
@@ -55,7 +55,7 @@ const W = {
     const expires = now.getTime() + expiryMs;
     localStorage.setItem(url, JSON.stringify({expires, response}));
     return response;
-  }
+  },
 
   _sweepStorage() {
     const now = new Date();
@@ -69,7 +69,7 @@ const W = {
       } catch(e) {
       }
     }
-  }
+  },
 
   async load(coords) {
     try {
@@ -97,7 +97,7 @@ const W = {
     } catch (e) {
       document.body.innerText = e.stack;
     }
-  }
+  },
   
   _setupCanvas() {
     W._canvas = document.getElementById('canvas');
@@ -107,14 +107,14 @@ const W = {
     W._canvas.style.width = innerWidth + 'px';
     W._canvas.style.height = h + 'px';
     W._ctx = W._canvas.getContext('2d');
-  }
+  },
 
   async _loadWeather() {
     W._addWeather(await W._fetchCachedJson({
       url: `https://api.openweathermap.org/data/2.5/onecall?lat=${W.lat}&lon=${W.lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`,
       expiryMs: MS_PER_HOUR,
     }));
-  }
+  },
   
   _addWeather(w) {
     for (const datum of w.hourly) {
@@ -161,7 +161,7 @@ const W = {
     for (const d of Object.values(W.days)) {
       d.temp = [convertTemp(d.temp[0], W.metric), convertTemp(d.temp[1], W.metric)];
     }
-  }
+  },
 
   async _loadUv() {
     const date = new Date(W.now.toDateString()).getTime();
@@ -172,7 +172,7 @@ const W = {
     })));
     await W._weatherLoaded;
     W._addUv(uvDays);
-  }
+  },
 
   _addUv(uv) {
     for (const dayDatum of uv) {
@@ -190,7 +190,7 @@ const W = {
         }
       }
     }
-  }
+  },
 
   async _loadAir() {
     const minlat = W.lat - AIR_SENSOR_DEGREES;
@@ -205,7 +205,7 @@ const W = {
     } catch(e) {
       debug.innerText += `Error fetching air quality:\n${e.stack}\n`;
     }
-  }
+  },
 
   _addAir(a) {
     // Mean particulate mass < 2.5um in ug/m^3.
@@ -217,7 +217,7 @@ const W = {
       return datum;
     }).filter(datum => datum.Lat !== null && datum.Lon !== null && datum.age < 30).map(s => s.pm_1 || 0));
     W.aqi = W.pm25 * 50 / 30;
-  }
+  },
   
   _draw() {
     W._setupCanvas();
@@ -241,7 +241,7 @@ const W = {
       W._ctx.fillStyle = ['#00cc00', '#66cc00', '#ffff00', '#ff9900', '#ff0000', '#a52a2a'][parseInt(W.aqi / 50)];
       W._ctx.fillText(parseInt(W.aqi), W._canvas.width - 10, 150);
     }
-  }
+  },
 
   _drawAxes() {
     // TODO merge axes
@@ -273,7 +273,7 @@ const W = {
     
     W._ctx.strokeStyle = '#000000';
     W._ctx.fillStyle = '#000000';
-  }
+  },
 
   _drawHours() {
     W._ctx.strokeStyle = '#888888';
@@ -310,7 +310,7 @@ const W = {
       W._ctx.lineTo(x, y);
     }
     W._ctx.stroke();
-  }
+  },
 
   _drawDays() {
     W._ctx.strokeStyle = '#888888';
@@ -350,7 +350,7 @@ const W = {
       W._ctx.lineTo(x+5,y+25);
     }
     W._ctx.stroke();
-  }
+  },
 };
 
 try {
