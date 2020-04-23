@@ -31,11 +31,6 @@ const W = {
     return sum / s.length;
   },
 
-  async _fetchJson(url, options) {
-    const response = await fetch(url, options);
-    return await response.json();
-  },
-
   async _fetchCachedJson(options) {
     const now = new Date();
     const url = options.url;
@@ -50,7 +45,7 @@ const W = {
     }
 
     console.log('fetching', url);
-    const response = await fetchJson(url, options);
+    const response = await (await fetch(url, options)).json();
     console.log('received', url, response);
     const expires = now.getTime() + expiryMs;
     localStorage.setItem(url, JSON.stringify({expires, response}));
@@ -209,7 +204,7 @@ const W = {
 
   _addAir(a) {
     // Mean particulate mass < 2.5um in ug/m^3.
-    W.pm25 = mean(a.data.map(row => {
+    W.pm25 = W._mean(a.data.map(row => {
       const datum = {};
       for (let i = 0; i < a.fields.length; ++i) {
         datum[a.fields[i]] = row[i];
