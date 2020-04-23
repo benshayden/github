@@ -216,7 +216,7 @@ class Forecast {
     
     ctx.strokeStyle = '#ff0000';
     ctx.beginPath();
-    const timeY = 150 + (50 * this.now.getMinutes() / 60);
+    const timeY = 150 - 15 + (50 * this.now.getMinutes() / 60);
     ctx.moveTo(70, timeY);
     ctx.lineTo(canvas.width - 70, timeY);
     ctx.stroke();
