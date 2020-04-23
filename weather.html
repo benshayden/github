@@ -323,6 +323,7 @@ class Forecast {
 console.log('geolocating');
 navigator.geolocation.getCurrentPosition(async (pos) => {
   console.log(pos.coords);
+  try {
   window.forecast = new Forecast(pos.coords.latitude, pos.coords.longitude);
   sweepStorage();
   canvas.width = innerWidth * (devicePixelRatio || 1);
@@ -332,6 +333,9 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   await window.forecast.loaded;
   console.log('loaded, drawing')
   window.forecast.draw(canvas.getContext('2d'));
+  } catch (er) {
+    document.body.innerText = er;
+  }
 }, er => {
   document.body.innerText = er;
 }, {
