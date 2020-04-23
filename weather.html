@@ -365,7 +365,7 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   localStorage.setItem('geolocation', JSON.stringify({
     latitude: pos.coords.latitude,
     longitude: pos.coords.longitude,
-    expires: new Date().getTime() + (1000 * 60 * 30);
+    expires: new Date().getTime() + (1000 * 60 * 30),
   }));
 }, e => {
   document.body.innerText = e.message;
