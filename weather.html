@@ -147,14 +147,14 @@ const W = {
     }
 
     for (const k of ['temp', 'feels']) {
-      W.maxima[k] = convertTemp(W.maxima[k], W.metric);
-      W.minima[k] = convertTemp(W.minima[k], W.metric);
+      W.maxima[k] = W._convertTemp(W.maxima[k], W.metric);
+      W.minima[k] = W._convertTemp(W.minima[k], W.metric);
       for (const h of Object.values(W.hours)) {
-        h[k] = convertTemp(h[k], W.metric);
+        h[k] = W._convertTemp(h[k], W.metric);
       }
     }
     for (const d of Object.values(W.days)) {
-      d.temp = [convertTemp(d.temp[0], W.metric), convertTemp(d.temp[1], W.metric)];
+      d.temp = [W._convertTemp(d.temp[0], W.metric), W._convertTemp(d.temp[1], W.metric)];
     }
   },
 
