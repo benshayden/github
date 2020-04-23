@@ -222,7 +222,7 @@ class Forecast {
       ctx.fillText(tick, x, 50);
       ctx.beginPath();
       ctx.moveTo(x, 130);
-      ctx.lineTo(x, canvas.height);
+      ctx.lineTo(x, 130 + (50 * (6 + 24 - this.now.getHours())));
       ctx.stroke();
     }
     
