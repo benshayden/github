@@ -19,94 +19,108 @@ const FONT_PX = 40;
 const LINE_HEIGHT_PX = 50;
 const Y_AXIS_PX = 70;
 
-function convertTemp(k, metric = true) {
-  const c = k - 273.15;
-  return metric ? c : (c * (9 / 5) + 32);
-}
-
-function mean(s) {
-  let sum = 0;
-  for (const e of s) sum += e;
-  return sum / s.length;
-}
-  
-async function fetchJson(url, options) {
-  const response = await fetch(url, options);
-  return await response.json();
-}
-  
-async function fetchCachedJson(options) {
-  const now = new Date();
-  const url = options.url;
-  const expiryMs = options.expiryMs;
-  delete options.url;
-  delete options.expiryMs;
-
-  const cached = JSON.parse(localStorage.getItem(url) || 'null');
-  if (cached && (now < cached.expires)) {
-    console.log('cachehit', url, cached.response);
-    return cached.response;
+const W = {
+  _convertTemp(k, metric = true) {
+    const c = k - 273.15;
+    return metric ? c : (c * (9 / 5) + 32);
   }
 
-  console.log('fetching', url);
-  const response = await fetchJson(url, options);
-  console.log('received', url, response);
-  const expires = now.getTime() + expiryMs;
-  localStorage.setItem(url, JSON.stringify({expires, response}));
-  return response;
-}
+  _mean(s) {
+    let sum = 0;
+    for (const e of s) sum += e;
+    return sum / s.length;
+  }
 
-function sweepStorage() {
-  const now = new Date();
-  for (let i = 0; i < localStorage.length; ++i) {
-    const k = localStorage.key(i);
-    try {
-      const cached = JSON.parse(localStorage.getItem(k));
-      if (now > cached.expires) {
-        localStorage.removeItem(k);
+  async _fetchJson(url, options) {
+    const response = await fetch(url, options);
+    return await response.json();
+  }
+
+  async _fetchCachedJson(options) {
+    const now = new Date();
+    const url = options.url;
+    const expiryMs = options.expiryMs;
+    delete options.url;
+    delete options.expiryMs;
+
+    const cached = JSON.parse(localStorage.getItem(url) || 'null');
+    if (cached && (now < cached.expires)) {
+      console.log('cachehit', url, cached.response);
+      return cached.response;
+    }
+
+    console.log('fetching', url);
+    const response = await fetchJson(url, options);
+    console.log('received', url, response);
+    const expires = now.getTime() + expiryMs;
+    localStorage.setItem(url, JSON.stringify({expires, response}));
+    return response;
+  }
+
+  _sweepStorage() {
+    const now = new Date();
+    for (let i = 0; i < localStorage.length; ++i) {
+      const k = localStorage.key(i);
+      try {
+        const cached = JSON.parse(localStorage.getItem(k));
+        if (now > cached.expires) {
+          localStorage.removeItem(k);
+        }
+      } catch(e) {
       }
-    } catch(e) {
     }
   }
-}
-  
-class Forecast {
-  constructor(lat, lon) {
-    this.lat = parseInt(lat * 10) / 10;
-    this.lon = parseInt(lon * 10) / 10;
-    this.now = new Date();
-    this.metric = localStorage.getItem('metric') !== null;
-    this.hours = {};
-    for (let h = this.now.getHours(); h < 24; ++h) {
-      this.hours[h] = {};
+
+  async load(coords) {
+    try {
+      W.lat = parseInt(coords.latitude * 10) / 10;
+      W.lon = parseInt(coords.longitude * 10) / 10;
+      W.now = new Date();
+      W.metric = localStorage.getItem('metric') !== null;
+      W.hours = {};
+      for (let h = W.now.getHours(); h < 24; ++h) {
+        W.hours[h] = {};
+      }
+      W.days = {};
+      const date = new Date(W.now.toDateString()).getTime();
+      for (let d = 0; d < 5; ++d) {
+        W.days[d] = {date: new Date(date + ((d + 1) * MS_PER_DAY))};
+      }
+      W.minima = {};
+      W.maxima = {};
+      W.pm25 = null;
+      W.aqi = null;
+      W._weatherLoaded = W._loadWeather();
+      await Promise.all([W._weatherLoaded, W._loadUv(), W._loadAir()]);
+      W._sweepStorage();
+      W._draw();
+    } catch (e) {
+      document.body.innerText = e.stack;
     }
-    this.days = {};
-    const date = new Date(this.now.toDateString()).getTime();
-    for (let d = 0; d < 5; ++d) {
-      this.days[d] = {date: new Date(date + ((d + 1) * MS_PER_DAY))};
-    }
-    this.minima = {};
-    this.maxima = {};
-    this.pm25 = null;
-    this.aqi = null;
-    this.weatherLoaded = this.fetchWeather();
-    this.uvLoaded = this.fetchUv();
-    this.airLoaded = this.fetchAir();
-    this.loaded = Promise.all([this.weatherLoaded, this.uvLoaded, this.airLoaded]);
   }
   
-  async fetchWeather() {
-    this.addWeather(await fetchCachedJson({
-      url: `https://api.openweathermap.org/data/2.5/onecall?lat=${this.lat}&lon=${this.lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`,
+  _setupCanvas() {
+    W._canvas = document.getElementById('canvas');
+    const h = (130 + (50 * (6 + 24 - W.now.getHours()))) / (devicePixelRatio || 1);
+    W._canvas.width = innerWidth * (devicePixelRatio || 1);
+    W._canvas.height = h * (devicePixelRatio || 1);
+    W._canvas.style.width = innerWidth + 'px';
+    W._canvas.style.height = h + 'px';
+    W._ctx = W._canvas.getContext('2d');
+  }
+
+  async _loadWeather() {
+    W._addWeather(await W._fetchCachedJson({
+      url: `https://api.openweathermap.org/data/2.5/onecall?lat=${W.lat}&lon=${W.lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`,
       expiryMs: MS_PER_HOUR,
     }));
   }
   
-  addWeather(w) {
+  _addWeather(w) {
     for (const datum of w.hourly) {
       const date = new Date(datum.dt * 1000);
-      if (date.getDate() != this.now.getDate()) continue;
-      const target = this.hours[date.getHours()];
+      if (date.getDate() != W.now.getDate()) continue;
+      const target = W.hours[date.getHours()];
       if (!target) continue;
       Object.assign(target, {
         temp: datum.temp,
@@ -115,14 +129,14 @@ class Forecast {
         humidity: datum.humidity,
       });
       for (const k of Object.keys(target)) {
-        this.minima[k] = Math.min(this.minima[k] || 1000000, target[k]);
-        this.maxima[k] = Math.max(this.maxima[k] || -1000000, target[k]);
+        W.minima[k] = Math.min(W.minima[k] || 1000000, target[k]);
+        W.maxima[k] = Math.max(W.maxima[k] || -1000000, target[k]);
       }
     }
     
     for (const datum of w.daily) {
       const date = new Date(datum.dt * 1000);
-      const target = this.days[parseInt((date - this.now) / MS_PER_DAY) - 1];
+      const target = W.days[parseInt((date - W.now) / MS_PER_DAY) - 1];
       if (!target) continue;
       Object.assign(target, {
         temp: [datum.temp.min, datum.temp.max],
@@ -130,47 +144,47 @@ class Forecast {
         humidity: datum.humidity,
       });
       for (const k of ['clouds', 'humidity']) {
-        this.minima[k] = Math.min(this.minima[k] || 1000000, target[k]);
-        this.maxima[k] = Math.max(this.maxima[k] || -1000000, target[k]);
+        W.minima[k] = Math.min(W.minima[k] || 1000000, target[k]);
+        W.maxima[k] = Math.max(W.maxima[k] || -1000000, target[k]);
       }
-      this.minima.temp = Math.min(this.minima.temp, target.temp[0]);
-      this.maxima.temp = Math.max(this.maxima.temp, target.temp[1]);
+      W.minima.temp = Math.min(W.minima.temp, target.temp[0]);
+      W.maxima.temp = Math.max(W.maxima.temp, target.temp[1]);
     }
 
     for (const k of ['temp', 'feels']) {
-      this.maxima[k] = convertTemp(this.maxima[k], this.metric);
-      this.minima[k] = convertTemp(this.minima[k], this.metric);
-      for (const h of Object.values(this.hours)) {
-        h[k] = convertTemp(h[k], this.metric);
+      W.maxima[k] = convertTemp(W.maxima[k], W.metric);
+      W.minima[k] = convertTemp(W.minima[k], W.metric);
+      for (const h of Object.values(W.hours)) {
+        h[k] = convertTemp(h[k], W.metric);
       }
     }
-    for (const d of Object.values(this.days)) {
-      d.temp = [convertTemp(d.temp[0], this.metric), convertTemp(d.temp[1], this.metric)];
+    for (const d of Object.values(W.days)) {
+      d.temp = [convertTemp(d.temp[0], W.metric), convertTemp(d.temp[1], W.metric)];
     }
   }
 
-  async fetchUv() {
-    const date = new Date(this.now.toDateString()).getTime();
+  async _loadUv() {
+    const date = new Date(W.now.toDateString()).getTime();
     const uvDays = await Promise.all([0, 1, 2, 3, 4, 5, 6].map(d => fetchCachedJson({
-      url: `https://api.openuv.io/api/v1/forecast?lat=${this.lat}&lng=${this.lon}&dt=${new Date(date + (d * MS_PER_DAY)).toISOString()}`,
+      url: `https://api.openuv.io/api/v1/forecast?lat=${W.lat}&lng=${W.lon}&dt=${new Date(date + (d * MS_PER_DAY)).toISOString()}`,
       headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
       expiryMs: MS_PER_DAY,
     })));
-    await this.weatherLoaded;
-    this.addUv(uvDays);
+    await W._weatherLoaded;
+    W._addUv(uvDays);
   }
 
-  addUv(uv) {
+  _addUv(uv) {
     for (const dayDatum of uv) {
       for (const hourDatum of dayDatum.result) {
         const date = new Date(hourDatum.uv_time);
         console.log('addUv', date.getDate(), date.getHours(), hourDatum.uv);
-        if (date.getDate() === this.now.getDate()) {
-          const target = this.hours[date.getHours()];
+        if (date.getDate() === W.now.getDate()) {
+          const target = W.hours[date.getHours()];
           if (!target) continue;
           target.uv = hourDatum.uv * (1 - 0.7 * (target.cloud || 0) / 100);
-        } else if (date > this.now) {
-          const target = this.days[parseInt((date - this.now) / MS_PER_DAY) - 1];
+        } else if (date > W.now) {
+          const target = W.days[parseInt((date - W.now) / MS_PER_DAY) - 1];
           if (!target) continue;
           target.uv = Math.max(hourDatum.uv, target.uv || 0);
         }
@@ -178,13 +192,13 @@ class Forecast {
     }
   }
 
-  async fetchAir() {
-    const minlat = this.lat - AIR_SENSOR_DEGREES;
-    const maxlat = this.lat + AIR_SENSOR_DEGREES;
-    const minlon = this.lon - AIR_SENSOR_DEGREES;
-    const maxlon = this.lon + AIR_SENSOR_DEGREES;
+  async _loadAir() {
+    const minlat = W.lat - AIR_SENSOR_DEGREES;
+    const maxlat = W.lat + AIR_SENSOR_DEGREES;
+    const minlon = W.lon - AIR_SENSOR_DEGREES;
+    const maxlon = W.lon + AIR_SENSOR_DEGREES;
     try {
-      this.addAir(await fetchCachedJson({
+      W._addAir(await W._fetchCachedJson({
         url: `https://www.purpleair.com/data.json?opt=1/mAQI/a10/cC0&fetch=true&nwlat=${maxlat}&selat=${minlat}&nwlng=${minlon}&selng=${maxlon}&fields=pm_1`,
         expiryMs: MS_PER_HOUR / 2,
       }));
@@ -193,174 +207,168 @@ class Forecast {
     }
   }
 
-  addAir(a) {
+  _addAir(a) {
     // Mean particulate mass < 2.5um in ug/m^3.
-    this.pm25 = mean(a.data.map(row => {
+    W.pm25 = mean(a.data.map(row => {
       const datum = {};
       for (let i = 0; i < a.fields.length; ++i) {
         datum[a.fields[i]] = row[i];
       }
       return datum;
     }).filter(datum => datum.Lat !== null && datum.Lon !== null && datum.age < 30).map(s => s.pm_1 || 0));
-    this.aqi = this.pm25 * 50 / 30;
+    W.aqi = W.pm25 * 50 / 30;
   }
   
-  draw(ctx) {
-    ctx.font = '40px Helvetica';
-    ctx.lineWidth = 1;
-    ctx.textAlign = 'center';
-    this.drawAxes(ctx);
-    ctx.textAlign = 'right';
-    this.drawHours(ctx);
-    this.drawDays(ctx);
+  _draw() {
+    W._setupCanvas();
+    W._ctx.font = '40px Helvetica';
+    W._ctx.lineWidth = 1;
+    W._ctx.textAlign = 'center';
+    W._drawAxes();
+    W._ctx.textAlign = 'right';
+    W._drawHours();
+    W._drawDays();
     
-    ctx.strokeStyle = '#ff0000';
-    ctx.beginPath();
-    const timeY = 150 - 15 + (50 * this.now.getMinutes() / 60);
-    ctx.moveTo(70, timeY);
-    ctx.lineTo(canvas.width - 70, timeY);
-    ctx.stroke();
+    W._ctx.strokeStyle = '#ff0000';
+    W._ctx.beginPath();
+    const timeY = 150 - 15 + (50 * W.now.getMinutes() / 60);
+    W._ctx.moveTo(70, timeY);
+    W._ctx.lineTo(W._canvas.width - 70, timeY);
+    W._ctx.stroke();
  
-    if (this.aqi !== null) {
-      ctx.textAlign = 'right';
-      ctx.fillStyle = ['#00cc00', '#66cc00', '#ffff00', '#ff9900', '#ff0000', '#a52a2a'][parseInt(this.aqi / 50)];
-      ctx.fillText(parseInt(this.aqi), canvas.width - 10, 150);
+    if (W.aqi !== null) {
+      W._ctx.textAlign = 'right';
+      W._ctx.fillStyle = ['#00cc00', '#66cc00', '#ffff00', '#ff9900', '#ff0000', '#a52a2a'][parseInt(W.aqi / 50)];
+      W._ctx.fillText(parseInt(W.aqi), W._canvas.width - 10, 150);
     }
   }
 
-  drawAxes(ctx) {
+  _drawAxes() {
     // TODO merge axes
 
-    ctx.strokeStyle = '#888888';
-    let dTempTick = this.metric ? 2 : 5;
-    let minTempTick = dTempTick + (dTempTick * parseInt(this.minima.temp / dTempTick));
-    let maxTempTick = dTempTick * parseInt(this.maxima.temp / dTempTick);
+    W._ctx.strokeStyle = '#888888';
+    let dTempTick = W.metric ? 2 : 5;
+    let minTempTick = dTempTick + (dTempTick * parseInt(W.minima.temp / dTempTick));
+    let maxTempTick = dTempTick * parseInt(W.maxima.temp / dTempTick);
     for (let tick = minTempTick; tick <= maxTempTick; tick += dTempTick) {
-      const x = 70 + ((canvas.width - 70 - 70) * (tick - this.minima.temp) / (this.maxima.temp - this.minima.temp));
-      ctx.fillText(tick, x, 50);
-      ctx.beginPath();
-      ctx.moveTo(x, 130);
-      ctx.lineTo(x, 130 + (50 * (6 + 24 - this.now.getHours())));
-      ctx.stroke();
+      const x = 70 + ((W._canvas.width - 70 - 70) * (tick - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+      W._ctx.fillText(tick, x, 50);
+      W._ctx.beginPath();
+      W._ctx.moveTo(x, 130);
+      W._ctx.lineTo(x, 130 + (50 * (6 + 24 - W.now.getHours())));
+      W._ctx.stroke();
     }
     
-    ctx.textAlign = 'right';
-    ctx.fillText(String.fromCharCode(0xb0) + (this.metric ? 'C' : 'F'), canvas.width - 10, 50);
+    W._ctx.textAlign = 'right';
+    W._ctx.fillText(String.fromCharCode(0xb0) + (W.metric ? 'C' : 'F'), W._canvas.width - 10, 50);
 
-    ctx.strokeStyle = ctx.fillStyle = '#ff00ff';
-    ctx.fillText('UV', canvas.width - 10, 100);
+    W._ctx.strokeStyle = W._ctx.fillStyle = '#ff00ff';
+    W._ctx.fillText('UV', W._canvas.width - 10, 100);
     
-    ctx.textAlign = 'center';
+    W._ctx.textAlign = 'center';
     for (let uvi = 1; uvi < 12; uvi++) {
-      const x = 70 + ((canvas.width - 70 - 70) * uvi / 12);
-      ctx.fillText(uvi, x, 100);
+      const x = 70 + ((W._canvas.width - 70 - 70) * uvi / 12);
+      W._ctx.fillText(uvi, x, 100);
     }
     
-    ctx.strokeStyle = '#000000';
-    ctx.fillStyle = '#000000';
+    W._ctx.strokeStyle = '#000000';
+    W._ctx.fillStyle = '#000000';
   }
 
-  drawHours(ctx) {
-    ctx.strokeStyle = '#888888';
-    for (let h = this.now.getHours(); h < 24; ++h) {
-      const datum = this.hours[h];
-      const y = 150 + (50 * (h - this.now.getHours()));
-      ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 60, y);
-      ctx.beginPath();
-      ctx.moveTo(70, y - 15);
-      ctx.lineTo(canvas.width - 70, y - 15);
-      ctx.stroke();
+  _drawHours() {
+    W._ctx.strokeStyle = '#888888';
+    for (let h = W.now.getHours(); h < 24; ++h) {
+      const datum = W.hours[h];
+      const y = 150 + (50 * (h - W.now.getHours()));
+      W._ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 60, y);
+      W._ctx.beginPath();
+      W._ctx.moveTo(70, y - 15);
+      W._ctx.lineTo(W._canvas.width - 70, y - 15);
+      W._ctx.stroke();
     }
-    
-    ctx.strokeStyle = '#000000';
-    ctx.beginPath();
+
+    W._ctx.strokeStyle = '#000000';
+    W._ctx.beginPath();
     let y = 130;
-    let x = 70 + ((canvas.width - 70 - 70) * (this.hours[this.now.getHours()].temp - this.minima.temp) / (this.maxima.temp - this.minima.temp));
-    ctx.moveTo(x, y);
-    for (let h = this.now.getHours() + 1; h < 24; ++h) {
-      x = 70 + ((canvas.width - 70 - 70) * (this.hours[h].temp - this.minima.temp) / (this.maxima.temp - this.minima.temp));
+    let x = 70 + ((W._canvas.width - 70 - 70) * (W.hours[W.now.getHours()].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+    W._ctx.moveTo(x, y);
+    for (let h = W.now.getHours() + 1; h < 24; ++h) {
+      x = 70 + ((W._canvas.width - 70 - 70) * (W.hours[h].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
       y += 50;
-      ctx.lineTo(x, y);
+      W._ctx.lineTo(x, y);
     }
-    ctx.stroke();
-    
-    ctx.strokeStyle = '#ff00ff';
-    ctx.beginPath();
+    W._ctx.stroke();
+
+    W._ctx.strokeStyle = '#ff00ff';
+    W._ctx.beginPath();
     y = 130;
-    x = 70 + ((canvas.width - 70 - 70) * this.hours[this.now.getHours()].uv / 12);
-    ctx.moveTo(x, y);
-    for (let h = this.now.getHours() + 1; h < 24; ++h) {
-      x = 70 + ((canvas.width - 70 - 70) * this.hours[h].uv / 12);
+    x = 70 + ((W._canvas.width - 70 - 70) * W.hours[W.now.getHours()].uv / 12);
+    W._ctx.moveTo(x, y);
+    for (let h = W.now.getHours() + 1; h < 24; ++h) {
+      x = 70 + ((W._canvas.width - 70 - 70) * W.hours[h].uv / 12);
       y += 50;
-      ctx.lineTo(x, y);
+      W._ctx.lineTo(x, y);
     }
-    ctx.stroke();
+    W._ctx.stroke();
   }
 
-  drawDays(ctx) {
-    ctx.strokeStyle = '#888888';
+  _drawDays() {
+    W._ctx.strokeStyle = '#888888';
     for (let d = 0; d < 5; ++d) {
-      const datum = this.days[d];
-      const y = 200 + (50 * (d + 24 - this.now.getHours()));
-      ctx.fillText(datum.date.getDate(), 60, y);
-      ctx.beginPath();
-      ctx.moveTo(70, y - 15);
-      ctx.lineTo(canvas.width - 70, y - 15);
-      ctx.stroke();
+      const datum = W.days[d];
+      const y = 200 + (50 * (d + 24 - W.now.getHours()));
+      W._ctx.fillText(datum.date.getDate(), 60, y);
+      W._ctx.beginPath();
+      W._ctx.moveTo(70, y - 15);
+      W._ctx.lineTo(W._canvas.width - 70, y - 15);
+      W._ctx.stroke();
     }
 
-    ctx.fillStyle = '#aaaaaa';
+    W._ctx.fillStyle = '#aaaaaa';
     for (let d = 0; d < 5; ++d) {
-      const datum = this.days[d];
-      const y = 200 + (50 * (d + 24 - this.now.getHours())) - 30;
-      const x = 70 + ((canvas.width - 70 - 70) * (datum.temp[0] - this.minima.temp) / (this.maxima.temp - this.minima.temp));
-      const w = 70 + ((canvas.width - 70 - 70) * (datum.temp[1] - this.minima.temp) / (this.maxima.temp - this.minima.temp)) - x;
-      ctx.fillRect(x, y, w, 30);
+      const datum = W.days[d];
+      const y = 200 + (50 * (d + 24 - W.now.getHours())) - 30;
+      const x = 70 + ((W._canvas.width - 70 - 70) * (datum.temp[0] - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+      const w = 70 + ((W._canvas.width - 70 - 70) * (datum.temp[1] - W.minima.temp) / (W.maxima.temp - W.minima.temp)) - x;
+      W._ctx.fillRect(x, y, w, 30);
     }
-    
-    ctx.strokeStyle = '#ff00ff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
+
+    W._ctx.strokeStyle = '#ff00ff';
+    W._ctx.lineWidth = 2;
+    W._ctx.beginPath();
     for (let d = 0; d < 5; ++d) {
-      const datum = this.days[d];
-      const y = 200 + (50 * (d + 24 - this.now.getHours())) - 30;
-      const x = 70 + ((canvas.width - 70 - 70) * datum.uv / 12) - 15;
-      ctx.moveTo(x,y+15);
-      ctx.lineTo(x+30,y+15);
-      ctx.moveTo(x+15,y);
-      ctx.lineTo(x+15,y+30);
-      ctx.moveTo(x+5,y+5);
-      ctx.lineTo(x+25,y+25);
-      ctx.moveTo(x+25,y+5);
-      ctx.lineTo(x+5,y+25);
+      const datum = W.days[d];
+      const y = 200 + (50 * (d + 24 - W.now.getHours())) - 30;
+      const x = 70 + ((W._canvas.width - 70 - 70) * datum.uv / 12) - 15;
+      W._ctx.moveTo(x,y+15);
+      W._ctx.lineTo(x+30,y+15);
+      W._ctx.moveTo(x+15,y);
+      W._ctx.lineTo(x+15,y+30);
+      W._ctx.moveTo(x+5,y+5);
+      W._ctx.lineTo(x+25,y+25);
+      W._ctx.moveTo(x+25,y+5);
+      W._ctx.lineTo(x+5,y+25);
     }
-    ctx.stroke();
+    W._ctx.stroke();
   }
+};
+
+try {
+  const coords = JSON.parse(localStorage.getItem('geolocation') || 'null');
+  if (coords && (new Date().getTime() < coords.expires)) {
+    W.load(coords);
+  }
+} catch (e) {
 }
-
-console.log('geolocating');
 navigator.geolocation.getCurrentPosition(async (pos) => {
-  console.log(pos.coords);
-  try {
-    window.forecast = new Forecast(pos.coords.latitude, pos.coords.longitude);
-    sweepStorage();
-    const h = 130 + (50 * (6 + 24 - forecast.now.getHours()));
-    debug.innerText += `innerWidth = ${innerWidth}\n`;
-    debug.innerText += `devicePixelRatio = ${devicePixelRatio}\n`;
-    canvas.width = innerWidth * (devicePixelRatio || 1);
-    canvas.height = h * (devicePixelRatio || 1);
-    canvas.style.width = innerWidth + 'px';
-    canvas.style.height = h + 'px';
-    await window.forecast.loaded;
-    console.log('loaded, drawing')
-    window.forecast.draw(canvas.getContext('2d'));
-  } catch (e) {
-    document.body.innerText = e.stack;
-  }
+  W.load(pos.coords);
+  localStorage.setItem('geolocation', JSON.stringify({
+    latitude: pos.coords.latitude,
+    longitude: pos.coords.longitude,
+    expires: new Date().getTime() + (1000 * 60 * 30);
+  }));
 }, e => {
   document.body.innerText = e.message;
 }, {
-  timeout: 1000,
-  maximumAge: 30 * 60 * 1000,
 });
 </script>
