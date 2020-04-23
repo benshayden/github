@@ -165,7 +165,7 @@ const W = {
 
   async _loadUv() {
     const date = new Date(W.now.toDateString()).getTime();
-    const uvDays = await Promise.all([0, 1, 2, 3, 4, 5, 6].map(d => fetchCachedJson({
+    const uvDays = await Promise.all([0, 1, 2, 3, 4, 5, 6].map(d => W._fetchCachedJson({
       url: `https://api.openuv.io/api/v1/forecast?lat=${W.lat}&lng=${W.lon}&dt=${new Date(date + (d * MS_PER_DAY)).toISOString()}`,
       headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
       expiryMs: MS_PER_DAY,
