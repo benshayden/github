@@ -332,5 +332,10 @@ navigator.geolocation.getCurrentPosition(async (pos) => {
   await window.forecast.loaded;
   console.log('loaded, drawing')
   window.forecast.draw(canvas.getContext('2d'));
+}, er => {
+  document.body.innerText = er;
+}, {
+  timeout: 1000,
+  maximumAge: 30 * 60 * 1000,
 });
 </script>
