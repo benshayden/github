@@ -324,15 +324,15 @@ console.log('geolocating');
 navigator.geolocation.getCurrentPosition(async (pos) => {
   console.log(pos.coords);
   try {
-  window.forecast = new Forecast(pos.coords.latitude, pos.coords.longitude);
-  sweepStorage();
-  canvas.width = innerWidth * (devicePixelRatio || 1);
-  canvas.height = innerHeight * (devicePixelRatio || 1);
-  canvas.style.width = innerWidth + 'px';
-  canvas.style.height = innerHeight + 'px';
-  await window.forecast.loaded;
-  console.log('loaded, drawing')
-  window.forecast.draw(canvas.getContext('2d'));
+    window.forecast = new Forecast(pos.coords.latitude, pos.coords.longitude);
+    sweepStorage();
+    canvas.width = innerWidth * (devicePixelRatio || 1);
+    canvas.height = innerHeight * (devicePixelRatio || 1);
+    canvas.style.width = innerWidth + 'px';
+    canvas.style.height = innerHeight + 'px';
+    await window.forecast.loaded;
+    console.log('loaded, drawing')
+    window.forecast.draw(canvas.getContext('2d'));
   } catch (er) {
     document.body.innerText = er;
   }
