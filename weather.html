@@ -165,6 +165,7 @@ class Forecast {
     for (const dayDatum of uv) {
       for (const hourDatum of dayDatum.result) {
         const date = new Date(hourDatum.uv_time);
+        console.log('addUv', date.getDate(), date.getHours(), hourDatum.uv);
         if (date.getDate() === this.now.getDate()) {
           const target = this.hours[date.getHours()];
           if (!target) continue;
