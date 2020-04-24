@@ -180,7 +180,9 @@ const W = {
           if (!target) continue;
           target.uv = hourDatum.uv * (1 - 0.7 * (target.cloud || 0) / 100);
         } else if (date > W.now) {
-          const target = W.days[parseInt((date - W.now) / MS_PER_DAY) - 1];
+          const targetIndex = parseInt((new Date(date.toDateString()) - new Date(W.now.toDateString())) / MS_PER_DAY) - 1;
+          console.log(targetIndex);
+          const target = W.days[targetIndex];
           if (!target) continue;
           target.uv = Math.max(hourDatum.uv, target.uv || 0);
         }
