@@ -71,6 +71,7 @@ const W = {
       W.lat = parseInt(coords.latitude * 10) / 10;
       W.lon = parseInt(coords.longitude * 10) / 10;
       W.now = new Date();
+      console.log('loading', W.lat, W.lon, W.now);
       W.metric = localStorage.getItem('metric') !== null;
       W.hours = {};
       for (let h = W.now.getHours(); h < 24; ++h) {
@@ -352,19 +353,27 @@ addEventListener('load', async() => {
   let coords = null;
   try {
     coords = JSON.parse(localStorage.getItem('geolocation') || 'null');
+    if (coords === null) {
+      console.log('no cached coords');
+    }
   } catch (e) {
+    console.log('coords failed to parse');
   }
   if (coords && (new Date().getTime() > coords.expires)) {
+    console.log('coords expired');
     coords = null;
   }
   if (coords) {
     W.load(coords);
   }
+  console.log('geolocating');
   navigator.geolocation.getCurrentPosition(async (pos) => {
     if (!coords
         || (Math.abs(coords.latitude - pos.coords.latitude) > 0.1)
         || (Math.abs(coords.longitude - pos.coords.longitude) > 0.1)) {
       W.load(pos.coords);
+    } else {
+      console.log('already loaded coords', coords);
     }
     localStorage.setItem('geolocation', JSON.stringify({
       latitude: pos.coords.latitude,
