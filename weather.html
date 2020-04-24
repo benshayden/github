@@ -11,6 +11,16 @@
 <div id=debug></div>
 
 <script>
+
+// TODO no magic numbers
+// TODO clouds
+// TODO location.hash = lat,lon,metric
+// TODO rain
+// TODO merge axes
+// TODO purpleair link
+// TODO radar link
+// TODO metric/imperial button
+
 const MS_PER_HOUR = 1000 * 60 * 60;
 const MS_PER_DAY = MS_PER_HOUR * 24;
 const AIR_SENSOR_MILES = 5;
@@ -270,8 +280,6 @@ const W = {
   },
 
   _drawAxes() {
-    // TODO merge axes
-
     W._ctx.strokeStyle = '#888888';
     let dTempTick = W.metric ? 2 : 5;
     let minTempTick = dTempTick + (dTempTick * parseInt(W.minima.temp / dTempTick));
@@ -383,15 +391,8 @@ addEventListener('load', async() => {
   let coords = null;
   try {
     coords = JSON.parse(localStorage.getItem('geolocation') || 'null');
-    if (coords === null) {
-      console.log('no cached coords');
-    }
   } catch (e) {
     console.log('coords failed to parse');
-  }
-  if (coords && (new Date().getTime() > coords.expires)) {
-    console.log('coords expired');
-    coords = null;
   }
   if (coords) {
     W.load(coords);
@@ -408,7 +409,6 @@ addEventListener('load', async() => {
     localStorage.setItem('geolocation', JSON.stringify({
       latitude: pos.coords.latitude,
       longitude: pos.coords.longitude,
-      expires: new Date().getTime() + (1000 * 60 * 30),
     }));
   }, e => {
     document.body.innerText = e.message;
