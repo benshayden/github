@@ -68,8 +68,8 @@ const W = {
 
   async load(coords) {
     try {
-      W.lat = parseInt(coords.latitude * 10) / 10;
-      W.lon = parseInt(coords.longitude * 10) / 10;
+      W.lat = Math.round(coords.latitude * 10) / 10;
+      W.lon = Math.round(coords.longitude * 10) / 10;
       W.now = new Date();
       console.log('loading', W.lat, W.lon, W.now);
       W.metric = localStorage.getItem('metric') !== null;
