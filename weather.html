@@ -6,12 +6,49 @@
     margin: 0;
     overflow: hidden;
   }
+  card {
+    border: 1px solid black;
+    border-radius: 8px;
+    display: inline;
+  }
+  card::before {
+    position: absolute;
+    display: block;
+    transform: translateY(-10px);
+  }
+  #date::before {
+    content: "Date";
+  }
+  #temp::before {
+    content: "Temp";
+  }
+  #uv::before {
+    content: "UV";
+  }
+  #aqi::before {
+    content: "AQI";
+  }
+  #rain::before {
+    content: "Rain";
+  }
+  #uv {
+    border-color: #ff00ff;
+  }
+  #rain {
+    border-color: #0000ff;
+  }
 </style>
+<card id=date></card>
+<card id=temp></card>
+<card id=uv></card>
+<card id=aqi></card>
+<card id=rain></card>
 <canvas id=canvas></canvas>
 <div id=debug></div>
 
 <script>
 
+// TODO scorecards
 // TODO no magic numbers
 // TODO clouds
 // TODO location.hash = lat,lon,metric
@@ -30,6 +67,10 @@ const LINE_HEIGHT_PX = 50;
 const Y_AXIS_PX = 70;
 
 const W = {
+  _day(date) {
+    return 'UMTWRFS'[date.getDay()] + date.getDate();
+  },
+
   _convertTemp(k, metric = true) {
     const c = k - 273.15;
     return metric ? c : (c * (9 / 5) + 32);
@@ -74,6 +115,10 @@ const W = {
       } catch(e) {
       }
     }
+  },
+  
+  async reload() {
+    return await W.load({latitude: W.lat, longitude: W.lon});
   },
 
   async load(coords) {
@@ -228,6 +273,7 @@ const W = {
   },
   
   _draw() {
+    document.getElementById('date').innerText = W._day(W.now);
     W._setupCanvas();
     W._ctx.font = '40px Helvetica';
     W._ctx.lineWidth = 1;
@@ -249,6 +295,10 @@ const W = {
       W._ctx.textAlign = 'right';
       W._ctx.fillStyle = ['#00cc00', '#66cc00', '#ffff00', '#ff9900', '#ff0000', '#a52a2a'][parseInt(W.aqi / 50)];
       W._ctx.fillText(parseInt(W.aqi), W._canvas.width - 10, 150);
+      const card = document.getElementById('aqi');
+      card.style.borderColor = W._ctx.fillStyle;
+      card.style.color = W._ctx.fillStyle;
+      card.innerText = parseInt(W.aqi);
     }
   },
   
@@ -413,6 +463,16 @@ addEventListener('load', async() => {
   }, e => {
     document.body.innerText = e.message;
   }, {
+  });
+  
+  window.setTimeout(function() {
+    W.reload();
+  }, 1000 * 60 * 5);
+
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+      W.reload();
+    }
   });
 });
 </script>
