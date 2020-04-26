@@ -9,12 +9,16 @@
   card {
     border: 1px solid black;
     border-radius: 8px;
-    display: inline;
+    display: inline-block;
+    min-width: 50px;
+    margin-top: 10px;
+    padding-top: 10px;
   }
   card::before {
     position: absolute;
     display: block;
-    transform: translateY(-10px);
+    transform: translateY(-20px);
+    background: white;
   }
   #date::before {
     content: "Date";
@@ -24,12 +28,14 @@
   }
   #uv::before {
     content: "UV";
+    color: #ff00ff;
   }
   #aqi::before {
     content: "AQI";
   }
   #rain::before {
     content: "Rain";
+    color: #0000ff;
   }
   #uv {
     border-color: #ff00ff;
@@ -69,6 +75,10 @@ const Y_AXIS_PX = 70;
 const W = {
   _day(date) {
     return 'UMTWRFS'[date.getDay()] + date.getDate();
+  },
+  
+  _lerp(v0, v1, t) {
+    return (v0 * (1 - t)) + (v1 * t);
   },
 
   _convertTemp(k, metric = true) {
@@ -370,6 +380,7 @@ const W = {
       W._ctx.lineTo(W._canvas.width - 70, y - 15);
       W._ctx.stroke();
     }
+    
 
     W._ctx.strokeStyle = '#000000';
     W._ctx.beginPath();
@@ -394,6 +405,27 @@ const W = {
       W._ctx.lineTo(x, y);
     }
     W._ctx.stroke();
+    
+    const tempCard = document.getElementById('temp');
+    const uvCard = document.getElementById('uv');
+    const prevHour = W.hours[W.now.getHours()];
+    const nextHour = W.hours[W.now.getHours() + 1];
+    if (nextHour) {
+      const minuteFrac = W.now.getMinutes() / 60
+      uvCard.innerText = parseInt(Math.round(W._lerp(
+        prevHour.uv || 0,
+        nextHour.uv || 0,
+        minuteFrac
+      )));
+      const lerpTemp = W._lerp(prevHour.temp, nextHour.temp, minuteFrac);
+      const metricPow = W.metric ? 10 : 1;
+      tempCard.innerText = (W.metric
+        ? (Math.round(lerpTemp * 10) / 10)
+        : parseInt(Math.round(lerpTemp))) + String.fromCharCode(0xb0) + (W.metric ? 'C' : 'F');
+    } else {
+      uvCard.innerText = 0;
+      tempCard.innerText = prevHour.temp;
+    }
   },
 
   _drawDays() {
