@@ -58,11 +58,10 @@
 
 <script>
 
-// TODO scorecards
 // TODO no magic numbers
 // TODO clouds
 // TODO location.hash = lat,lon,metric
-// TODO rain
+// TODO rain bars, rainCard
 // TODO merge axes
 // TODO purpleair link
 // TODO radar link
@@ -440,7 +439,7 @@ const W = {
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
       const y = 200 + (50 * (d + 24 - W.now.getHours()));
-      W._ctx.fillText(datum.date.getDate(), 60, y);
+      W._ctx.fillText(W._day(datum.date), 60, y);
       W._ctx.beginPath();
       W._ctx.moveTo(70, y - 15);
       W._ctx.lineTo(W._canvas.width - 70, y - 15);
