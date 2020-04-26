@@ -313,6 +313,9 @@ const W = {
       card.style.color = W._ctx.fillStyle;
       card.innerText = parseInt(W.aqi);
     }
+    
+    const rainCard = document.getElementById('rain');
+    rainCard.innerText = 0 + (W.metric ? 'mm' : '"');
   },
   
   _drawClouds() {
