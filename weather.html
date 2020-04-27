@@ -288,10 +288,11 @@ const W = {
   },
   
   _drawAqi() {
-    if (W.aqi !== null) {
-      const card = document.getElementById('aqi');
-      card.style.borderColor = W._ctx.fillStyle;
-      card.style.color = W._ctx.fillStyle;
+    const card = document.getElementById('aqi');
+    if (W.aqi === null) {
+      card.style.display = 'none';
+    } else {
+      card.style.color = card.style.borderColor = ['#00cc00', '#66cc00', '#ffff00', '#ff9900', '#ff0000', '#a52a2a'][parseInt(W.aqi / 50)];
       card.innerText = parseInt(W.aqi);
     }
   },
