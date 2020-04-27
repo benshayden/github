@@ -73,7 +73,7 @@ const W = {
       if ((h - W.now.getHours()) % 2 == 0) continue;
       const clouds = W.hours[h].clouds;
       if ('number' !== typeof clouds) continue;
-      const y = 80 + (50 * (h - W.now.getHours()));
+      const y = 85 + (50 * (h - W.now.getHours()));
       const grd = W._ctx.createLinearGradient(/*x0*/0, /*y0*/0, /*x1*/0, /*y1*/50);
       grd.addColorStop(0, W._clouds(prevClouds));
       grd.addColorStop(1, W._clouds(clouds));
@@ -388,7 +388,7 @@ const W = {
 
     W._ctx.strokeStyle = '#000000';
     W._ctx.beginPath();
-    let y = 130;
+    let y = 135;
     let x = 70 + ((W._canvas.width - 70 - 70) * (W.hours[W.now.getHours()].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
     W._ctx.moveTo(x, y);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
@@ -400,7 +400,7 @@ const W = {
 
     W._ctx.strokeStyle = '#ff00ff';
     W._ctx.beginPath();
-    y = 130;
+    y = 135;
     x = 70 + ((W._canvas.width - 70 - 70) * W.hours[W.now.getHours()].uv / 12);
     W._ctx.moveTo(x, y);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
