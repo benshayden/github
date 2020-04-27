@@ -187,6 +187,7 @@ const W = {
     W._canvas.style.width = innerWidth + 'px';
     W._canvas.style.height = h + 'px';
     W._ctx = W._canvas.getContext('2d');
+    W._ctx.clearRect(0, 0, W._canvas.width, W._canvas.height);
   },
 
   async _loadWeather() {
@@ -335,7 +336,7 @@ const W = {
   },
   
   _clouds(clouds) {
-    return `hsl(216, ${100 - clouds}%, 70%)`;
+    return `hsl(216, ${100 - clouds}%, 80%)`;
   },
   
   _drawAxes() {
