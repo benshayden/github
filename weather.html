@@ -322,8 +322,8 @@ const W = {
       if ('number' !== typeof clouds) continue;
       const y = 150 + (50 * (h - W.now.getHours()));
       const grd = W._ctx.createLinearGradient(/*x0*/0, /*y0*/0, /*x1*/0, /*y1*/50);
-      grd.addColorStop(0, `hsl(216, ${prevClouds}%, 70%)`);
-      grd.addColorStop(1, `hsl(216, ${clouds}%, 70%)`);
+      grd.addColorStop(0, `hsl(216, ${100 - prevClouds}%, 70%)`);
+      grd.addColorStop(1, `hsl(216, ${100 - clouds}%, 70%)`);
       W._ctx.fillStyle = grd;
       W._ctx.fillRect(0, y, 70, 50);
       prevClouds = clouds;
@@ -333,7 +333,7 @@ const W = {
       const clouds = W.days[d].clouds;
       if ('number' !== typeof clouds) continue;
       const y = 200 + (50 * (d + 24 - W.now.getHours()));
-      W._ctx.fillStyle = `hsl(216, ${clouds}%, 70%)`;
+      W._ctx.fillStyle = `hsl(216, ${100 - clouds}%, 70%)`;
       W._ctx.fillRect(0, y, 70, 50);
     }
   },
