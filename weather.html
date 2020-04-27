@@ -85,7 +85,7 @@ const W = {
     for (let d = 0; d < 5; ++d) {
       const clouds = W.days[d].clouds;
       if ('number' !== typeof clouds) continue;
-      const y = 150 + (50 * (d + 24 - W.now.getHours()));
+      const y = 155 + (50 * (d + 24 - W.now.getHours()));
       W._ctx.fillStyle = W._clouds(clouds);
       W._ctx.fillRect(0, y, 70, 50);
     }
