@@ -262,14 +262,14 @@ const W = {
     for (const dayDatum of uv) {
       for (const hourDatum of dayDatum.result) {
         const date = new Date(hourDatum.uv_time);
-        console.log('addUv', date.getDate(), date.getHours(), hourDatum.uv);
         if (date.getDate() === W.now.getDate()) {
           const target = W.hours[date.getHours()];
+          console.log('addUv', date.getDate(), date.getHours(), hourDatum.uv, target);
           if (!target) continue;
           target.uv = hourDatum.uv * (1 - 0.7 * (target.cloud || 0) / 100);
         } else if (date > W.now) {
           const targetIndex = parseInt((new Date(date.toDateString()) - new Date(W.now.toDateString())) / MS_PER_DAY) - 1;
-          console.log(targetIndex);
+          console.log('addUv', date.getDate(), date.getHours(), hourDatum.uv, targetIndex, W.days[targetIndex]);
           const target = W.days[targetIndex];
           if (!target) continue;
           target.uv = Math.max(hourDatum.uv, target.uv || 0);
