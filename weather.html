@@ -80,6 +80,8 @@ const W = {
       W._ctx.fillRect(0, y, 70, 50);
       prevClouds = clouds;
     }
+    W._ctx.fillStyle = W._clouds(prevClouds);
+    W._ctx.fillRect(0, 85 + (50 * (24 - W.now.getHours())), 70, 25);
 
     for (let d = 0; d < 5; ++d) {
       const clouds = W.days[d].clouds;
