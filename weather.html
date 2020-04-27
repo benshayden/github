@@ -68,9 +68,8 @@ const W = {
   _drawClouds() {
     let prevClouds = W.hours[W.now.getHours()].clouds;
     W._ctx.fillStyle = W._clouds(prevClouds);
-    //W._ctx.fillRect(0, 120, 70, 30);
+    W._ctx.fillRect(0, 100, 70, 25);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
-      if ((h - W.now.getHours()) % 2 == 0) continue;
       const clouds = W.hours[h].clouds;
       if ('number' !== typeof clouds) continue;
       const y = 85 + (50 * (h - W.now.getHours()));
@@ -350,8 +349,8 @@ const W = {
       const x = 70 + ((W._canvas.width - 70 - 70) * (tick - W.minima.temp) / (W.maxima.temp - W.minima.temp));
       W._ctx.fillText(tick, x, 50);
       W._ctx.beginPath();
-      W._ctx.moveTo(x, 130);
-      W._ctx.lineTo(x, 130 + (50 * (6 + 24 - W.now.getHours())));
+      W._ctx.moveTo(x, 135);
+      W._ctx.lineTo(x, 135 + (50 * (6 + 24 - W.now.getHours())));
       W._ctx.stroke();
     }
     
