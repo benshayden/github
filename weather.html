@@ -61,7 +61,7 @@ const MS_PER_DAY = MS_PER_HOUR * 24;
 const AIR_SENSOR_MILES = 5;
 const AIR_SENSOR_DEGREES = parseInt((AIR_SENSOR_MILES * 360 / 24901) * 10000) / 10000;
 const FONT_PX = 40;
-const LINE_HEIGHT_PX = 50;
+const LINE_HEIGHT_PX = FONT_PX * 1.25;
 const Y_AXIS_PX = 70;
 
 const W = {
@@ -330,7 +330,7 @@ const W = {
     for (let d = 0; d < 5; ++d) {
       const clouds = W.days[d].clouds;
       if ('number' !== typeof clouds) continue;
-      const y = 180 + (50 * (d + 24 - W.now.getHours()));
+      const y = 150 + (50 * (d + 24 - W.now.getHours()));
       W._ctx.fillStyle = W._clouds(clouds);
       W._ctx.fillRect(0, y, 70, 50);
     }
