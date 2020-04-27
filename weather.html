@@ -65,6 +65,32 @@ const LINE_HEIGHT_PX = FONT_PX * 1.25;
 const Y_AXIS_PX = 70;
 
 const W = {
+  _drawClouds() {
+    let prevClouds = W.hours[W.now.getHours()].clouds;
+    W._ctx.fillStyle = W._clouds(prevClouds);
+    //W._ctx.fillRect(0, 120, 70, 30);
+    for (let h = W.now.getHours() + 1; h < 24; ++h) {
+      if (h % 2 == 0) continue;
+      const clouds = W.hours[h].clouds;
+      if ('number' !== typeof clouds) continue;
+      const y = 50 + (50 * (h - W.now.getHours()));
+      const grd = W._ctx.createLinearGradient(/*x0*/0, /*y0*/0, /*x1*/0, /*y1*/50);
+      grd.addColorStop(0, W._clouds(prevClouds));
+      grd.addColorStop(1, W._clouds(clouds));
+      W._ctx.fillStyle = grd;
+      W._ctx.fillRect(0, y, 70, 50);
+      prevClouds = clouds;
+    }
+
+    for (let d = 0; d < 5; ++d) {
+      const clouds = W.days[d].clouds;
+      if ('number' !== typeof clouds) continue;
+      const y = 150 + (50 * (d + 24 - W.now.getHours()));
+      W._ctx.fillStyle = W._clouds(clouds);
+      W._ctx.fillRect(0, y, 70, 50);
+    }
+  },
+
   _day(date) {
     return 'UMTWRFS'[date.getDay()] + date.getDate();
   },
@@ -311,31 +337,6 @@ const W = {
     return `hsl(216, ${100 - clouds}%, 70%)`;
   },
   
-  _drawClouds() {
-    let prevClouds = W.hours[W.now.getHours()].clouds;
-    W._ctx.fillStyle = W._clouds(prevClouds);
-    W._ctx.fillRect(0, 70, 70, 30);
-    for (let h = W.now.getHours() + 1; h < 24; ++h) {
-      const clouds = W.hours[h].clouds;
-      if ('number' !== typeof clouds) continue;
-      const y = 100 + (50 * (h - W.now.getHours()));
-      const grd = W._ctx.createLinearGradient(/*x0*/0, /*y0*/0, /*x1*/0, /*y1*/50);
-      grd.addColorStop(0, W._clouds(prevClouds));
-      grd.addColorStop(1, W._clouds(clouds));
-      W._ctx.fillStyle = grd;
-      W._ctx.fillRect(0, y, 70, 50);
-      prevClouds = clouds;
-    }
-
-    for (let d = 0; d < 5; ++d) {
-      const clouds = W.days[d].clouds;
-      if ('number' !== typeof clouds) continue;
-      const y = 150 + (50 * (d + 24 - W.now.getHours()));
-      W._ctx.fillStyle = W._clouds(clouds);
-      W._ctx.fillRect(0, y, 70, 50);
-    }
-  },
-
   _drawAxes() {
     W._ctx.font = '40px Helvetica';
     W._ctx.lineWidth = 1;
@@ -384,7 +385,6 @@ const W = {
       W._ctx.lineTo(W._canvas.width - 70, y - 15);
       W._ctx.stroke();
     }
-    
 
     W._ctx.strokeStyle = '#000000';
     W._ctx.beginPath();
