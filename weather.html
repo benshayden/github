@@ -50,11 +50,9 @@
 <script>
 
 // TODO no magic numbers
-// TODO clouds
 // TODO location.hash = lat,lon,metric
 // TODO rain bars, rainCard
 // TODO merge axes
-// TODO purpleair link
 // TODO radar link
 // TODO metric/imperial button
 
@@ -294,6 +292,9 @@ const W = {
     } else {
       card.style.color = card.style.borderColor = ['#00cc00', '#66cc00', '#ffff00', '#ff9900', '#ff0000', '#a52a2a'][parseInt(W.aqi / 50)];
       card.innerText = parseInt(W.aqi);
+      card.onclick = () => {
+        open(`https://www.purpleair.com/map?opt=1/mAQI/a10/cC0#11/${W.lat}/${W.lon}`);
+      };
     }
   },
   
@@ -306,15 +307,21 @@ const W = {
     W._ctx.stroke();
   },
   
+  _clouds(clouds) {
+    return `hsl(216, ${100 - clouds}%, 70%)`;
+  },
+  
   _drawClouds() {
     let prevClouds = W.hours[W.now.getHours()].clouds;
+    W._ctx.fillStyle = W._clouds(prevClouds);
+    W._ctx.fillRect(0, 70, 70, 30);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
       const clouds = W.hours[h].clouds;
       if ('number' !== typeof clouds) continue;
-      const y = 70 + (50 * (h - W.now.getHours()));
+      const y = 100 + (50 * (h - W.now.getHours()));
       const grd = W._ctx.createLinearGradient(/*x0*/0, /*y0*/0, /*x1*/0, /*y1*/50);
-      grd.addColorStop(0, `hsl(216, ${100 - prevClouds}%, 70%)`);
-      grd.addColorStop(1, `hsl(216, ${100 - clouds}%, 70%)`);
+      grd.addColorStop(0, W._clouds(prevClouds));
+      grd.addColorStop(1, W._clouds(clouds));
       W._ctx.fillStyle = grd;
       W._ctx.fillRect(0, y, 70, 50);
       prevClouds = clouds;
@@ -324,7 +331,7 @@ const W = {
       const clouds = W.days[d].clouds;
       if ('number' !== typeof clouds) continue;
       const y = 180 + (50 * (d + 24 - W.now.getHours()));
-      W._ctx.fillStyle = `hsl(216, ${100 - clouds}%, 70%)`;
+      W._ctx.fillStyle = W._clouds(clouds);
       W._ctx.fillRect(0, y, 70, 50);
     }
   },
