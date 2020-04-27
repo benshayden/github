@@ -77,8 +77,8 @@ const W = {
       if ('number' !== typeof clouds) continue;
       const y = 85 + (50 * (h - W.now.getHours()));
       const grd = W._ctx.createLinearGradient(0, y, 0, y + 50);
-      grd.addColorStop(0, W._clouds(0));
-      grd.addColorStop(1, W._clouds(100));
+      grd.addColorStop(0, W._clouds(prevClouds));
+      grd.addColorStop(1, W._clouds(clouds));
       W._ctx.fillStyle = grd;
       W._ctx.fillRect(0, y, 70, 50);
       prevClouds = clouds;
