@@ -35,24 +35,15 @@
   #aqi::before {
     content: "AQI";
   }
-  #rain::before {
-    content: "Rain";
-    color: #0000ff;
-  }
   #uv {
     border-color: #ff00ff;
     color: #ff00ff;
-  }
-  #rain {
-    border-color: #0000ff;
-    color: #0000ff;
   }
 </style>
 <card id=date></card>
 <card id=temp></card>
 <card id=uv></card>
 <card id=aqi></card>
-<card id=rain></card>
 <canvas id=canvas></canvas>
 <div id=debug></div>
 
@@ -288,31 +279,30 @@ const W = {
   _draw() {
     document.getElementById('date').innerText = W._day(W.now);
     W._setupCanvas();
-    W._ctx.font = '40px Helvetica';
-    W._ctx.lineWidth = 1;
-    W._ctx.textAlign = 'center';
     W._drawAxes();
-    W._ctx.textAlign = 'right';
     W._drawClouds();
     W._drawHours();
     W._drawDays();
-    
-    W._ctx.strokeStyle = '#ff0000';
-    W._ctx.beginPath();
-    const timeY = 150 - 15 + (50 * W.now.getMinutes() / 60);
-    W._ctx.moveTo(70, timeY);
-    W._ctx.lineTo(W._canvas.width - 70, timeY);
-    W._ctx.stroke();
- 
+    W._drawNow();
+    W._drawAqi();
+  },
+  
+  _drawAqi() {
     if (W.aqi !== null) {
       const card = document.getElementById('aqi');
       card.style.borderColor = W._ctx.fillStyle;
       card.style.color = W._ctx.fillStyle;
       card.innerText = parseInt(W.aqi);
     }
-    
-    const rainCard = document.getElementById('rain');
-    rainCard.innerText = 0 + (W.metric ? 'mm' : '"');
+  },
+  
+  _drawNow() {
+    W._ctx.strokeStyle = '#ff0000';
+    W._ctx.beginPath();
+    const timeY = 150 - 15 + (50 * W.now.getMinutes() / 60);
+    W._ctx.moveTo(70, timeY);
+    W._ctx.lineTo(W._canvas.width - 70, timeY);
+    W._ctx.stroke();
   },
   
   _drawClouds() {
@@ -320,7 +310,7 @@ const W = {
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
       const clouds = W.hours[h].clouds;
       if ('number' !== typeof clouds) continue;
-      const y = 150 + (50 * (h - W.now.getHours()));
+      const y = 70 + (50 * (h - W.now.getHours()));
       const grd = W._ctx.createLinearGradient(/*x0*/0, /*y0*/0, /*x1*/0, /*y1*/50);
       grd.addColorStop(0, `hsl(216, ${100 - prevClouds}%, 70%)`);
       grd.addColorStop(1, `hsl(216, ${100 - clouds}%, 70%)`);
@@ -332,14 +322,18 @@ const W = {
     for (let d = 0; d < 5; ++d) {
       const clouds = W.days[d].clouds;
       if ('number' !== typeof clouds) continue;
-      const y = 200 + (50 * (d + 24 - W.now.getHours()));
+      const y = 180 + (50 * (d + 24 - W.now.getHours()));
       W._ctx.fillStyle = `hsl(216, ${100 - clouds}%, 70%)`;
       W._ctx.fillRect(0, y, 70, 50);
     }
   },
 
   _drawAxes() {
+    W._ctx.font = '40px Helvetica';
+    W._ctx.lineWidth = 1;
+    W._ctx.textAlign = 'center';
     W._ctx.strokeStyle = '#888888';
+
     let dTempTick = W.metric ? 2 : 5;
     let minTempTick = dTempTick + (dTempTick * parseInt(W.minima.temp / dTempTick));
     let maxTempTick = dTempTick * parseInt(W.maxima.temp / dTempTick);
@@ -369,7 +363,10 @@ const W = {
   },
 
   _drawHours() {
+    W._ctx.textAlign = 'right';
     W._ctx.strokeStyle = '#888888';
+    W._ctx.fillStyle = 'black';
+
     for (let h = W.now.getHours(); h < 24; ++h) {
       const datum = W.hours[h];
       const y = 150 + (50 * (h - W.now.getHours()));
