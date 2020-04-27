@@ -293,7 +293,7 @@ const W = {
     W._ctx.textAlign = 'center';
     W._drawAxes();
     W._ctx.textAlign = 'right';
-    //W._drawClouds();
+    W._drawClouds();
     W._drawHours();
     W._drawDays();
     
@@ -305,9 +305,6 @@ const W = {
     W._ctx.stroke();
  
     if (W.aqi !== null) {
-      W._ctx.textAlign = 'right';
-      W._ctx.fillStyle = ['#00cc00', '#66cc00', '#ffff00', '#ff9900', '#ff0000', '#a52a2a'][parseInt(W.aqi / 50)];
-      W._ctx.fillText(parseInt(W.aqi), W._canvas.width - 10, 150);
       const card = document.getElementById('aqi');
       card.style.borderColor = W._ctx.fillStyle;
       card.style.color = W._ctx.fillStyle;
@@ -324,12 +321,12 @@ const W = {
       if ('number' !== typeof datum.clouds) continue;
       const y = 150 + (50 * (h - W.now.getHours()));
       
-      const grd = W._ctx.createLinearGradient(0, 0, 200, 0);
+      const grd = W._ctx.createLinearGradient(/*x0*/0, /*y0*/0, /*x1*/0, /*y1*/50);
       // clouds=0: rgb(0%, 0%, 100%); clouds=100: rgb(50%, 50%, 50%)
       grd.addColorStop(0, `rgb(${datum.clouds / 2}%, ${datum.clouds / 2}%, ${100 - (datum.clouds / 2)}%)`);
       grd.addColorStop(1, `rgb(${datum.clouds / 2}%, ${datum.clouds / 2}%, ${100 - (datum.clouds / 2)}%)`);
       W._ctx.fillStyle = grd;
-      W._ctx.fillRect(10, 10, 150, 80);
+      W._ctx.fillRect(0, y, 70, 50);
     }
     
     for (let d = 0; d < 5; ++d) {
@@ -337,11 +334,11 @@ const W = {
       if ('number' !== typeof datum.clouds) continue;
       const y = 200 + (50 * (d + 24 - W.now.getHours()));
       
-      const grd = W._ctx.createLinearGradient(0, 0, 200, 0);
+      const grd = W._ctx.createLinearGradient(0, 0, 0, 50);
       grd.addColorStop(0, `rgb(${datum.clouds / 2}%, ${datum.clouds / 2}%, ${100 - (datum.clouds / 2)}%)`);
       grd.addColorStop(1, `rgb(${datum.clouds / 2}%, ${datum.clouds / 2}%, ${100 - (datum.clouds / 2)}%)`);
       W._ctx.fillStyle = grd;
-      W._ctx.fillRect(10, 10, 150, 80);
+      W._ctx.fillRect(0, y, 70, 50);
     }
   },
 
