@@ -1,5 +1,6 @@
 <!doctype html>
 <title>weather</title>
+<meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <style>
   body {
@@ -35,6 +36,9 @@
   #aqi::before {
     content: "AQI";
   }
+  #covid::before {
+    content: "d\000394covid";
+  }
   #uv {
     border-color: #ff00ff;
     color: #ff00ff;
@@ -47,6 +51,7 @@
 <card id=temp></card>
 <card id=uv></card>
 <card id=aqi></card>
+<card id=covid></card>
 <canvas id=canvas></canvas>
 <div id=debug></div>
 
@@ -174,7 +179,7 @@ const W = {
       W.pm25 = null;
       W.aqi = null;
       W._weatherLoaded = W._loadWeather();
-      await Promise.all([W._weatherLoaded, W._loadUv(), W._loadAir()]);
+      await Promise.all([W._weatherLoaded, W._loadUv(), W._loadAir(), W._loadCovid()]);
       W._sweepStorage();
       W._draw();
     } catch (e) {
@@ -191,6 +196,25 @@ const W = {
     W._canvas.style.height = h + 'px';
     W._ctx = W._canvas.getContext('2d');
     W._ctx.clearRect(0, 0, W._canvas.width, W._canvas.height);
+  },
+  
+  async _loadCovid() {
+    const date = new Date(new Date(W._now.toDateString()) - (3 * MS_PER_DAY)).toISOString();
+    W._addCovid(await W._fetchCachedJson({
+      url: `https://api.covid19api.com/live/country/united-states/status/confirmed/date/${date}`,
+      expiryMs: MS_PER_DAY,
+    }));
+  },
+  
+  _addCovid(data) {
+    // TODO find Province by Lat/Lon
+    data = j.filter(d => d.Province === 'California');
+    const card = document.getElementById('covid');
+    const delta = data[data.length - 1].Active - data[data.length - 2].Active;
+    card.innerText = ((delta >= 0) ? '+' : '') + delta;
+    card.onclick = () => {
+      open(`https://openweathermap.org/weathermap?basemap=map&cities=true&layer=precipitation&lat=${W.lat}&lon=${W.lon}&zoom=5`);
+    };
   },
 
   async _loadWeather() {
