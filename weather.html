@@ -194,6 +194,8 @@ const W = {
   },
 
   async _loadWeather() {
+    // https://openweathermap.org/api/one-call-api
+    // https://home.openweathermap.org/api_keys
     W._addWeather(await W._fetchCachedJson({
       url: `https://api.openweathermap.org/data/2.5/onecall?lat=${W.lat}&lon=${W.lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`,
       expiryMs: MS_PER_HOUR,
@@ -248,6 +250,7 @@ const W = {
   },
 
   async _loadUv() {
+    // https://www.openuv.io/
     const date = new Date(W.now.toDateString()).getTime();
     const uvDays = await Promise.all([0, 1, 2, 3, 4, 5, 6].map(d => W._fetchCachedJson({
       url: `https://api.openuv.io/api/v1/forecast?lat=${W.lat}&lng=${W.lon}&dt=${new Date(date + (d * MS_PER_DAY)).toISOString()}`,
@@ -352,7 +355,7 @@ const W = {
     let minTempTick = dTempTick + (dTempTick * parseInt(W.minima.temp / dTempTick));
     let maxTempTick = dTempTick * parseInt(W.maxima.temp / dTempTick);
     for (let tick = minTempTick; tick <= maxTempTick; tick += dTempTick) {
-      const x = 70 + ((W._canvas.width - 70 - 70) * (tick - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+      const x = 100 + ((W._canvas.width - 70 - 70) * (tick - W.minima.temp) / (W.maxima.temp - W.minima.temp));
       W._ctx.fillText(tick, x, 50);
       W._ctx.beginPath();
       W._ctx.moveTo(x, 135);
@@ -386,7 +389,7 @@ const W = {
       const y = 150 + (50 * (h - W.now.getHours()));
       W._ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 60, y);
       W._ctx.beginPath();
-      W._ctx.moveTo(70, y - 15);
+      W._ctx.moveTo(100, y - 15);
       W._ctx.lineTo(W._canvas.width - 70, y - 15);
       W._ctx.stroke();
     }
@@ -394,10 +397,10 @@ const W = {
     W._ctx.strokeStyle = '#000000';
     W._ctx.beginPath();
     let y = 135;
-    let x = 70 + ((W._canvas.width - 70 - 70) * (W.hours[W.now.getHours()].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+    let x = 100 + ((W._canvas.width - 70 - 70) * (W.hours[W.now.getHours()].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
     W._ctx.moveTo(x, y);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
-      x = 70 + ((W._canvas.width - 70 - 70) * (W.hours[h].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+      x = 100 + ((W._canvas.width - 70 - 70) * (W.hours[h].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
       y += 50;
       W._ctx.lineTo(x, y);
     }
@@ -406,10 +409,10 @@ const W = {
     W._ctx.strokeStyle = '#ff00ff';
     W._ctx.beginPath();
     y = 135;
-    x = 70 + ((W._canvas.width - 70 - 70) * W.hours[W.now.getHours()].uv / 12);
+    x = 100 + ((W._canvas.width - 70 - 70) * W.hours[W.now.getHours()].uv / 12);
     W._ctx.moveTo(x, y);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
-      x = 70 + ((W._canvas.width - 70 - 70) * W.hours[h].uv / 12);
+      x = 100 + ((W._canvas.width - 70 - 70) * W.hours[h].uv / 12);
       y += 50;
       W._ctx.lineTo(x, y);
     }
@@ -444,7 +447,7 @@ const W = {
       const y = 200 + (50 * (d + 24 - W.now.getHours()));
       W._ctx.fillText(W._day(datum.date), 60, y);
       W._ctx.beginPath();
-      W._ctx.moveTo(70, y - 15);
+      W._ctx.moveTo(100, y - 15);
       W._ctx.lineTo(W._canvas.width - 70, y - 15);
       W._ctx.stroke();
     }
@@ -453,8 +456,8 @@ const W = {
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
       const y = 200 + (50 * (d + 24 - W.now.getHours())) - 30;
-      const x = 70 + ((W._canvas.width - 70 - 70) * (datum.temp[0] - W.minima.temp) / (W.maxima.temp - W.minima.temp));
-      const w = 70 + ((W._canvas.width - 70 - 70) * (datum.temp[1] - W.minima.temp) / (W.maxima.temp - W.minima.temp)) - x;
+      const x = 100 + ((W._canvas.width - 70 - 70) * (datum.temp[0] - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+      const w = 100 + ((W._canvas.width - 70 - 70) * (datum.temp[1] - W.minima.temp) / (W.maxima.temp - W.minima.temp)) - x;
       W._ctx.fillRect(x, y, w, 30);
     }
 
@@ -464,7 +467,7 @@ const W = {
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
       const y = 200 + (50 * (d + 24 - W.now.getHours())) - 30;
-      const x = 70 + ((W._canvas.width - 70 - 70) * datum.uv / 12) - 15;
+      const x = 100 + ((W._canvas.width - 70 - 70) * datum.uv / 12) - 15;
       W._ctx.moveTo(x,y+15);
       W._ctx.lineTo(x+30,y+15);
       W._ctx.moveTo(x+15,y);
