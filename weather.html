@@ -208,13 +208,13 @@ const W = {
   },
   
   _addCovid(data) {
-    // TODO find Province by Lat/Lon
-    W._covid = j.filter(d => d.Province === 'California');
+    // TODO find Province by Lat/Lon?
+    W._covid = data.filter(d => d.Province === 'California');
   },
   
   _drawCovid() {
     const card = document.getElementById('covid');
-    const delta = W._covid[data.length - 1].Active - W._covid[data.length - 2].Active;
+    const delta = W._covid[W._covid.length - 1].Active - W._covid[W._covid.length - 2].Active;
     card.innerText = ((delta >= 0) ? '+' : '') + delta;
     card.onclick = () => {
       open(`https://openweathermap.org/weathermap?basemap=map&cities=true&layer=precipitation&lat=${W.lat}&lon=${W.lon}&zoom=5`);
