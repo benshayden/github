@@ -47,6 +47,7 @@
     display: block;
   }
 </style>
+<div id=loading></div>
 <card id=date></card>
 <card id=temp></card>
 <card id=uv></card>
@@ -85,7 +86,7 @@ const W = {
       grd.addColorStop(0, W._clouds(prevClouds));
       grd.addColorStop(1, W._clouds(clouds));
       W._ctx.fillStyle = grd;
-      W._ctx.fillRect(0, y, 70, 50);
+      W._ctx.fillRect(0, y, 90, 50);
       prevClouds = clouds;
     }
     W._ctx.fillStyle = W._clouds(prevClouds);
@@ -96,7 +97,7 @@ const W = {
       if ('number' !== typeof clouds) continue;
       const y = 160 + (50 * (d + 24 - W.now.getHours()));
       W._ctx.fillStyle = W._clouds(clouds);
-      W._ctx.fillRect(0, y, 70, 50);
+      W._ctx.fillRect(0, y, 90, 50);
     }
   },
 
@@ -208,9 +209,12 @@ const W = {
   
   _addCovid(data) {
     // TODO find Province by Lat/Lon
-    data = j.filter(d => d.Province === 'California');
+    W._covid = j.filter(d => d.Province === 'California');
+  },
+  
+  _drawCovid() {
     const card = document.getElementById('covid');
-    const delta = data[data.length - 1].Active - data[data.length - 2].Active;
+    const delta = W._covid[data.length - 1].Active - W._covid[data.length - 2].Active;
     card.innerText = ((delta >= 0) ? '+' : '') + delta;
     card.onclick = () => {
       open(`https://openweathermap.org/weathermap?basemap=map&cities=true&layer=precipitation&lat=${W.lat}&lon=${W.lon}&zoom=5`);
@@ -341,6 +345,7 @@ const W = {
     W._drawDays();
     W._drawNow();
     W._drawAqi();
+    W._drawCovid();
   },
   
   _drawAqi() {
@@ -411,7 +416,7 @@ const W = {
     for (let h = W.now.getHours(); h < 24; ++h) {
       const datum = W.hours[h];
       const y = 150 + (50 * (h - W.now.getHours()));
-      W._ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 60, y);
+      W._ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 90, y);
       W._ctx.beginPath();
       W._ctx.moveTo(100, y - 15);
       W._ctx.lineTo(W._canvas.width - 70, y - 15);
@@ -469,7 +474,7 @@ const W = {
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
       const y = 200 + (50 * (d + 24 - W.now.getHours()));
-      W._ctx.fillText(W._day(datum.date), 60, y);
+      W._ctx.fillText(W._day(datum.date), 90, y);
       W._ctx.beginPath();
       W._ctx.moveTo(100, y - 15);
       W._ctx.lineTo(W._canvas.width - 70, y - 15);
