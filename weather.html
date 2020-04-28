@@ -200,7 +200,7 @@ const W = {
   },
   
   async _loadCovid() {
-    const date = new Date(new Date(W._now.toDateString()) - (3 * MS_PER_DAY)).toISOString();
+    const date = new Date(new Date(W.now.toDateString()) - (3 * MS_PER_DAY)).toISOString();
     W._addCovid(await W._fetchCachedJson({
       url: `https://api.covid19api.com/live/country/united-states/status/confirmed/date/${date}`,
       expiryMs: MS_PER_DAY,
