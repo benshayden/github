@@ -82,10 +82,9 @@ const AIR_SENSOR_MILES = 5;
 const AIR_SENSOR_DEGREES = parseInt((AIR_SENSOR_MILES * 360 / 24901) * 10000) / 10000;
 const FONT_PX = 40;
 const LINE_HEIGHT_PX = FONT_PX * 1.25;
-const Y_AXIS_PX = 70;
 
 const W = {
-  _drawClouds() {
+  drawClouds() {
     let prevClouds = W.hours[W.now.getHours()].clouds;
     W._ctx.fillStyle = W._clouds(prevClouds);
     W._ctx.fillRect(0, 110, 100, 25);
@@ -116,7 +115,7 @@ const W = {
     return 'UMTWRFS'[date.getDay()] + date.getDate();
   },
   
-  _lerp(v0, v1, t) {
+  lerp(v0, v1, t) {
     return (v0 * (1 - t)) + (v1 * t);
   },
 
@@ -131,7 +130,7 @@ const W = {
     return sum / s.length;
   },
 
-  async _fetchCachedJson(options) {
+  async fetchCachedJson(options) {
     const now = new Date();
     const url = options.url;
     const expiryMs = options.expiryMs;
@@ -152,7 +151,7 @@ const W = {
     return response;
   },
 
-  _sweepStorage() {
+  sweepStorage() {
     const now = new Date();
     for (let i = 0; i < localStorage.length; ++i) {
       const k = localStorage.key(i);
@@ -190,16 +189,16 @@ const W = {
       W.maxima = {};
       W.pm25 = null;
       W.aqi = null;
-      W._weatherLoaded = W._loadWeather();
-      await Promise.all([W._weatherLoaded, W._loadUv(), W._loadAir(), W._loadCovid()]);
-      W._sweepStorage();
-      W._draw();
+      W.weatherLoaded = W.loadWeather();
+      await Promise.all([W.weatherLoaded, W.loadUv(), W.loadAir(), W.loadCovid()]);
+      W.sweepStorage();
+      W.draw();
     } catch (e) {
       document.body.innerText = e.stack;
     }
   },
   
-  _setupCanvas() {
+  setupCanvas() {
     W._canvas = document.getElementById('canvas');
     const h = (130 + (50 * (6 + 24 - W.now.getHours()))) / (devicePixelRatio || 1);
     W._canvas.width = innerWidth * (devicePixelRatio || 1);
@@ -210,20 +209,17 @@ const W = {
     W._ctx.clearRect(0, 0, W._canvas.width, W._canvas.height);
   },
   
-  async _loadCovid() {
+  async loadCovid() {
     const date = new Date(new Date(W.now.toDateString()) - (3 * MS_PER_DAY)).toISOString();
-    W._addCovid(await W._fetchCachedJson({
+    const data = await W.fetchCachedJson({
       url: `https://api.covid19api.com/live/country/united-states/status/confirmed/date/${date}`,
       expiryMs: MS_PER_DAY,
-    }));
-  },
-  
-  _addCovid(data) {
+    });
     // TODO find Province by Lat/Lon?
     W._covid = data.filter(d => d.Province === 'California');
   },
   
-  _drawCovid() {
+  drawCovid() {
     const card = document.getElementById('covid');
     const delta = W._covid[W._covid.length - 1].Active - W._covid[W._covid.length - 2].Active;
     card.innerText = ((delta >= 0) ? '+' : '') + delta;
@@ -232,16 +228,13 @@ const W = {
     };
   },
 
-  async _loadWeather() {
+  async loadWeather() {
     // https://openweathermap.org/api/one-call-api
     // https://home.openweathermap.org/api_keys
-    W._addWeather(await W._fetchCachedJson({
+    const w = await W.fetchCachedJson({
       url: `https://api.openweathermap.org/data/2.5/onecall?lat=${W.lat}&lon=${W.lon}&appid=4f7a34d2b44e009df9246dbca025d0b5`,
       expiryMs: MS_PER_HOUR,
-    }));
-  },
-  
-  _addWeather(w) {
+    });
     for (const datum of w.hourly) {
       const date = new Date(datum.dt * 1000);
       if (date.getDate() != W.now.getDate()) continue;
@@ -288,19 +281,15 @@ const W = {
     }
   },
 
-  async _loadUv() {
+  async loadUv() {
     // https://www.openuv.io/
     const date = new Date(W.now.toDateString()).getTime();
-    const uvDays = await Promise.all([0, 1, 2, 3, 4, 5, 6].map(d => W._fetchCachedJson({
+    const uv = await Promise.all([0, 1, 2, 3, 4, 5, 6].map(d => W.fetchCachedJson({
       url: `https://api.openuv.io/api/v1/forecast?lat=${W.lat}&lng=${W.lon}&dt=${new Date(date + (d * MS_PER_DAY)).toISOString()}`,
       headers: {'x-access-token': '0e881fcec14d82a8eb011877e61bfc21'},
       expiryMs: MS_PER_DAY,
     })));
-    await W._weatherLoaded;
-    W._addUv(uvDays);
-  },
-
-  _addUv(uv) {
+    await W.weatherLoaded;
     for (const dayDatum of uv) {
       for (const hourDatum of dayDatum.result) {
         const date = new Date(hourDatum.uv_time);
@@ -320,22 +309,21 @@ const W = {
     }
   },
 
-  async _loadAir() {
+  async loadAir() {
     const minlat = W.lat - AIR_SENSOR_DEGREES;
     const maxlat = W.lat + AIR_SENSOR_DEGREES;
     const minlon = W.lon - AIR_SENSOR_DEGREES;
     const maxlon = W.lon + AIR_SENSOR_DEGREES;
+    let a;
     try {
-      W._addAir(await W._fetchCachedJson({
+      a = await W.fetchCachedJson({
         url: `https://www.purpleair.com/data.json?opt=1/mAQI/a10/cC0&fetch=true&nwlat=${maxlat}&selat=${minlat}&nwlng=${minlon}&selng=${maxlon}&fields=pm_1`,
         expiryMs: MS_PER_HOUR / 2,
-      }));
+      });
     } catch(e) {
       debug.innerText += `Error fetching air quality:\n${e.stack}\n`;
+      return;
     }
-  },
-
-  _addAir(a) {
     // Mean particulate mass < 2.5um in ug/m^3.
     W.pm25 = W._mean(a.data.map(row => {
       const datum = {};
@@ -347,19 +335,19 @@ const W = {
     W.aqi = W.pm25 * 50 / 30;
   },
   
-  _draw() {
+  draw() {
     document.getElementById('date').innerText = W._day(W.now);
-    W._setupCanvas();
-    W._drawAxes();
-    W._drawClouds();
-    W._drawHours();
-    W._drawDays();
-    W._drawNow();
-    W._drawAqi();
-    W._drawCovid();
+    W.setupCanvas();
+    W.drawAxes();
+    W.drawClouds();
+    W.drawHours();
+    W.drawDays();
+    W.drawNow();
+    W.drawAqi();
+    W.drawCovid();
   },
   
-  _drawAqi() {
+  drawAqi() {
     const card = document.getElementById('aqi');
     if (W.aqi === null) {
       card.style.display = 'none';
@@ -372,7 +360,7 @@ const W = {
     }
   },
   
-  _drawNow() {
+  drawNow() {
     W._ctx.strokeStyle = '#ff0000';
     W._ctx.beginPath();
     const timeY = 150 - 15 + (50 * W.now.getMinutes() / 60);
@@ -385,7 +373,7 @@ const W = {
     return `hsl(216, ${100 - clouds}%, 80%)`;
   },
   
-  _drawAxes() {
+  drawAxes() {
     W._ctx.font = '40px Helvetica';
     W._ctx.lineWidth = 1;
     W._ctx.textAlign = 'center';
@@ -395,7 +383,7 @@ const W = {
     let minTempTick = dTempTick + (dTempTick * parseInt(W.minima.temp / dTempTick));
     let maxTempTick = dTempTick * parseInt(W.maxima.temp / dTempTick);
     for (let tick = minTempTick; tick <= maxTempTick; tick += dTempTick) {
-      const x = 100 + ((W._canvas.width - 70 - 70) * (tick - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+      const x = 100 + ((W._canvas.width - 100 - 70) * (tick - W.minima.temp) / (W.maxima.temp - W.minima.temp));
       W._ctx.fillText(tick, x, 50);
       W._ctx.beginPath();
       W._ctx.moveTo(x, 135);
@@ -411,7 +399,7 @@ const W = {
     
     W._ctx.textAlign = 'center';
     for (let uvi = 1; uvi < 12; uvi++) {
-      const x = 70 + ((W._canvas.width - 70 - 70) * uvi / 12);
+      const x = 70 + ((W._canvas.width - 100 - 70) * uvi / 12);
       W._ctx.fillText(uvi, x, 100);
     }
     
@@ -419,7 +407,7 @@ const W = {
     W._ctx.fillStyle = '#000000';
   },
 
-  _drawHours() {
+  drawHours() {
     W._ctx.textAlign = 'right';
     W._ctx.strokeStyle = '#888888';
     W._ctx.fillStyle = 'black';
@@ -437,10 +425,10 @@ const W = {
     W._ctx.strokeStyle = '#000000';
     W._ctx.beginPath();
     let y = 135;
-    let x = 100 + ((W._canvas.width - 70 - 70) * (W.hours[W.now.getHours()].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+    let x = 100 + ((W._canvas.width - 100 - 70) * (W.hours[W.now.getHours()].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
     W._ctx.moveTo(x, y);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
-      x = 100 + ((W._canvas.width - 70 - 70) * (W.hours[h].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+      x = 100 + ((W._canvas.width - 100 - 70) * (W.hours[h].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
       y += 50;
       W._ctx.lineTo(x, y);
     }
@@ -449,10 +437,10 @@ const W = {
     W._ctx.strokeStyle = '#ff00ff';
     W._ctx.beginPath();
     y = 135;
-    x = 100 + ((W._canvas.width - 70 - 70) * W.hours[W.now.getHours()].uv / 12);
+    x = 100 + ((W._canvas.width - 100 - 70) * W.hours[W.now.getHours()].uv / 12);
     W._ctx.moveTo(x, y);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
-      x = 100 + ((W._canvas.width - 70 - 70) * W.hours[h].uv / 12);
+      x = 100 + ((W._canvas.width - 100 - 70) * W.hours[h].uv / 12);
       y += 50;
       W._ctx.lineTo(x, y);
     }
@@ -464,12 +452,12 @@ const W = {
     const nextHour = W.hours[W.now.getHours() + 1];
     if (nextHour) {
       const minuteFrac = W.now.getMinutes() / 60
-      uvCard.innerText = parseInt(Math.round(W._lerp(
+      uvCard.innerText = parseInt(Math.round(W.lerp(
         prevHour.uv || 0,
         nextHour.uv || 0,
         minuteFrac
       )));
-      const lerpTemp = W._lerp(prevHour.temp, nextHour.temp, minuteFrac);
+      const lerpTemp = W.lerp(prevHour.temp, nextHour.temp, minuteFrac);
       const metricPow = W.metric ? 10 : 1;
       tempCard.innerText = (W.metric
         ? (Math.round(lerpTemp * 10) / 10)
@@ -480,7 +468,7 @@ const W = {
     }
   },
 
-  _drawDays() {
+  drawDays() {
     W._ctx.strokeStyle = '#888888';
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
@@ -496,8 +484,8 @@ const W = {
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
       const y = 200 + (50 * (d + 24 - W.now.getHours())) - 30;
-      const x = 100 + ((W._canvas.width - 70 - 70) * (datum.temp[0] - W.minima.temp) / (W.maxima.temp - W.minima.temp));
-      const w = 100 + ((W._canvas.width - 70 - 70) * (datum.temp[1] - W.minima.temp) / (W.maxima.temp - W.minima.temp)) - x;
+      const x = 100 + ((W._canvas.width - 100 - 70) * (datum.temp[0] - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+      const w = 100 + ((W._canvas.width - 100 - 70) * (datum.temp[1] - W.minima.temp) / (W.maxima.temp - W.minima.temp)) - x;
       W._ctx.fillRect(x, y, w, 30);
     }
 
@@ -507,7 +495,7 @@ const W = {
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
       const y = 200 + (50 * (d + 24 - W.now.getHours())) - 30;
-      const x = 100 + ((W._canvas.width - 70 - 70) * datum.uv / 12) - 15;
+      const x = 100 + ((W._canvas.width - 100 - 70) * datum.uv / 12) - 15;
       W._ctx.moveTo(x,y+15);
       W._ctx.lineTo(x+30,y+15);
       W._ctx.moveTo(x+15,y);
