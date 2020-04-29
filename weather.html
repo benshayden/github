@@ -249,6 +249,7 @@ const W = {
         feels: datum.feels_like,
         clouds: datum.clouds,
         humidity: datum.humidity,
+        rain: datum.rain['1h'],
       });
       for (const k of Object.keys(target)) {
         W.minima[k] = Math.min(W.minima[k] || 1000000, target[k]);
@@ -264,6 +265,7 @@ const W = {
         temp: [datum.temp.min, datum.temp.max],
         clouds: datum.clouds,
         humidity: datum.humidity,
+        rain: datum.rain,
       });
       for (const k of ['clouds', 'humidity']) {
         W.minima[k] = Math.min(W.minima[k] || 1000000, target[k]);
