@@ -65,7 +65,6 @@
 <card id=aqi></card>
 <card id=covid></card>
 <canvas id=canvas></canvas>
-<div id=debug></div>
 
 <script>
 
@@ -326,7 +325,7 @@ const W = {
         expiryMs: MS_PER_HOUR / 2,
       });
     } catch(e) {
-      debug.innerText += `Error fetching air quality:\n${e.stack}\n`;
+      console.error(`Error fetching air quality:\n${e.stack}\n`);
       return;
     }
     // Mean particulate mass < 2.5um in ug/m^3.
