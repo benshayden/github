@@ -170,6 +170,10 @@ const W = {
   },
 
   async load(coords) {
+    if (W.loading) {
+      return;
+    }
+    W.loading = true;
     try {
       W.lat = Math.round(coords.latitude * 10) / 10;
       W.lon = Math.round(coords.longitude * 10) / 10;
@@ -196,6 +200,7 @@ const W = {
     } catch (e) {
       document.body.innerText = e.stack;
     }
+    W.loading = false;
   },
   
   setupCanvas() {
