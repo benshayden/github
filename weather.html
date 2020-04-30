@@ -411,19 +411,31 @@ const W = {
       W._ctx.lineTo(x, 135 + (50 * (6 + 24 - W.now.getHours())));
       W._ctx.stroke();
     }
-    
+
     W._ctx.textAlign = 'right';
     W._ctx.fillText(String.fromCharCode(0xb0) + (W.metric ? 'C' : 'F'), W._canvas.width - 10, 50);
 
     W._ctx.strokeStyle = W._ctx.fillStyle = '#ff00ff';
     W._ctx.fillText('UV', W._canvas.width - 10, 100);
-    
+
     W._ctx.textAlign = 'center';
     for (let uvi = 1; uvi < 12; uvi++) {
       const x = 70 + ((W._canvas.width - 100 - 70) * uvi / 12);
       W._ctx.fillText(uvi, x, 100);
     }
-    
+
+    if (W.maxima.rain > 0) {
+      W._ctx.fillStyle = '#0000ff';
+      let dRainTick = W.metric ? 0.5 : 0.05;
+      let maxRainTick = dRainTick * parseInt(W.maxima.rain / dRainTick);
+      for (let tick = dRainTick; tick <= maxRainTick; tick += dRainTick) {
+        const x = 100 + ((W._canvas.width - 100 - 70) * tick / W.maxima.rain);
+        W._ctx.fillText(tick, x, 150);
+      }
+      W._ctx.textAlign = 'right';
+      W._ctx.fillText((W.metric ? 'mm' : 'in'), W._canvas.width - 10, 150);
+    }
+
     W._ctx.strokeStyle = '#000000';
     W._ctx.fillStyle = '#000000';
   },
