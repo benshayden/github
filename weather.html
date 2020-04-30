@@ -362,13 +362,13 @@ const W = {
     W._ctx.fillStyle = 'hsl(216, 100%, 80%)';
     for (let h = W.now.getHours(); h < 24; ++h) {
       const datum = W.hours[h];
-      const y = 200 + (50 * (h - W.now.getHours()));
+      const y = 160 + (50 * (h - W.now.getHours()));
       const w = ((W._canvas.width - 100 - 70) * datum.rain / W.maxima.rain);
       W._ctx.fillRect(100, y, w, 50);
     }
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
-      const y = 250 + (50 * (d + 24 - W.now.getHours()));
+      const y = 210 + (50 * (d + 24 - W.now.getHours()));
       const w = ((W._canvas.width - 100 - 70) * datum.rain / W.maxima.rain);
       W._ctx.fillRect(100, y, w, 50);
     }
