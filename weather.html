@@ -63,22 +63,28 @@
   }
   #canvas {
     display: block;
+    border-top: 1px solid grey;
+  }
+  #cards {
+    display: flex;
   }
 </style>
 <div id=loading></div>
-<card id=date></card>
-<card id=temp></card>
-<card id=uv></card>
-<card id=aqi></card>
-<card id=rain></card>
-<card id=covid></card>
+<div id=cards>
+  <card id=date></card>
+  <card id=temp></card>
+  <card id=uv></card>
+  <card id=aqi></card>
+  <card id=rain></card>
+  <card id=covid></card>
+</div>
 <canvas id=canvas></canvas>
 
 <script>
 
 // TODO no magic numbers
 // TODO location.hash = lat,lon,metric
-// TODO merge axes
+// TODO align axes
 // TODO radar link
 // TODO metric/imperial button
 
