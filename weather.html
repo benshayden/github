@@ -371,6 +371,7 @@ const W = {
       return;
     }
 
+    card.style.display = 'inline-block';
     card.innerText = (parseInt(Math.round(W.lerp(
       W.hours[W.now.getHours()].rain,
       W.hours[W.now.getHours() + 1].rain,
