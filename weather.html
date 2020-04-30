@@ -27,11 +27,17 @@
     content: "UV";
     color: #ff00ff;
   }
+  #aqi {
+    cursor: pointer;
+  }
   #aqi::before {
     content: "AQI";
   }
+  #covid {
+    cursor: pointer;
+  }
   #covid::before {
-    content: "d\000394covid";
+    content: "covid";
   }
   #rain::before {
     content: "Rain";
@@ -39,6 +45,7 @@
   }
   #rain {
     color: hsl(216, 100%, 50%);
+    cursor: pointer;
   }
   #uv {
     color: #ff00ff;
@@ -248,7 +255,10 @@ const W = {
     }
 
     card.style.display = 'inline-block';
-    card.innerText = W._covid.positiveIncrease;
+    card.innerText = '+' + W._covid.positiveIncrease;
+    card.onclick = () => {
+      open(`https://coronavirus.jhu.edu/us-map`);
+    };
   },
 
   async loadWeather() {
