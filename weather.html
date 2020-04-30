@@ -212,7 +212,7 @@ const W = {
   
   async loadCovid() {
     const yesterday = new Date(new Date(W.now.toDateString()) - MS_PER_DAY);
-    const y = date.getFullYear();
+    const y = yesterday.getFullYear();
     const m = (yesterday.getMonth() + 1).toString().padStart(2, '0');
     const d = yesterday.getDate().toString().padStart(2, '0');
     W._covid = await W.fetchCachedJson({
