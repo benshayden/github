@@ -469,7 +469,7 @@ const W = {
       let maxRainTick = dRainTick * parseInt(W.maxima.rain / dRainTick);
       for (let tick = dRainTick; tick <= maxRainTick; tick += dRainTick) {
         const x = 100 + ((W._canvas.width - 100 - 70) * tick / W.maxima.rain);
-        W._ctx.fillText(tick, x, 150);
+        W._ctx.fillText(tick.toString().substr(0, 4), x, 150);
       }
       W._ctx.textAlign = 'right';
       W._ctx.fillText((W.metric ? 'mm' : 'in'), W._canvas.width - 10, 150);
