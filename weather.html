@@ -259,7 +259,7 @@ const W = {
       expiryMs: MS_PER_HOUR,
     });
     for (const datum of w.hourly) {
-      const date = new Date(datum.dt * 1000);
+      const date = new Date(datum.dt * MS_PER_SEC);
       if (date.getDate() != W.now.getDate()) continue;
       const target = W.hours[date.getHours()];
       if (!target) continue;
@@ -277,7 +277,7 @@ const W = {
     }
     
     for (const datum of w.daily) {
-      const date = new Date(datum.dt * 1000);
+      const date = new Date(datum.dt * MS_PER_SEC);
       const target = W.days[parseInt((date - W.now) / MS_PER_DAY) - 1];
       if (!target) continue;
       Object.assign(target, {
@@ -426,7 +426,7 @@ const W = {
     W._ctx.strokeStyle = '#ff0000';
     W._ctx.beginPath();
     const timeY = 150 + ((W.maxima.rain > 0) ? W.lineHeightPx : 0) - 15 + (W.lineHeightPx * W.now.getMinutes() / 60);
-    W._ctx.moveTo(100, timeY);
+    W._ctx.moveTo(W.yAxisWidthPx, timeY);
     W._ctx.lineTo(W._canvas.width - 70, timeY);
     W._ctx.stroke();
   },
@@ -446,7 +446,7 @@ const W = {
     let minTempTick = dTempTick + (dTempTick * parseInt(W.minima.temp / dTempTick));
     let maxTempTick = dTempTick * parseInt(W.maxima.temp / dTempTick);
     for (let tick = minTempTick; tick <= maxTempTick; tick += dTempTick) {
-      const x = 100 + ((W._canvas.width - 100 - 70) * (tick - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+      const x = W.yAxisWidthPx + ((W._canvas.width - W.yAxisWidthPx - 70) * (tick - W.minima.temp) / (W.maxima.temp - W.minima.temp));
       W._ctx.fillText(tick, x, 50);
       W._ctx.beginPath();
       W._ctx.moveTo(x, 135 + ((W.maxima.rain > 0) ? 50 : 0));
@@ -458,12 +458,12 @@ const W = {
     W._ctx.fillText(String.fromCharCode(0xb0) + (W.metric ? 'C' : 'F'), W._canvas.width - 10, 50);
 
     W._ctx.strokeStyle = W._ctx.fillStyle = '#ff00ff';
-    W._ctx.fillText('UV', W._canvas.width - 10, 100);
+    W._ctx.fillText('UV', W._canvas.width - 10, 2 * W.lineHeightPx);
 
     W._ctx.textAlign = 'center';
     for (let uvi = 1; uvi < 12; uvi++) {
-      const x = 70 + ((W._canvas.width - 100 - 70) * uvi / 12);
-      W._ctx.fillText(uvi, x, 100);
+      const x = 70 + ((W._canvas.width - W.yAxisWidthPx - 70) * uvi / 12);
+      W._ctx.fillText(uvi, x, 2 * W.lineHeightPx);
     }
 
     if (W.maxima.rain > 0) {
@@ -471,7 +471,7 @@ const W = {
       let dRainTick = W.metric ? 0.5 : 0.05;
       let maxRainTick = dRainTick * parseInt(W.maxima.rain / dRainTick);
       for (let tick = dRainTick; tick <= maxRainTick; tick += dRainTick) {
-        const x = 100 + ((W._canvas.width - 100 - 70) * tick / W.maxima.rain);
+        const x = W.yAxisWidthPx + ((W._canvas.width - W.yAxisWidthPx - 70) * tick / W.maxima.rain);
         W._ctx.fillText(tick.toString().substr(0, 4), x, 150);
       }
       W._ctx.textAlign = 'right';
@@ -492,18 +492,18 @@ const W = {
       const y = ((W.maxima.rain > 0) ? 200 : 150) + (50 * (h - W.now.getHours()));
       W._ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 90, y);
       W._ctx.beginPath();
-      W._ctx.moveTo(100, y - 15);
+      W._ctx.moveTo(W.yAxisWidthPx, y - 15);
       W._ctx.lineTo(W._canvas.width - 70, y - 15);
       W._ctx.stroke();
     }
 
     W._ctx.strokeStyle = '#000000';
     W._ctx.beginPath();
-    let y = ((W.maxima.rain > 0) ? 200 : 150) - 15;
-    let x = 100 + ((W._canvas.width - 100 - 70) * (W.hours[W.now.getHours()].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+    let y = (W.hasRain ? 200 : 150) - 15;
+    let x = W.yAxisWidthPx + ((W._canvas.width - W.yAxisWidthPx - 70) * (W.hours[W.now.getHours()].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
     W._ctx.moveTo(x, y);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
-      x = 100 + ((W._canvas.width - 100 - 70) * (W.hours[h].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+      x = W.yAxisWidthPx + ((W._canvas.width - W.yAxisWidthPx - 70) * (W.hours[h].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
       y += W.lineHeightPx;
       W._ctx.lineTo(x, y);
     }
@@ -607,10 +607,10 @@ addEventListener('load', async() => {
     document.body.innerText = e.message;
   }, {
   });
-  
+
   window.setTimeout(function() {
     W.reload();
-  }, 1000 * 60 * 5);
+  }, MS_PER_SEC * SECS_PER_MIN * 5);
 
   document.addEventListener('visibilitychange', function() {
     if (!document.hidden) {
