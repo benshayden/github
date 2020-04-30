@@ -91,7 +91,7 @@ const W = {
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
       const clouds = W.hours[h].clouds;
       if ('number' !== typeof clouds) continue;
-      const y = 85 + (50 * (h - W.now.getHours()));
+      const y = ((W.maxima.rain > 0) ? 150 : 100) - 15 + (50 * (h - W.now.getHours()));
       const grd = W._ctx.createLinearGradient(0, y, 0, y + 50);
       grd.addColorStop(0, W._clouds(prevClouds));
       grd.addColorStop(1, W._clouds(clouds));
@@ -105,7 +105,7 @@ const W = {
     for (let d = 0; d < 5; ++d) {
       const clouds = W.days[d].clouds;
       if ('number' !== typeof clouds) continue;
-      const y = 160 + (50 * (d + 24 - W.now.getHours()));
+      const y = ((W.maxima.rain > 0) ? 200 : 150) + (50 * (d + 24 - W.now.getHours()));
       W._ctx.fillStyle = W._clouds(clouds);
       W._ctx.fillRect(0, y, 100, 50);
     }
@@ -205,7 +205,7 @@ const W = {
   
   setupCanvas() {
     W._canvas = document.getElementById('canvas');
-    const h = (130 + (50 * (6 + 24 - W.now.getHours()))) / (devicePixelRatio || 1);
+    const h = (130 + (50 * (7 + 24 - W.now.getHours()))) / (devicePixelRatio || 1);
     W._canvas.width = innerWidth * (devicePixelRatio || 1);
     W._canvas.height = h * (devicePixelRatio || 1);
     W._canvas.style.width = innerWidth + 'px';
@@ -359,21 +359,21 @@ const W = {
     if (W.maxima.rain <= 0) {
       return;
     }
-    W._ctx.fillStyle = '#0000ff';
+    W._ctx.fillStyle = 'hsl(216, 100%, 80%)';
     for (let h = W.now.getHours(); h < 24; ++h) {
       const datum = W.hours[h];
       const y = 200 + (50 * (h - W.now.getHours()));
-      const w = 100 + ((W._canvas.width - 100 - 70) * datum.rain / W.maxima.rain);
+      const w = ((W._canvas.width - 100 - 70) * datum.rain / W.maxima.rain);
       W._ctx.fillRect(100, y, w, 50);
     }
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
       const y = 250 + (50 * (d + 24 - W.now.getHours()));
-      const w = 100 + ((W._canvas.width - 100 - 70) * datum.rain / W.maxima.rain);
+      const w = ((W._canvas.width - 100 - 70) * datum.rain / W.maxima.rain);
       W._ctx.fillRect(100, y, w, 50);
     }
   },
-  
+
   drawAqi() {
     const card = document.getElementById('aqi');
     if (W.aqi === null) {
@@ -431,7 +431,7 @@ const W = {
     }
 
     if (W.maxima.rain > 0) {
-      W._ctx.fillStyle = '#0000ff';
+      W._ctx.fillStyle = 'hsl(216, 100%, 50%)';
       let dRainTick = W.metric ? 0.5 : 0.05;
       let maxRainTick = dRainTick * parseInt(W.maxima.rain / dRainTick);
       for (let tick = dRainTick; tick <= maxRainTick; tick += dRainTick) {
