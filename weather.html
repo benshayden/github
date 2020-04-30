@@ -9,7 +9,6 @@
   }
   card {
     flex-grow: 1;
-    min-width: 48px;
     margin-top: 8px;
     padding: 4px 0 0 8px;
     font-size: 20px;
@@ -47,17 +46,9 @@
   }
   #rain {
     color: hsl(216, 100%, 50%);
-    min-width: 64px;
-  }
-  #covid {
-    min-width: 64px;
   }
   #uv {
     color: #ff00ff;
-    min-width: 24px;
-  }
-  #aqi {
-    min-width: 32px;
   }
   #canvas {
     display: block;
@@ -65,6 +56,7 @@
   }
   #cards {
     display: flex;
+    justify-content: space-evenly;
   }
 </style>
 <div id=loading></div>
