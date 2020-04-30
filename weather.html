@@ -211,25 +211,25 @@ const W = {
   },
   
   async loadCovid() {
-    const date = new Date(new Date(W.now.toDateString()) - (3 * MS_PER_DAY)).toISOString();
-    const data = await W.fetchCachedJson({
-      url: `https://api.covid19api.com/live/country/united-states/status/confirmed/date/${date}`,
+    const yesterday = new Date(new Date(W.now.toDateString()) - MS_PER_DAY);
+    const y = date.getFullYear();
+    const m = (yesterday.getMonth() + 1).toString().padStart(2, '0');
+    const d = yesterday.getDate().toString().padStart(2, '0');
+    W._covid = await W.fetchCachedJson({
+      url: `https://covidtracking.com/api/v1/states/CA/${y}${m}${d}.json`,
       expiryMs: MS_PER_DAY,
     });
-    // TODO find Province by Lat/Lon?
-    W._covid = data.filter(d => d.Province === 'California');
   },
   
   drawCovid() {
     const card = document.getElementById('covid');
-    if (W._covid.length < 2) {
+    if (typeof((W._covid || {}).positiveIncrease) !== 'number')) {
       card.style.display = 'none';
       return;
     }
 
     card.style.display = 'inline-block';
-    const delta = W._covid[W._covid.length - 1].Active - W._covid[W._covid.length - 2].Active;
-    card.innerText = ((delta >= 0) ? '+' : '') + delta;
+    card.innerText = W._covid.positiveIncrease;
   },
 
   async loadWeather() {
