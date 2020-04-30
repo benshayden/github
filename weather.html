@@ -74,8 +74,6 @@
 const MS_PER_HOUR = 1000 * 60 * 60;
 const MS_PER_DAY = MS_PER_HOUR * 24;
 const IN_PER_MM = 1 / 25.4;
-const AIR_SENSOR_MILES = 5;
-const AIR_SENSOR_DEGREES = parseInt((AIR_SENSOR_MILES * 360 / 24901) * 10000) / 10000;
 const FONT_PX = 40;
 const LINE_HEIGHT_PX = FONT_PX * 1.25;
 
@@ -315,11 +313,18 @@ const W = {
     }
   },
 
+  get airSensorMiles() {
+    return 5;
+  },
+  get airSensorDegrees() {
+    return parseInt((W.airSensorMiles * 360 / 24901) * 10000) / 10000;
+  },
+
   async loadAir() {
-    const minlat = W.lat - AIR_SENSOR_DEGREES;
-    const maxlat = W.lat + AIR_SENSOR_DEGREES;
-    const minlon = W.lon - AIR_SENSOR_DEGREES;
-    const maxlon = W.lon + AIR_SENSOR_DEGREES;
+    const minlat = W.lat - W.airSensorDegrees;
+    const maxlat = W.lat + W.airSensorDegrees;
+    const minlon = W.lon - W.airSensorDegrees;
+    const maxlon = W.lon + W.airSensorDegrees;
     let a;
     try {
       a = await W.fetchCachedJson({
