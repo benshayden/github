@@ -504,19 +504,19 @@ const W = {
     W._ctx.moveTo(x, y);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
       x = 100 + ((W._canvas.width - 100 - 70) * (W.hours[h].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
-      y += 50;
+      y += W.lineHeightPx;
       W._ctx.lineTo(x, y);
     }
     W._ctx.stroke();
 
     W._ctx.strokeStyle = '#ff00ff';
     W._ctx.beginPath();
-    y = ((W.maxima.rain > 0) ? 200 : 150) - 15;
-    x = 100 + ((W._canvas.width - 100 - 70) * W.hours[W.now.getHours()].uv / 12);
+    y = (W.hasRain ? 200 : 150) - 15;
+    x = W.yAxisWidthPx + ((W._canvas.width - W.yAxisWidthPx - 70) * W.hours[W.now.getHours()].uv / 12);
     W._ctx.moveTo(x, y);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
-      x = 100 + ((W._canvas.width - 100 - 70) * W.hours[h].uv / 12);
-      y += 50;
+      x = W.yAxisWidthPx + ((W._canvas.width - W.yAxisWidthPx - 70) * W.hours[h].uv / 12);
+      y += W.lineHeightPx;
       W._ctx.lineTo(x, y);
     }
     W._ctx.stroke();
@@ -526,7 +526,7 @@ const W = {
     const prevHour = W.hours[W.now.getHours()];
     const nextHour = W.hours[W.now.getHours() + 1];
     if (nextHour) {
-      const minuteFrac = W.now.getMinutes() / 60
+      const minuteFrac = W.now.getMinutes() / MINS_PER_HOUR;
       uvCard.innerText = parseInt(Math.round(W.lerp(
         prevHour.uv || 0,
         nextHour.uv || 0,
@@ -547,10 +547,10 @@ const W = {
     W._ctx.strokeStyle = '#888888';
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
-      const y = ((W.maxima.rain > 0) ? 250 : 200) + (50 * (d + 24 - W.now.getHours()));
+      const y = (W.hasRain ? 250 : 200) + (W.lineHeightPx * (d + HOURS_PER_DAY - W.now.getHours()));
       W._ctx.fillText(W._day(datum.date), 90, y);
       W._ctx.beginPath();
-      W._ctx.moveTo(100, y - 15);
+      W._ctx.moveTo(W.yAxisWidthPx, y - 15);
       W._ctx.lineTo(W._canvas.width - 70, y - 15);
       W._ctx.stroke();
     }
@@ -558,9 +558,9 @@ const W = {
     W._ctx.fillStyle = '#aaaaaa';
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
-      const y = ((W.maxima.rain > 0) ? 250 : 200) + (50 * (d + 24 - W.now.getHours())) - 30;
-      const x = 100 + ((W._canvas.width - 100 - 70) * (datum.temp[0] - W.minima.temp) / (W.maxima.temp - W.minima.temp));
-      const w = 100 + ((W._canvas.width - 100 - 70) * (datum.temp[1] - W.minima.temp) / (W.maxima.temp - W.minima.temp)) - x;
+      const y = (W.hasRain ? 250 : 200) + (W.lineHeightPx * (d + HOURS_PER_DAY - W.now.getHours())) - 30;
+      const x = W.yAxisWidthPx + ((W._canvas.width - W.yAxisWidthPx - 70) * (datum.temp[0] - W.minima.temp) / (W.maxima.temp - W.minima.temp));
+      const w = W.yAxisWidthPx + ((W._canvas.width - W.yAxisWidthPx - 70) * (datum.temp[1] - W.minima.temp) / (W.maxima.temp - W.minima.temp)) - x;
       W._ctx.fillRect(x, y, w, 30);
     }
 
@@ -569,8 +569,8 @@ const W = {
     W._ctx.beginPath();
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
-      const y = ((W.maxima.rain > 0) ? 250 : 200) + (50 * (d + 24 - W.now.getHours())) - 30;
-      const x = 100 + ((W._canvas.width - 100 - 70) * datum.uv / 12) - 15;
+      const y = (W.hasRain ? 250 : 200) + (W.lineHeightPx * (d + HOURS_PER_DAY - W.now.getHours())) - 30;
+      const x = W.yAxisWidthPx + ((W._canvas.width - W.yAxisWidthPx - 70) * datum.uv / 12) - 15;
       W._ctx.moveTo(x,y+15);
       W._ctx.lineTo(x+30,y+15);
       W._ctx.moveTo(x+15,y);
