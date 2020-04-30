@@ -149,13 +149,10 @@ const W = {
 
     const cached = JSON.parse(localStorage.getItem(url) || 'null');
     if (cached && (now < cached.expires)) {
-      console.log('cachehit', url, cached.response);
       return cached.response;
     }
 
-    console.log('fetching', url);
     const response = await (await fetch(url, options)).json();
-    console.log('received', url, response);
     const expires = now.getTime() + expiryMs;
     localStorage.setItem(url, JSON.stringify({expires, response}));
     return response;
@@ -188,7 +185,6 @@ const W = {
       W.lat = Math.round(coords.latitude * 10) / 10;
       W.lon = Math.round(coords.longitude * 10) / 10;
       W.now = new Date();
-      console.log('loading', W.lat, W.lon, W.now);
       W.metric = localStorage.getItem('metric') !== null;
       W.hours = {};
       for (let h = W.now.getHours(); h < 24; ++h) {
@@ -315,12 +311,10 @@ const W = {
         const date = new Date(hourDatum.uv_time);
         if (date.getDate() === W.now.getDate()) {
           const target = W.hours[date.getHours()];
-          console.log('addUv', date.getDate(), date.getHours(), hourDatum.uv, target);
           if (!target) continue;
           target.uv = hourDatum.uv * (1 - 0.7 * (target.cloud || 0) / 100);
         } else if (date > W.now) {
           const targetIndex = parseInt((new Date(date.toDateString()) - new Date(W.now.toDateString())) / MS_PER_DAY) - 1;
-          console.log('addUv', date.getDate(), date.getHours(), hourDatum.uv, targetIndex, W.days[targetIndex]);
           const target = W.days[targetIndex];
           if (!target) continue;
           target.uv = Math.max(hourDatum.uv, target.uv || 0);
@@ -586,19 +580,15 @@ addEventListener('load', async() => {
   try {
     coords = JSON.parse(localStorage.getItem('geolocation') || 'null');
   } catch (e) {
-    console.log('coords failed to parse');
   }
   if (coords) {
     W.load(coords);
   }
-  console.log('geolocating');
   navigator.geolocation.getCurrentPosition(async (pos) => {
     if (!coords
         || (Math.abs(coords.latitude - pos.coords.latitude) > 0.1)
         || (Math.abs(coords.longitude - pos.coords.longitude) > 0.1)) {
       W.load(pos.coords);
-    } else {
-      console.log('already loaded coords', coords);
     }
     localStorage.setItem('geolocation', JSON.stringify({
       latitude: pos.coords.latitude,
