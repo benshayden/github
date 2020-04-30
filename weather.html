@@ -105,7 +105,7 @@ const W = {
     for (let d = 0; d < 5; ++d) {
       const clouds = W.days[d].clouds;
       if ('number' !== typeof clouds) continue;
-      const y = ((W.maxima.rain > 0) ? 200 : 150) + (50 * (d + 24 - W.now.getHours()));
+      const y = 160 + ((W.maxima.rain > 0) ? 50 : 0) + (50 * (d + 24 - W.now.getHours()));
       W._ctx.fillStyle = W._clouds(clouds);
       W._ctx.fillRect(0, y, 100, 50);
     }
