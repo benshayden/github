@@ -223,7 +223,7 @@ const W = {
   
   drawCovid() {
     const card = document.getElementById('covid');
-    if (typeof((W._covid || {}).positiveIncrease) !== 'number')) {
+    if (typeof((W._covid || {}).positiveIncrease) !== 'number') {
       card.style.display = 'none';
       return;
     }
