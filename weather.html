@@ -70,7 +70,10 @@
 // TODO align axes
 // TODO metric/imperial button
 
-const MS_PER_HOUR = 1000 * 60 * 60;
+const SECS_PER_MIN = 60;
+const MINS_PER_HOUR = 60;
+const MS_PER_SEC = 1000;
+const MS_PER_HOUR = MS_PER_SEC * SECS_PER_MIN * MINS_PER_HOUR;
 const HOURS_PER_DAY = 24;
 const MS_PER_DAY = MS_PER_HOUR * HOURS_PER_DAY;
 const MM_PER_IN = 25.4;
@@ -89,7 +92,12 @@ const W = {
     return 100;
   },
   
+  get hasRain() {
+    return W.maxima.rain > 0;
+  },
+  
   get graphTop() {
+    return W.lineHeightPx * (W.hasRain ? 3 : 2);
   },
   
   get graphWidth() {
@@ -98,11 +106,11 @@ const W = {
   drawClouds() {
     let prevClouds = W.hours[W.now.getHours()].clouds;
     W._ctx.fillStyle = W._clouds(prevClouds);
-    W._ctx.fillRect(0, (2 * W.lineHeightPx) + 10 + ((W.maxima.rain > 0) ? W.lineHeightPx : 0), W.yAxisWidthPx, W.lineHeightPx / 2);
+    W._ctx.fillRect(0, 10 + W.graphTop, W.yAxisWidthPx, W.lineHeightPx / 2);
     for (let h = W.now.getHours() + 1; h < HOURS_PER_DAY; ++h) {
       const clouds = W.hours[h].clouds;
       if ('number' !== typeof clouds) continue;
-      const y = (2 * W.lineHeightPx) + ((W.maxima.rain > 0) ? W.lineHeightPx : 0) - 15 + (W.lineHeightPx * (h - W.now.getHours()));
+      const y = (2 * W.lineHeightPx) + (W.hasRain ? W.lineHeightPx : 0) - 15 + (W.lineHeightPx * (h - W.now.getHours()));
       const grd = W._ctx.createLinearGradient(0, y, 0, y + W.lineHeightPx);
       grd.addColorStop(0, W._clouds(prevClouds));
       grd.addColorStop(1, W._clouds(clouds));
@@ -111,12 +119,12 @@ const W = {
       prevClouds = clouds;
     }
     W._ctx.fillStyle = W._clouds(prevClouds);
-    W._ctx.fillRect(0, 85 + ((W.maxima.rain > 0) ? W.lineHeightPx : 0) + (W.lineHeightPx * (HOURS_PER_DAY - W.now.getHours())), W.yAxisWidthPx, W.lineHeightPx / 2);
+    W._ctx.fillRect(0, 85 + (W.hasRain ? W.lineHeightPx : 0) + (W.lineHeightPx * (HOURS_PER_DAY - W.now.getHours())), W.yAxisWidthPx, W.lineHeightPx / 2);
 
     for (let d = 0; d < 5; ++d) {
       const clouds = W.days[d].clouds;
       if ('number' !== typeof clouds) continue;
-      const y = 160 + ((W.maxima.rain > 0) ? W.lineHeightPx : 0) + (W.lineHeightPx * (d + HOURS_PER_DAY - W.now.getHours()));
+      const y = 160 + (W.hasRain ? W.lineHeightPx : 0) + (W.lineHeightPx * (d + HOURS_PER_DAY - W.now.getHours()));
       W._ctx.fillStyle = W._clouds(clouds);
       W._ctx.fillRect(0, y, W.yAxisWidthPx, W.lineHeightPx);
     }
@@ -390,14 +398,14 @@ const W = {
     for (let h = W.now.getHours(); h < HOURS_PER_DAY; ++h) {
       const datum = W.hours[h];
       const y = 160 + (W.lineHeightPx * (h - W.now.getHours()));
-      const w = ((W._canvas.width - 100 - 70) * datum.rain / W.maxima.rain);
-      W._ctx.fillRect(100, y, w, 50);
+      const w = ((W._canvas.width - W.yAxisWidthPx - 70) * datum.rain / W.maxima.rain);
+      W._ctx.fillRect(W.yAxisWidthPx, y, w, W.lineHeightPx);
     }
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
-      const y = 210 + (50 * (d + HOURS_PER_DAY - W.now.getHours()));
-      const w = ((W._canvas.width - 100 - 70) * datum.rain / W.maxima.rain);
-      W._ctx.fillRect(100, y, w, 50);
+      const y = 210 + (W.lineHeightPx * (d + HOURS_PER_DAY - W.now.getHours()));
+      const w = ((W._canvas.width - W.yAxisWidthPx - 70) * datum.rain / W.maxima.rain);
+      W._ctx.fillRect(W.yAxisWidthPx, y, w, W.lineHeightPx);
     }
   },
 
@@ -417,7 +425,7 @@ const W = {
   drawNow() {
     W._ctx.strokeStyle = '#ff0000';
     W._ctx.beginPath();
-    const timeY = 150 + ((W.maxima.rain > 0) ? 50 : 0) - 15 + (50 * W.now.getMinutes() / 60);
+    const timeY = 150 + ((W.maxima.rain > 0) ? W.lineHeightPx : 0) - 15 + (W.lineHeightPx * W.now.getMinutes() / 60);
     W._ctx.moveTo(100, timeY);
     W._ctx.lineTo(W._canvas.width - 70, timeY);
     W._ctx.stroke();
