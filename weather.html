@@ -447,7 +447,7 @@ const W = {
 
     for (let h = W.now.getHours(); h < 24; ++h) {
       const datum = W.hours[h];
-      const y = 150 + (50 * (h - W.now.getHours()));
+      const y = ((W.maxima.rain > 0) ? 200 : 150) + (50 * (h - W.now.getHours()));
       W._ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 90, y);
       W._ctx.beginPath();
       W._ctx.moveTo(100, y - 15);
@@ -457,7 +457,7 @@ const W = {
 
     W._ctx.strokeStyle = '#000000';
     W._ctx.beginPath();
-    let y = 135;
+    let y = (W.maxima.rain > 0) ? 200 : 150) - 15;
     let x = 100 + ((W._canvas.width - 100 - 70) * (W.hours[W.now.getHours()].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
     W._ctx.moveTo(x, y);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
@@ -469,7 +469,7 @@ const W = {
 
     W._ctx.strokeStyle = '#ff00ff';
     W._ctx.beginPath();
-    y = 135;
+    y = ((W.maxima.rain > 0) ? 200 : 150) - 15;
     x = 100 + ((W._canvas.width - 100 - 70) * W.hours[W.now.getHours()].uv / 12);
     W._ctx.moveTo(x, y);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
@@ -505,7 +505,7 @@ const W = {
     W._ctx.strokeStyle = '#888888';
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
-      const y = 200 + (50 * (d + 24 - W.now.getHours()));
+      const y = ((W.maxima.rain > 0) ? 250 : 200) + (50 * (d + 24 - W.now.getHours()));
       W._ctx.fillText(W._day(datum.date), 90, y);
       W._ctx.beginPath();
       W._ctx.moveTo(100, y - 15);
@@ -516,7 +516,7 @@ const W = {
     W._ctx.fillStyle = '#aaaaaa';
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
-      const y = 200 + (50 * (d + 24 - W.now.getHours())) - 30;
+      const y = ((W.maxima.rain > 0) ? 250 : 200) + (50 * (d + 24 - W.now.getHours())) - 30;
       const x = 100 + ((W._canvas.width - 100 - 70) * (datum.temp[0] - W.minima.temp) / (W.maxima.temp - W.minima.temp));
       const w = 100 + ((W._canvas.width - 100 - 70) * (datum.temp[1] - W.minima.temp) / (W.maxima.temp - W.minima.temp)) - x;
       W._ctx.fillRect(x, y, w, 30);
@@ -527,7 +527,7 @@ const W = {
     W._ctx.beginPath();
     for (let d = 0; d < 5; ++d) {
       const datum = W.days[d];
-      const y = 200 + (50 * (d + 24 - W.now.getHours())) - 30;
+      const y = ((W.maxima.rain > 0) ? 250 : 200) + (50 * (d + 24 - W.now.getHours())) - 30;
       const x = 100 + ((W._canvas.width - 100 - 70) * datum.uv / 12) - 15;
       W._ctx.moveTo(x,y+15);
       W._ctx.lineTo(x+30,y+15);
