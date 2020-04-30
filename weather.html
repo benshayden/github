@@ -390,7 +390,7 @@ const W = {
   drawNow() {
     W._ctx.strokeStyle = '#ff0000';
     W._ctx.beginPath();
-    const timeY = 150 - 15 + (50 * W.now.getMinutes() / 60);
+    const timeY = 150 + ((W.maxima.rain > 0) ? 50 : 0) - 15 + (50 * W.now.getMinutes() / 60);
     W._ctx.moveTo(100, timeY);
     W._ctx.lineTo(W._canvas.width - 70, timeY);
     W._ctx.stroke();
