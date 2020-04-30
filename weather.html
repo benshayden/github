@@ -433,8 +433,8 @@ const W = {
       const x = 100 + ((W._canvas.width - 100 - 70) * (tick - W.minima.temp) / (W.maxima.temp - W.minima.temp));
       W._ctx.fillText(tick, x, 50);
       W._ctx.beginPath();
-      W._ctx.moveTo(x, 135);
-      W._ctx.lineTo(x, 135 + (50 * (6 + 24 - W.now.getHours())));
+      W._ctx.moveTo(x, 135 + ((W.maxima.rain > 0) ? 50 : 0));
+      W._ctx.lineTo(x, 135 + ((W.maxima.rain > 0) ? 50 : 0) + (50 * (6 + 24 - W.now.getHours())));
       W._ctx.stroke();
     }
 
