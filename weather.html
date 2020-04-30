@@ -87,7 +87,7 @@ const W = {
   drawClouds() {
     let prevClouds = W.hours[W.now.getHours()].clouds;
     W._ctx.fillStyle = W._clouds(prevClouds);
-    W._ctx.fillRect(0, 110, 100, 25);
+    W._ctx.fillRect(0, 110 + ((W.maxima.rain > 0) ? 50 : 0), 100, 25);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
       const clouds = W.hours[h].clouds;
       if ('number' !== typeof clouds) continue;
@@ -100,7 +100,7 @@ const W = {
       prevClouds = clouds;
     }
     W._ctx.fillStyle = W._clouds(prevClouds);
-    W._ctx.fillRect(0, 85 + (50 * (24 - W.now.getHours())), 100, 25);
+    W._ctx.fillRect(0, 85 + ((W.maxima.rain > 0) ? 50 : 0) + (50 * (24 - W.now.getHours())), 100, 25);
 
     for (let d = 0; d < 5; ++d) {
       const clouds = W.days[d].clouds;
