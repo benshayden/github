@@ -68,20 +68,36 @@
 // TODO no magic numbers
 // TODO location.hash = lat,lon,metric
 // TODO align axes
-// TODO radar link
 // TODO metric/imperial button
 
 const MS_PER_HOUR = 1000 * 60 * 60;
 const MS_PER_DAY = MS_PER_HOUR * 24;
-const IN_PER_MM = 1 / 25.4;
-const FONT_PX = 40;
-const LINE_HEIGHT_PX = FONT_PX * 1.25;
+const MM_PER_IN = 25.4;
+const IN_PER_MM = 1 / MM_PER_IN;
 
 const W = {
+  get fontPx() {
+    return 40;
+  },
+  
+  get lineHeightPx() {
+    return W.fontPx * 1.25;
+  },
+  
+  get yAxisWidthPx() {
+    return 100;
+  },
+  
+  get graphTop() {
+  },
+  
+  get graphWidth() {
+  },
+
   drawClouds() {
     let prevClouds = W.hours[W.now.getHours()].clouds;
     W._ctx.fillStyle = W._clouds(prevClouds);
-    W._ctx.fillRect(0, 110 + ((W.maxima.rain > 0) ? 50 : 0), 100, 25);
+    W._ctx.fillRect(0, (2 * W.lineHeightPx) + 10 + ((W.maxima.rain > 0) ? W.lineHeightPx : 0), W.yAxisWidthPx, W.lineHeightPx / 2);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
       const clouds = W.hours[h].clouds;
       if ('number' !== typeof clouds) continue;
