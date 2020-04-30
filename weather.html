@@ -43,6 +43,14 @@
   #covid::before {
     content: "d\000394covid";
   }
+  #rain::before {
+    content: "Rain";
+    color: hsl(216, 100%, 80%);
+  }
+  #rain {
+    color: hsl(216, 100%, 80%);
+    border-color: hsl(216, 100%, 80%);
+  }
   #covid {
     min-width: 64px;
   }
@@ -63,6 +71,7 @@
 <card id=temp></card>
 <card id=uv></card>
 <card id=aqi></card>
+<card id=rain></card>
 <card id=covid></card>
 <canvas id=canvas></canvas>
 
@@ -356,9 +365,17 @@ const W = {
   },
   
   drawRain() {
+    const card = document.getElementById('rain');
     if (W.maxima.rain <= 0) {
+      card.style.display = 'none';
       return;
     }
+
+    card.innerText = (parseInt(Math.round(W.lerp(
+      W.hours[W.now.getHours()].rain,
+      W.hours[W.now.getHours() + 1].rain,
+      W.now.getMinutes() / 60) * (W.metric ? 10 : 100))) / (W.metric ? 10 : 100)) + (W.metric ? 'mm' : 'in');
+    
     W._ctx.fillStyle = 'hsl(216, 100%, 80%)';
     for (let h = W.now.getHours(); h < 24; ++h) {
       const datum = W.hours[h];
