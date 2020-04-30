@@ -77,6 +77,7 @@
 
 const MS_PER_HOUR = 1000 * 60 * 60;
 const MS_PER_DAY = MS_PER_HOUR * 24;
+const IN_PER_MM = 1 / 25.4;
 const AIR_SENSOR_MILES = 5;
 const AIR_SENSOR_DEGREES = parseInt((AIR_SENSOR_MILES * 360 / 24901) * 10000) / 10000;
 const FONT_PX = 40;
@@ -249,7 +250,7 @@ const W = {
         feels: datum.feels_like,
         clouds: datum.clouds,
         humidity: datum.humidity,
-        rain: (datum.rain || {})['1h'] || 0,
+        rain: ((datum.rain || {})['1h'] || 0) * (W.metric ? 1 : IN_PER_MM),
       });
       for (const k of Object.keys(target)) {
         W.minima[k] = Math.min(W.minima[k] || 1000000, target[k]);
@@ -265,7 +266,7 @@ const W = {
         temp: [datum.temp.min, datum.temp.max],
         clouds: datum.clouds,
         humidity: datum.humidity,
-        rain: datum.rain || 0,
+        rain: (datum.rain || 0) * (W.metric ? 1 : IN_PER_MM),
       });
       for (const k of ['clouds', 'humidity', 'rain']) {
         W.minima[k] = Math.min(W.minima[k] || 1000000, target[k]);
