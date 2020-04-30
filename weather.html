@@ -463,7 +463,7 @@ const W = {
 
     W._ctx.strokeStyle = '#000000';
     W._ctx.beginPath();
-    let y = (W.maxima.rain > 0) ? 200 : 150) - 15;
+    let y = ((W.maxima.rain > 0) ? 200 : 150) - 15;
     let x = 100 + ((W._canvas.width - 100 - 70) * (W.hours[W.now.getHours()].temp - W.minima.temp) / (W.maxima.temp - W.minima.temp));
     W._ctx.moveTo(x, y);
     for (let h = W.now.getHours() + 1; h < 24; ++h) {
