@@ -229,6 +229,12 @@ const W = {
   
   drawCovid() {
     const card = document.getElementById('covid');
+    if (W._covid.length < 2) {
+      card.style.display = 'none';
+      return;
+    }
+
+    card.style.display = 'inline-block';
     const delta = W._covid[W._covid.length - 1].Active - W._covid[W._covid.length - 2].Active;
     card.innerText = ((delta >= 0) ? '+' : '') + delta;
   },
