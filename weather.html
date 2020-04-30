@@ -188,8 +188,8 @@ const W = {
       for (let d = 0; d < 5; ++d) {
         W.days[d] = {date: new Date(date + ((d + 1) * MS_PER_DAY))};
       }
-      W.minima = {};
-      W.maxima = {};
+      W.minima = {rain: 0, uv: 0};
+      W.maxima = {rain: 0, uv: 0};
       W.pm25 = null;
       W.aqi = null;
       W.weatherLoaded = W.loadWeather();
@@ -265,9 +265,9 @@ const W = {
         temp: [datum.temp.min, datum.temp.max],
         clouds: datum.clouds,
         humidity: datum.humidity,
-        rain: datum.rain,
+        rain: datum.rain || 0,
       });
-      for (const k of ['clouds', 'humidity']) {
+      for (const k of ['clouds', 'humidity', 'rain']) {
         W.minima[k] = Math.min(W.minima[k] || 1000000, target[k]);
         W.maxima[k] = Math.max(W.maxima[k] || -1000000, target[k]);
       }
@@ -344,6 +344,7 @@ const W = {
   draw() {
     document.getElementById('date').innerText = W._day(W.now);
     W.setupCanvas();
+    W.drawRain();
     W.drawAxes();
     W.drawClouds();
     W.drawHours();
@@ -351,6 +352,19 @@ const W = {
     W.drawNow();
     W.drawAqi();
     W.drawCovid();
+  },
+  
+  drawRain() {
+    for (let h = W.now.getHours(); h < 24; ++h) {
+      const datum = W.hours[h];
+      const y = 150 + (50 * (h - W.now.getHours()));
+      console.log('drawRain', h, datum.rain, y);
+    }
+    for (let d = 0; d < 5; ++d) {
+      const datum = W.days[d];
+      const y = 200 + (50 * (d + 24 - W.now.getHours()));
+      console.log('drawRain', d, datum.rain, y);
+    }
   },
   
   drawAqi() {
