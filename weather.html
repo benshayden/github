@@ -80,7 +80,6 @@
 
 // TODO no magic numbers
 // TODO location.hash = lat,lon,metric
-// TODO rain bars, rainCard
 // TODO merge axes
 // TODO radar link
 // TODO metric/imperial button
@@ -238,9 +237,6 @@ const W = {
     const card = document.getElementById('covid');
     const delta = W._covid[W._covid.length - 1].Active - W._covid[W._covid.length - 2].Active;
     card.innerText = ((delta >= 0) ? '+' : '') + delta;
-    card.onclick = () => {
-      open(`https://openweathermap.org/weathermap?basemap=map&cities=true&layer=precipitation&lat=${W.lat}&lon=${W.lon}&zoom=5`);
-    };
   },
 
   async loadWeather() {
@@ -377,6 +373,9 @@ const W = {
       W.hours[W.now.getHours()].rain,
       W.hours[W.now.getHours() + 1].rain,
       W.now.getMinutes() / 60) * (W.metric ? 10 : 100))) / (W.metric ? 10 : 100)) + (W.metric ? 'mm' : 'in');
+    card.onclick = () => {
+      open(`https://openweathermap.org/weathermap?basemap=map&cities=true&layer=precipitation&lat=${W.lat}&lon=${W.lon}&zoom=5`);
+    };
     
     W._ctx.fillStyle = 'hsl(216, 100%, 80%)';
     for (let h = W.now.getHours(); h < 24; ++h) {
