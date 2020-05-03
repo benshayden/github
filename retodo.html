@@ -127,7 +127,7 @@ async function listTodos() {
       todos.push(todo);
     }
   }
-  todos.sort((a, b) => a.name.localeCompare(b.name));
+  todos.sort((a, b) => a.ended - b.ended);
   for (const todo of todos.filter(t => !t.isDone)) {
     todo.display();
   }
