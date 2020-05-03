@@ -127,7 +127,7 @@ async function listTodos() {
       todos.push(todo);
     }
   }
-  todos.sort((a, b) => a.ended - b.ended);
+  todos.sort((a, b) => a.sortKey - b.sortKey);
   for (const todo of todos.filter(t => !t.isDone)) {
     todo.display();
   }
@@ -180,6 +180,10 @@ class Todo {
     this.time = time;
     this.started = started && new Date(started);
     this.ended = ended && new Date(ended);
+  }
+  
+  get sortKey() {
+    return (this.ended ? this.ended.getTime() : 0) / this.frequencyMs;
   }
 
   async startNow() {
@@ -252,6 +256,10 @@ class Todo {
     return 'D';
   }
   
+  get frequencyMs() {
+    return {O:1, M: 2.628e+9, Q: 7.884e+9, "2/Y": 1.577e+10, Y: 3.154e+10, "2Y": 6.307e+10, W: 6.048e+8, "2W": 1.21e+9, "4W": 2.419e+9, D: 8.64e+7}[this.frequencyBadge];
+  }
+
   get since() {
     let since = '';
     if (!this.ended) return since;
