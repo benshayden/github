@@ -183,7 +183,7 @@ class Todo {
   }
   
   get sortKey() {
-    return (this.ended ? this.ended.getTime() : 0) / this.frequencyMs;
+    return (new Date().getTime() - (this.ended ? this.ended.getTime() : 0)) / this.frequencyMs;
   }
 
   async startNow() {
