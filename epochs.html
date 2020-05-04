@@ -1,0 +1,18 @@
+<!doctype html>
+<title>epochs</title>
+<table id=table></table>
+<script>
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+const now = new Date();
+for (const kvp of location.hash.split('&')) {
+  const [k, v] = kvp.split('=');
+  const tr = document.createElement('tr');
+  table.appendChild(tr);
+  let td = document.createElement('td');
+  tr.appendChild(td);
+  td.innerText = k;
+  td = document.createElement('td');
+  tr.appendChild(td);
+  td.innerText = parseInt(Math.round((now - new Date(v)) / MS_PER_DAY));
+}
+</script>
