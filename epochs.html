@@ -4,7 +4,7 @@
 <script>
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const now = new Date();
-for (const kvp of location.hash.split('&')) {
+for (const kvp of location.hash.substr(1).split('&')) {
   const [k, v] = kvp.split('=');
   const tr = document.createElement('tr');
   table.appendChild(tr);
