@@ -28,19 +28,19 @@ This app can only transliterate. The grammar is based on toki pona:
 
 const spreadsheetId = '1lOF5iFM41Au5nf6oFgHLb7-kZQbtxVINLYktcYpjVsQ';
 const F = {
-  syllables: document.getElementById('syllables'),
-
   async load() {
     const response = await window.gapi.client.sheets.spreadsheets.get({
       spreadsheetId,
       includeGridData: true,
     });
     console.log(response);
+    return;
+    const table = document.getElementById('syllables');
     const rows = response.result.sheets[0].data[0].rowData.map(({values}) =>
       values.map(v => v.formattedValue));
     for (let i = 1; i < rows.length; ++i) {
       if (!rows[i][0]) continue;
-      this.rows.push(rows[i]));
+      this.rows.push(rows[i]);
     }
   },
 };
