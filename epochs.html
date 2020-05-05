@@ -13,6 +13,7 @@ for (const kvp of location.hash.substr(1).split('&')) {
   td.innerText = k;
   td = document.createElement('td');
   tr.appendChild(td);
+  td.style.textAlign = 'right';
   td.innerText = parseInt(Math.round((now - new Date(v)) / MS_PER_DAY));
 }
 </script>
