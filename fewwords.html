@@ -25,4 +25,91 @@ This app can only transliterate. The grammar is based on toki pona:
 // TODO sync tx table to translations sheet
 // TODO sync nums table to numbers sheet
 // TODO transliterate en-fw
+
+addEventListener('load', () => {
+  if (window.location.protocol === 'http:') {
+    window.location.protocol = 'https:';
+    return;
+  }
+  const script = document.createElement('script');
+  script.async = 'async';
+  script.defer = 'defer';
+  script.src = 'https://apis.google.com/js/api.js';
+  script.onreadystatechange = () => {
+    if (this.readyState === 'complete') this.onload()
+  };
+  script.onload = () => {
+    this.onload = function(){};
+    window.gapi.load('client:auth2', initClient);
+  };
+  document.head.appendChild(script);
+});
+
+function initClient() {
+  window.gapi.client.init({
+    clientId: '563656626445-ijrtluv6l4k9v8io4tinnl054onkmvaf.apps.googleusercontent.com',
+    apiKey: 'AIzaSyCisRYYgsPjDE0DuiC2Wr8j7K8Mj2aFW-U',
+    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+  }).then(async function () {
+    updateSigninStatus();
+    window.gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+    document.getElementById('authorize_button').onclick = handleAuthClick;
+  }, function(error) {
+    document.body.innerText = JSON.stringify(error);
+  });
+}
+
+function updateSigninStatus() {
+  if (window.gapi.auth2.getAuthInstance().isSignedIn.get()) {
+    document.getElementById('authorize_button').style.display = 'none';
+    listTodos();
+  } else {
+    document.getElementById('authorize_button').style.display = 'block';
+  }
+}
+
+addEventListener('hashchange', () => {
+  if (window.gapi.auth2.getAuthInstance().isSignedIn.get()) {
+    TODO();
+  }
+});
+
+function handleAuthClick(event) {
+  return window.gapi.auth2.getAuthInstance().signIn();
+}
+
+class Spreadsheet {
+  constructor(id) {
+    this.id = id;
+    this.loaded = this._load();
+  }
+
+  async _load() {
+    this._url = '';
+    this._title = '';
+    this._error = undefined;
+    this.rows = [];
+    try {
+      const response = await window.gapi.client.sheets.spreadsheets.get({
+        spreadsheetId: this.id,
+        includeGridData: true,
+      });
+
+      this._url = response.result.spreadsheetUrl;
+      this._title = response.result.properties.title;
+
+      const rows = response.result.sheets[0].data[0].rowData.map(({values}) =>
+        values.map(v => v.formattedValue));
+      for (let i = 1; i < rows.length; ++i) {
+        if (!rows[i][0]) continue;
+        this.rows.push(rows[i]));
+      }
+    } catch(err) {
+      console.log(err);
+      this._error = err;
+    }
+  }
+}
+})();
 </script>
