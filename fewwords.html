@@ -41,8 +41,6 @@ const F = {
       spreadsheetId,
       includeGridData: true,
     });
-    console.log(response);
-    return;
     const table = document.getElementById('syllables');
     const strings = [];
     for (const sheet of response.result.sheets) {
