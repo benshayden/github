@@ -3,37 +3,49 @@
 <style>
   table {
     border-collapse: collapse;
+    margin: auto;
   }
   td {
     padding: 0;
   }
 </style>
 
-[few words] is an engineered oligosynthetic international language inspired by toki pona and aUI.
+<tx>word few</tx> is an engineered oligosynthetic international language inspired by toki pona and aUI.
 Each morpheme is a single CV syllable.
-There are 5 vowels and 9 consonants, making for 45 total syllable-morphemes, minus a few that are difficult to disambiguate.
-
+There are 5 vowels and 9 consonants, making for 45 total syllable-morphemes, minus a few that are sometimes tricky.
+<br><br>
 <button id="authorize_button">Authorize</button>
 <table id=syllables></table>
-This app can only transliterate. The grammar is based on toki pona:
-<ol>
-<li>(PHRASE [context-particle])* PHRASE [predicate-particle] PHRASE ([object-particle] PHRASE)
-<li>Nouns before adjectives. Verbs before adverbs.
-<li>Most words can be nouns, adjectives, verbs, and adverbs. Use context and your imagination.
-<li>No pronouns. Instead of I/me/myself/my/mine, say [person] then your name or some abbreviation. Unlike toki pona, no exception to the [predicate-particle] for pronouns.
-<li>Yes/no questions as in toki pona: PHRASE [predicate-particle] PHRASE [not] PHRASE. Yes/no answers similarly: PHRASE or [not].
-<li>To ask a who/what/when/where/why question, use [unknown] as an adjective without changing the sentence order.
-<li>Prepositions: [of], [to], [at], [because of].
-<li>For foreign words, do the best you can. Don't correct pronunciation or spelling unless requested: "[sound] [predicate] [good] [not] [good]?"
-<li>Proper names work like adjectives.
-<li>Commands or "please": [good] [context-particle]...
-<li>There is a complete number system:
-<table id=nums></table>
-<li>[context-particle] works like "if" or "when".
-</ol>
+<h2>Transliterate</h2>
 <textarea id=en></textarea>
 <textarea id=fw></textarea>
+<h2>Vocabulary</h2>
 <table id=tx></table>
+<h2>Sentence Structure</h2>
+(PHRASE [context-particle])* PHRASE [predicate-particle] PHRASE ([object-particle] PHRASE)
+<h2>Head-Initial</h2>
+Nouns before adjectives. Verbs before adverbs.
+<h2>Parts of Speech</h2>
+Most words can be nouns, adjectives, verbs, and adverbs. Use context and your imagination.
+<h2>Pronouns</h2>
+Instead of having special words for I/me/myself/my/mine, say [person] then your name or some abbreviation. Unlike toki pona, no exception to the [predicate-particle] for pronouns.
+<h2>Questions</h2>
+Yes/no questions as in toki pona: PHRASE [predicate-particle] PHRASE [not] PHRASE. Yes/no answers similarly: PHRASE or [not].
+To ask a who/what/when/where/why question, use [unknown] as an adjective without changing the sentence order.
+<h2>Prepositions</h2>
+Prepositions: [of], [to], [at], [because of].
+<h2>Foreign Words</h2>
+For foreign words, do the best you can. Don't correct pronunciation or spelling unless requested: "[sound] [predicate] [good] [not] [good]?"
+<h2>Proper Names</h2>
+Proper names work like adjectives.
+<h2>Imperatives</h2>
+Commands or "please": [good] [context-particle]...
+<h2>Numbers</h2>
+There is a complete number system:
+<table id=nums></table>
+<h2>If/When</h2>
+[context-particle] works like "if" or "when".
+
 <script>
 // TODO sync vc table to vowels-consonants sheet
 // TODO sync tx table to translations sheet
@@ -44,6 +56,16 @@ const spreadsheetId = '1lOF5iFM41Au5nf6oFgHLb7-kZQbtxVINLYktcYpjVsQ';
 const F = {
   fw2en: {},
   en2fw: {},
+  
+  transliterate() {
+    for (const elem of document.querySelectorAll('tx')) {
+      const fw = '';
+      for (const en of elem.innerText.split(' ')) {
+        fw += ' ' + (F.en2fw[en] || en);
+      }
+      elem.innerText = fw;
+    }
+  },
 
   async load() {
     const response = await window.gapi.client.sheets.spreadsheets.get({
