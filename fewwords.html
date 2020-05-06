@@ -33,6 +33,9 @@ This app can only transliterate. The grammar is based on toki pona:
 
 const spreadsheetId = '1lOF5iFM41Au5nf6oFgHLb7-kZQbtxVINLYktcYpjVsQ';
 const F = {
+  fw2en: {},
+  en2fw: {},
+
   async load() {
     const response = await window.gapi.client.sheets.spreadsheets.get({
       spreadsheetId,
@@ -41,11 +44,36 @@ const F = {
     console.log(response);
     return;
     const table = document.getElementById('syllables');
-    const rows = response.result.sheets[0].data[0].rowData.map(({values}) =>
-      values.map(v => v.formattedValue));
-    for (let i = 1; i < rows.length; ++i) {
-      if (!rows[i][0]) continue;
-      this.rows.push(rows[i]);
+    const strings = [];
+    for (const sheet of response.result.sheets) {
+      if (sheet.properties.title === 'syllables') {
+        for (const row of sheet.data[0].rowData) {
+          strings.push([]);
+          const tr = document.createElement('tr');
+          table.appendChild(tr);
+          for (const cell of row.values) {
+            const td = document.createElement('td');
+            tr.appendChild(td);
+            const input = document.createElement('input');
+            td.appendChild(input);
+            input.value = cell.formattedValue;
+            input.addEventListener('keyup', e => {
+              console.log('TODO schedule spreadsheets.update()');
+            });
+            strings[strings.length - 1].push(cell.formattedValue);
+          }
+        }
+      } else if (sheet.properties.title === 'words') {
+      }
+    }
+    for (let rowi = 1; rowi < strings.length; ++rowi) {
+      for (let coli = 1; coli < strings[rowi].length; ++coli) {
+        const en = strings[rowi][coli];
+        if (!en) continue;
+        const fw = strings[rowi][0] + strings[0][coli];
+        F.fw2en[fw] = en;
+        F.en2fw[en] = fw;
+      }
     }
   },
 };
