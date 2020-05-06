@@ -16,35 +16,124 @@ There are 5 vowels and 9 consonants, making for 45 total syllable-morphemes, min
 <br><br>
 <button id="authorize_button">Authorize</button>
 <table id=syllables></table>
-<h2>Transliterate</h2>
-<textarea id=en></textarea>
-<textarea id=fw></textarea>
+
 <h2>Vocabulary</h2>
 <table id=words></table>
+
 <h2>Sentence Structure</h2>
 (PHRASE [context-particle])* PHRASE [predicate-particle] PHRASE ([object-particle] PHRASE)
+
+<table>
+  <tr>
+    <td></td>
+    <td><tx></tx></td>
+  </tr>
+</table>
+
 <h2>Head-Initial</h2>
 Nouns before adjectives. Verbs before adverbs.
+
+<table>
+  <tr>
+    <td></td>
+    <td><tx></tx></td>
+  </tr>
+</table>
+
 <h2>Parts of Speech</h2>
 Most words can be nouns, adjectives, verbs, and adverbs. Use context and your imagination.
+
+<table>
+  <tr>
+    <td>Eat food. Drink water. Not too much.</td>
+    <td><tx>eat [object] food. drink [object] water. number big not.</tx></td>
+  </tr>
+</table>
+
 <h2>Pronouns</h2>
 Instead of having special words for I/me/myself/my/mine, say [person] then your name or some abbreviation. Unlike toki pona, no exception to the [predicate-particle] for pronouns.
+
+<table>
+  <tr>
+    <td></td>
+    <td><tx></tx></td>
+  </tr>
+</table>
+
 <h2>Questions</h2>
 Yes/no questions as in toki pona: PHRASE [predicate-particle] PHRASE [not] PHRASE. Yes/no answers similarly: PHRASE or [not].
 To ask a who/what/when/where/why question, use [unknown] as an adjective without changing the sentence order.
+
+<table>
+  <tr>
+    <td></td>
+    <td><tx></tx></td>
+  </tr>
+</table>
+
 <h2>Prepositions</h2>
-Prepositions: [of], [to], [at], [because of].
+<table>
+  <tr>
+    <td></td>
+    <td><tx>of</tx></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td><tx>to</tx></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td><tx>at</tx></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td><tx>because</tx></td>
+  </tr>
+</table>
+
 <h2>Foreign Words</h2>
-For foreign words, do the best you can. Don't correct pronunciation or spelling unless requested: "[sound] [predicate] [good] [not] [good]?"
+For foreign words, do the best you can, and trust that others will, too. Don't correct pronunciation or spelling unless requested.
+
+<table>
+  <tr>
+    <td></td>
+    <td><tx></tx></td>
+  </tr>
+</table>
+
 <h2>Proper Names</h2>
 Proper names work like adjectives.
+<table>
+  <tr>
+    <td></td>
+    <td><tx></tx></td>
+  </tr>
+</table>
+
 <h2>Imperatives</h2>
-Commands or "please": [good] [context-particle]...
+<table>
+  <tr>
+    <td></td>
+    <td><tx></tx></td>
+  </tr>
+</table>
+
 <h2>Numbers</h2>
 There is a complete number system:
 <table id=nums></table>
+
 <h2>If/When</h2>
 [context-particle] works like "if" or "when".
+<table>
+  <tr>
+    <td></td>
+    <td><tx></tx></td>
+  </tr>
+</table>
+
+<h2>Transliterate</h2>
+<textarea id=en></textarea>
+<textarea id=fw></textarea>
 
 <script>
 // TODO sync vc table to vowels-consonants sheet
@@ -109,7 +198,7 @@ const F = {
         for (const row of sheet.data[0].rowData) {
           const tr = document.createElement('tr');
           table.appendChild(tr);
-          for (let coli = 0; coli < 6; ++coli) {
+          for (let coli = 0; coli < 2; ++coli) {
             const cell = row.values[coli] || {};
             const td = document.createElement('td');
             tr.appendChild(td);
