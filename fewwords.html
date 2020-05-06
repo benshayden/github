@@ -20,7 +20,7 @@ There are 5 vowels and 9 consonants, making for 45 total syllable-morphemes, min
 <textarea id=en></textarea>
 <textarea id=fw></textarea>
 <h2>Vocabulary</h2>
-<table id=tx></table>
+<table id=words></table>
 <h2>Sentence Structure</h2>
 (PHRASE [context-particle])* PHRASE [predicate-particle] PHRASE ([object-particle] PHRASE)
 <h2>Head-Initial</h2>
@@ -72,10 +72,11 @@ const F = {
       spreadsheetId,
       includeGridData: true,
     });
-    const table = document.getElementById('syllables');
-    const strings = [];
+    console.log(response);
     for (const sheet of response.result.sheets) {
       if (sheet.properties.title === 'syllables') {
+    	  const table = document.getElementById('syllables');
+        const strings = [];
         for (const row of sheet.data[0].rowData) {
           strings.push([]);
           const tr = document.createElement('tr');
@@ -94,16 +95,34 @@ const F = {
             strings[strings.length - 1].push(cell.formattedValue);
           }
         }
+        for (let rowi = 1; rowi < strings.length; ++rowi) {
+          for (let coli = 1; coli < strings[rowi].length; ++coli) {
+            const en = strings[rowi][coli];
+            if (!en) continue;
+            const fw = strings[rowi][0] + strings[0][coli];
+            F.fw2en[fw] = en;
+            F.en2fw[en] = fw;
+          }
+        }
       } else if (sheet.properties.title === 'words') {
-      }
-    }
-    for (let rowi = 1; rowi < strings.length; ++rowi) {
-      for (let coli = 1; coli < strings[rowi].length; ++coli) {
-        const en = strings[rowi][coli];
-        if (!en) continue;
-        const fw = strings[rowi][0] + strings[0][coli];
-        F.fw2en[fw] = en;
-        F.en2fw[en] = fw;
+    	  const table = document.getElementById('words');
+        for (const row of sheet.data[0].rowData) {
+          const tr = document.createElement('tr');
+          table.appendChild(tr);
+          for (let coli = 0; coli < 6; ++coli) {
+            const cell = row.values[coli] || {};
+            const td = document.createElement('td');
+            tr.appendChild(td);
+            const input = document.createElement('input');
+            td.appendChild(input);
+            input.size = 10;
+            input.value = cell.formattedValue || '';
+            input.addEventListener('keyup', e => {
+              console.log('TODO schedule spreadsheets.update()');
+            });
+          }
+        }
+        // TODO F.en2fw/fw2en
       }
     }
   },
