@@ -1,5 +1,14 @@
 <!doctype html>
 <title>few words</title>
+<style>
+  table {
+    border-collapse: collapse;
+  }
+  td {
+    padding: 0;
+  }
+</style>
+
 [few words] is an engineered oligosynthetic international language inspired by toki pona and aUI.
 Each morpheme is a single CV syllable.
 There are 5 vowels and 9 consonants, making for 45 total syllable-morphemes, minus a few that are difficult to disambiguate.
@@ -49,12 +58,14 @@ const F = {
           strings.push([]);
           const tr = document.createElement('tr');
           table.appendChild(tr);
-          for (const cell of row.values) {
+          for (let coli = 0; coli < 6; ++coli) {
+            const cell = row.values[coli] || {};
             const td = document.createElement('td');
             tr.appendChild(td);
             const input = document.createElement('input');
             td.appendChild(input);
-            input.value = cell.formattedValue;
+            input.size = strings[strings.length - 1].length ? 5 : 1;
+            input.value = cell.formattedValue || '';
             input.addEventListener('keyup', e => {
               console.log('TODO schedule spreadsheets.update()');
             });
