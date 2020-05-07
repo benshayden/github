@@ -154,7 +154,7 @@ const F = {
   
   phrase(s, strict = false) {
     const fw = '';
-    for (const en of elem.en.split(' ')) {
+    for (const en of s.split(' ')) {
       if (strict && !F.en2fw[en]) throw new Error(en);
       fw += ' ' + (F.en2fw[en] || en);
     }
