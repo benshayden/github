@@ -303,6 +303,10 @@ const W = {
       W.minima.temp = Math.min(W.minima.temp, target.temp[0]);
       W.maxima.temp = Math.max(W.maxima.temp, target.temp[1]);
     }
+    
+    if (W.hasRain) {
+      W.maxima.rain = Math.max(W.maxima.rain, (W.metric ? 0.5 : 0.05) * 1.1);
+    }
 
     for (const k of ['temp', 'feels']) {
       W.maxima[k] = W._convertTemp(W.maxima[k], W.metric);
@@ -390,7 +394,7 @@ const W = {
   
   drawRain() {
     const card = document.getElementById('rain');
-    if (W.maxima.rain <= 0) {
+    if (!W.hasRain) {
       card.style.display = 'none';
       return;
     }
@@ -435,7 +439,7 @@ const W = {
   drawNow() {
     W._ctx.strokeStyle = '#ff0000';
     W._ctx.beginPath();
-    const timeY = 150 + ((W.maxima.rain > 0) ? W.lineHeightPx : 0) - 15 + (W.lineHeightPx * W.now.getMinutes() / 60);
+    const timeY = 150 + (W.hasRain ? W.lineHeightPx : 0) - 15 + (W.lineHeightPx * W.now.getMinutes() / 60);
     W._ctx.moveTo(W.yAxisWidthPx, timeY);
     W._ctx.lineTo(W._canvas.width - 70, timeY);
     W._ctx.stroke();
@@ -459,8 +463,8 @@ const W = {
       const x = W.yAxisWidthPx + ((W._canvas.width - W.yAxisWidthPx - 70) * (tick - W.minima.temp) / (W.maxima.temp - W.minima.temp));
       W._ctx.fillText(tick, x, 50);
       W._ctx.beginPath();
-      W._ctx.moveTo(x, 135 + ((W.maxima.rain > 0) ? 50 : 0));
-      W._ctx.lineTo(x, 135 + ((W.maxima.rain > 0) ? 50 : 0) + (50 * (6 + 24 - W.now.getHours())));
+      W._ctx.moveTo(x, 135 + (W.hasRain ? 50 : 0));
+      W._ctx.lineTo(x, 135 + (W.hasRain ? 50 : 0) + (50 * (6 + 24 - W.now.getHours())));
       W._ctx.stroke();
     }
 
@@ -476,7 +480,7 @@ const W = {
       W._ctx.fillText(uvi, x, 2 * W.lineHeightPx);
     }
 
-    if (W.maxima.rain > 0) {
+    if (W.hasRain) {
       W._ctx.fillStyle = 'hsl(216, 100%, 50%)';
       let dRainTick = W.metric ? 0.5 : 0.05;
       let maxRainTick = dRainTick * parseInt(W.maxima.rain / dRainTick);
@@ -499,7 +503,7 @@ const W = {
 
     for (let h = W.now.getHours(); h < 24; ++h) {
       const datum = W.hours[h];
-      const y = ((W.maxima.rain > 0) ? 200 : 150) + (50 * (h - W.now.getHours()));
+      const y = (W.hasRain ? 200 : 150) + (50 * (h - W.now.getHours()));
       W._ctx.fillText((h % 12) == 0 ? 12 : (h % 12), 90, y);
       W._ctx.beginPath();
       W._ctx.moveTo(W.yAxisWidthPx, y - 15);
