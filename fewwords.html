@@ -2,7 +2,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>few words</title>
 <!--
-TODO onkeyup -> update()
 TODO toki pona sheet
 TODO aUI sheet
 -->
@@ -213,13 +212,7 @@ const F = {
             const cell = row.values[coli] || {};
             const td = document.createElement('td');
             tr.appendChild(td);
-            const input = document.createElement('input');
-            td.appendChild(input);
-            input.size = strings[strings.length - 1].length ? 5 : 1;
-            input.value = cell.formattedValue || '';
-            input.addEventListener('keyup', e => {
-              console.log('TODO schedule spreadsheets.update()');
-            });
+            td.innerText = cell.formattedValue || '';
             strings[strings.length - 1].push(cell.formattedValue);
           }
         }
@@ -242,13 +235,7 @@ const F = {
             const cell = row.values[coli] || {};
             const td = document.createElement('td');
             tr.appendChild(td);
-            const input = document.createElement('input');
-            td.appendChild(input);
-            input.size = 10;
-            input.value = cell.formattedValue || '';
-            input.addEventListener('keyup', e => {
-              console.log('TODO schedule spreadsheets.update()');
-            });
+            td.innerText = cell.formattedValue || '';
           }
           queue.push({en: row.values[0].formattedValue, elements: row.values[1].formattedValue});
           const td = document.createElement('td');
