@@ -253,11 +253,13 @@ const F = {
             const {en, elements} = queue[i];
             try {
               const fw = F.phrase(elements, true);
+              console.log(en, fw, elements);
               --i;
               queue.splice(i, 1);
               F.en2fw[en] = fw;
               F.fw2en[fw] = en;
             } catch (e) {
+              console.log(en, elements, e);
             }
           }
           prevLength = queue.length;
