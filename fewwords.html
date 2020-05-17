@@ -292,7 +292,7 @@ const F = {
           tr.appendChild(td);
           const tx = document.createElement('tx');
           td.appendChild(tx);
-          tx.innerText = row.values[2].formattedValue;
+          tx.innerText = (row.values[2] || {}).formattedValue || '';
         }
       } else {
         console.log(sheet);
