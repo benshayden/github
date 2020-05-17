@@ -1,10 +1,6 @@
 <!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>few words</title>
-<!--
-TODO toki pona sheet
-TODO aUI sheet
--->
 <style>
   table {
     border-collapse: collapse;
@@ -23,7 +19,11 @@ TODO aUI sheet
 <br>sound-thought-of-number-big-not
 <br>few words
 
-<br><button id="authorize_button">Authorize</button>
+<p>Oligosynthesis works up to a point. How far can that point be pushed? When are concrete roots better or worse than abstract roots?
+
+<p>Can a strict CV syllable structure with a minimal phonemic inventory account for enough roots?  
+
+<br><button id="authorize_button">Authorize Google Sheets API</button>
 
 <table id=syllables></table>
 
@@ -260,6 +260,42 @@ const F = {
           }
           prevLength = queue.length;
         }
+      } else if (sheet.properties.title === 'toki pona') {
+    	  const table = document.getElementById('tokipona');
+        for (const row of sheet.data[0].rowData) {
+          const tr = document.createElement('tr');
+          table.appendChild(tr);
+          for (let coli = 0; coli < 2; ++coli) {
+            const cell = row.values[coli] || {};
+            const td = document.createElement('td');
+            tr.appendChild(td);
+            td.innerText = cell.formattedValue || '';
+          }
+          const td = document.createElement('td');
+          tr.appendChild(td);
+          const tx = document.createElement('tx');
+          td.appendChild(tx);
+          tx.innerText = row.values[1].formattedValue;
+        }
+      } else if (sheet.properties.title === 'aUI') {
+    	  const table = document.getElementById('aui');
+        for (const row of sheet.data[0].rowData) {
+          const tr = document.createElement('tr');
+          table.appendChild(tr);
+          for (let coli = 0; coli < 3; ++coli) {
+            const cell = row.values[coli] || {};
+            const td = document.createElement('td');
+            tr.appendChild(td);
+            td.innerText = cell.formattedValue || '';
+          }
+          const td = document.createElement('td');
+          tr.appendChild(td);
+          const tx = document.createElement('tx');
+          td.appendChild(tx);
+          tx.innerText = row.values[2].formattedValue;
+        }
+      } else {
+        console.log(sheet);
       }
     }
     F.transliterate();
