@@ -15,9 +15,11 @@
   }
 </style>
 
+<center>
 <tx>word of few</tx>
 <br>sound-thought-of-number-big-not
 <br>few words
+</center>
 
 <p>Oligosynthesis works up to a point. How far can that point be pushed? When are concrete roots better or worse than abstract roots?
 
@@ -99,7 +101,7 @@ Instead of having special words for I/me/myself/my/mine, say <tx>person</tx> the
 </ul>
 
 <h2>Questions</h2>
-Yes/no questions as in toki pona: subject [predicate] verb [not] verb. Yes/no answers similarly: PHRASE or [not].
+Yes/no questions as in toki pona: subject [predicate] verb [not] verb. Yes/no answers similarly: verb or [not].
 To ask a who/what/when/where/why question, use <tx>unknown</tx> as an adjective without changing the sentence order.
 
 <ul>
@@ -259,6 +261,9 @@ const F = {
             }
           }
           prevLength = queue.length;
+        }
+        if (queue.length) {
+          console.log('unable to translate', queue);
         }
       } else if (sheet.properties.title === 'toki pona') {
     	  const table = document.getElementById('tokipona');
