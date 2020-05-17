@@ -254,8 +254,8 @@ const F = {
             try {
               const fw = F.phrase(elements, true);
               console.log(en, fw, elements);
-              --i;
               queue.splice(i, 1);
+              --i;
               F.en2fw[en] = fw;
               F.fw2en[fw] = en;
             } catch (e) {
