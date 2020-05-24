@@ -221,6 +221,7 @@ const F = {
     	  const table = document.getElementById('words');
         const queue = [];
         for (const row of sheet.data[0].rowData) {
+          if (!row.values[0] || !row.values[1]) continue;
           const tr = document.createElement('tr');
           table.appendChild(tr);
           for (let coli = 0; coli < 2; ++coli) {
