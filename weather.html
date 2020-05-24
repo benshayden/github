@@ -358,25 +358,24 @@ const W = {
     const maxlat = W.lat + W.airSensorDegrees;
     const minlon = W.lon - W.airSensorDegrees;
     const maxlon = W.lon + W.airSensorDegrees;
-    let a;
     try {
-      a = await W.fetchCachedJson({
+      const a = await W.fetchCachedJson({
         url: `https://www.purpleair.com/data.json?opt=1/mAQI/a10/cC0&fetch=true&nwlat=${maxlat}&selat=${minlat}&nwlng=${minlon}&selng=${maxlon}&fields=pm_1`,
         expiryMs: MS_PER_HOUR / 2,
       });
+      // Mean particulate mass < 2.5um in ug/m^3.
+      W.pm25 = W._mean(a.data.map(row => {
+        const datum = {};
+        for (let i = 0; i < a.fields.length; ++i) {
+          datum[a.fields[i]] = row[i];
+        }
+        return datum;
+      }).filter(datum => datum.Lat !== null && datum.Lon !== null && datum.age < 30).map(s => s.pm_1 || 0));
+      W.aqi = W.pm25 * 50 / 30;
     } catch(e) {
       console.error(`Error fetching air quality:\n${e.stack}\n`);
       return;
     }
-    // Mean particulate mass < 2.5um in ug/m^3.
-    W.pm25 = W._mean(a.data.map(row => {
-      const datum = {};
-      for (let i = 0; i < a.fields.length; ++i) {
-        datum[a.fields[i]] = row[i];
-      }
-      return datum;
-    }).filter(datum => datum.Lat !== null && datum.Lon !== null && datum.age < 30).map(s => s.pm_1 || 0));
-    W.aqi = W.pm25 * 50 / 30;
   },
   
   draw() {
