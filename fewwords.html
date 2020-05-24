@@ -1,4 +1,9 @@
 <!doctype html>
+<!--
+  TODO
+  cell onclick => display notes, parts for root, root-not, root-.+, .+-root-.*
+  todo lists for each tab: untranslated nouns, untranslated toki pona, untranslated aUI
+-->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>few words</title>
 <style>
@@ -212,7 +217,7 @@ const F = {
             F.en2fw[en] = fw;
           }
         }
-      } else if (sheet.properties.title === 'words') {
+      } else if (sheet.properties.title === 'nouns') {
     	  const table = document.getElementById('words');
         const queue = [];
         for (const row of sheet.data[0].rowData) {
