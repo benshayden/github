@@ -242,6 +242,8 @@ const F = {
             const {en, elements} = queue[i];
             if (!elements) {
               console.log(`TODO compose "${en}"`);
+              queue.splice(i, 1);
+              --i;
               continue;
             }
             try {
