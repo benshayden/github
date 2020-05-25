@@ -269,6 +269,10 @@ const F = {
         for (const part of missing) {
           console.log(`TODO define "${part}"`);
         }
+      } else if (sheet.properties.title === 'parts') {
+        for (const row of sheet.data[0].rowData) {
+          console.log('TODO parts', row);
+        }
       } else if (sheet.properties.title === 'toki pona') {
     	  const table = document.getElementById('tokipona');
         for (const row of sheet.data[0].rowData) {
