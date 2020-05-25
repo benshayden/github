@@ -191,7 +191,6 @@ const F = {
       spreadsheetId,
       includeGridData: true,
     });
-    console.log(response);
     for (const sheet of response.result.sheets) {
       if (sheet.properties.title === 'syllables') {
     	  const table = document.getElementById('syllables');
@@ -241,21 +240,32 @@ const F = {
         while (queue.length !== prevLength) {
           for (let i = 0; i < queue.length; ++i) {
             const {en, elements} = queue[i];
+            if (!elements) {
+              console.log(`TODO compose "${en}"`);
+              continue;
+            }
             try {
               const fw = F.phrase(elements, true);
-              console.log(en, fw, elements);
               queue.splice(i, 1);
               --i;
               F.en2fw[en] = fw;
               F.fw2en[fw] = en;
             } catch (e) {
-              console.log(en, elements, e);
+              console.log(`Error {en: "${en}", elements: "${elements}"}\n${e}`);
             }
           }
           prevLength = queue.length;
         }
-        if (queue.length) {
-          console.log('unable to translate', queue);
+        const missing = new Set();
+        for (const {en, elements} of queue) {
+          for (const part of elements.split()) {
+            if (!F.en2fw[part]) {
+              missing.add(part);
+            }
+          }
+        }
+        for (const part of missing) {
+          console.log(`TODO define "${part}"`);
         }
       } else if (sheet.properties.title === 'toki pona') {
     	  const table = document.getElementById('tokipona');
