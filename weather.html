@@ -85,6 +85,7 @@ const HOURS_PER_DAY = 24;
 const MS_PER_DAY = MS_PER_HOUR * HOURS_PER_DAY;
 const MM_PER_IN = 25.4;
 const IN_PER_MM = 1 / MM_PER_IN;
+const TZO_JAN = new Date(new Date().getFullYear(), 0, 1).getTimezoneOffset();
 
 const W = {
   get fontPx() {
@@ -333,7 +334,12 @@ const W = {
       for (const hourDatum of dayDatum.result) {
         const date = new Date(hourDatum.uv_time);
         if (date.getDate() === W.now.getDate()) {
-          const target = W.hours[date.getHours()];
+          let hours = date.getHours();
+          if (date.getTimezoneOffset() !== TZO_JAN) {
+            // Daylight Savings Time is in effect today. Solar noon is closer to 1pm.
+            ++hours;
+          }
+          const target = W.hours[hours];
           if (!target) continue;
           target.uv = hourDatum.uv * (1 - 0.7 * (target.cloud || 0) / 100);
         } else if (date > W.now) {
