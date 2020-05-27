@@ -196,7 +196,7 @@ const F = {
       const rows = [];
       sheets[sheet.properties.title] = rows;
       for (const row of sheet.data[0].rowData) {
-        rows.push(row.values.map(v => ((v || {}).formattedValue || ''));
+        rows.push(row.values.map(v => ((v || {}).formattedValue || '')));
       }
 
       if (sheet.properties.title === 'syllables') {
