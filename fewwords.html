@@ -191,7 +191,14 @@ const F = {
       spreadsheetId,
       includeGridData: true,
     });
+    const sheets = {};
     for (const sheet of response.result.sheets) {
+      const rows = [];
+      sheets[sheet.properties.title] = rows;
+      for (const row of sheet.data[0].rowData) {
+        rows.push(row.values.map(v => ((v || {}).formattedValue || ''));
+      }
+
       if (sheet.properties.title === 'syllables') {
     	  const table = document.getElementById('syllables');
         const strings = [];
@@ -311,6 +318,7 @@ const F = {
         console.log(sheet);
       }
     }
+    console.log(sheets);
     F.transliterate();
   },
 };
