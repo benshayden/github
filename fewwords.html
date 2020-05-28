@@ -208,7 +208,6 @@ const F = {
 
     let table = document.getElementById('syllables');
     for (const row of sheets.syllables) {
-      strings.push([]);
       const tr = document.createElement('tr');
       table.appendChild(tr);
       for (let coli = 0; coli < 6; ++coli) {
@@ -216,14 +215,13 @@ const F = {
         const td = document.createElement('td');
         tr.appendChild(td);
         td.innerText = cell;
-        strings[strings.length - 1].push(cell);
       }
     }
-    for (let rowi = 1; rowi < strings.length; ++rowi) {
-      for (let coli = 1; coli < strings[rowi].length; ++coli) {
+    for (let rowi = 1; rowi < sheets.syllables.length; ++rowi) {
+      for (let coli = 1; coli < sheets.syllables[rowi].length; ++coli) {
         const en = sheets.syllables[rowi][coli];
         if (!en) continue;
-        const fw = sheets.syllables[rowi][0] + strings[0][coli];
+        const fw = sheets.syllables[rowi][0] + sheets.syllables[0][coli];
         F.fw2en[fw] = en;
         F.en2fw[en] = fw;
       }
