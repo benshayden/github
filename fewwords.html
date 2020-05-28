@@ -229,7 +229,7 @@ const F = {
       }
     }
 
-    const table = document.getElementById('words');
+    table = document.getElementById('words');
     const queue = [];
     for (const row of sheets.nouns) {
       if (!row.values[0] || !row.values[1]) continue;
@@ -282,7 +282,16 @@ const F = {
       console.log(`TODO define "${part}"`);
     }
 
-    for (const row of sheets.parts) {
+    for (const row of sheets.parts.slice(1)) {
+      console.log('parts', row);
+      for (const cell of row.slice(1)) {
+        if (!cell) continue;
+        console.log('part', cell, row[0], F.en2fw[row[0]]);
+        if (!F.en2fw[row[0]]) {
+          console.log(`TODO define ${row[0]}`);
+        }
+        F.en2fw[cell] = F.en2fw[row[0]];
+      }
     }
 
     table = document.getElementById('tokipona');
