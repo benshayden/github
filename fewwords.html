@@ -311,7 +311,7 @@ const F = {
       tx.innerText = row.values[1].formattedValue;
     }
 
-    const table = document.getElementById('aui');
+    table = document.getElementById('aui');
     for (const row of sheets['source:aUI']) {
       const tr = document.createElement('tr');
       table.appendChild(tr);
