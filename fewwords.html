@@ -254,7 +254,7 @@ const F = {
           continue;
         }
         try {
-          const fw = F.phrase(elements, true);
+          const fw = F.phrase(elements, true).replace(/ /g, '');
           queue.splice(i, 1);
           --i;
           F.en2fw[en] = fw;
