@@ -311,7 +311,7 @@ const F = {
       td.appendChild(tx);
       tx.innerText = row[1];
       try {
-        F.phrase(elements, true)
+        F.phrase(row[1], true)
       } catch (e) {
         console.log('TODO define', row[1]);
       }
@@ -331,6 +331,11 @@ const F = {
       const tx = document.createElement('tx');
       td.appendChild(tx);
       tx.innerText = row[2] || '';
+      try {
+        F.phrase(row[2], true)
+      } catch (e) {
+        console.log('TODO define', row[1]);
+      }
     }
 
     F.transliterate();
