@@ -22,8 +22,7 @@
 </style>
 
 <center>
-<tx>word of few</tx>
-<br>sound-thought-of-number-big-not
+<tx>word few</tx>
 <br>few words
 </center>
 
@@ -219,7 +218,7 @@ const F = {
     }
     for (let rowi = 1; rowi < sheets.syllables.length; ++rowi) {
       for (let coli = 1; coli < sheets.syllables[rowi].length; ++coli) {
-        const en = sheets.syllables[rowi][coli];
+        const en = sheets.syllables[rowi][coli] || '';
         if (!en) continue;
         const fw = sheets.syllables[rowi][0] + sheets.syllables[0][coli];
         F.fw2en[fw] = en;
