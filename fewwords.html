@@ -290,7 +290,7 @@ const F = {
     for (const row of sheets.parts) {
       for (const cell of [row.verb, row.adj, row.adv]) {
         if (!cell) continue;
-        console.log('part', cell, row[0], F.en2fw[row.noun]);
+        console.log('part', cell, row.noun, F.en2fw[row.noun]);
         if (!F.en2fw[row.noun]) {
           console.log(`TODO define ${row.noun}`);
         }
