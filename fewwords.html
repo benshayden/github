@@ -287,12 +287,14 @@ const F = {
     }
 
     for (const row of sheets.parts) {
+      if (!F.en2fw[row.noun]) {
+        console.log(`TODO define ${row.noun}`);
+      }
       for (const cell of [row.verb, row.adj, row.adv]) {
         if (!cell) continue;
-        if (!F.en2fw[row.noun]) {
-          console.log(`TODO define ${row.noun}`);
+        for (const syn of cell.split('/')) {
+          F.en2fw[syn] = F.en2fw[row.noun];
         }
-        F.en2fw[cell] = F.en2fw[row.noun];
       }
     }
 
