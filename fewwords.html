@@ -210,10 +210,9 @@ const F = {
       const tr = document.createElement('tr');
       table.appendChild(tr);
       for (let coli = 0; coli < 6; ++coli) {
-        const cell = row[coli];
         const td = document.createElement('td');
         tr.appendChild(td);
-        td.innerText = cell;
+        td.innerText = row[coli] || '';
       }
     }
     for (let rowi = 1; rowi < sheets.syllables.length; ++rowi) {
@@ -233,17 +232,16 @@ const F = {
       const tr = document.createElement('tr');
       table.appendChild(tr);
       for (let coli = 0; coli < 2; ++coli) {
-        const cell = row.values[coli] || {};
         const td = document.createElement('td');
         tr.appendChild(td);
-        td.innerText = cell.formattedValue || '';
+        td.innerText = row[coli] || '';
       }
-      queue.push({en: row.values[0].formattedValue, elements: row.values[1].formattedValue});
+      queue.push({en: row[0], elements: row[1]});
       const td = document.createElement('td');
       tr.appendChild(td);
       const tx = document.createElement('tx');
       td.appendChild(tx);
-      tx.innerText = row.values[1].formattedValue;
+      tx.innerText = row[1] || '';
     }
     let prevLength = queue.length + 1;
     while (queue.length !== prevLength) {
