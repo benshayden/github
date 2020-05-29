@@ -199,8 +199,18 @@ const F = {
     for (const sheet of response.result.sheets) {
       const rows = [];
       sheets[sheet.properties.title] = rows;
+      let header;
       for (const row of sheet.data[0].rowData) {
-        rows.push(row.values.map(v => ((v || {}).formattedValue || '')));
+        const cells = row.values.map(v => ((v || {}).formattedValue || ''));
+        if (!['nouns', 'parts'].includes(sheet.properties.title)) {
+          rows.push(cells);
+          continue;
+        }
+        if (header) {
+          rows.push(Object.fromEntries(cells.map((v, i) => [header[i], v])));
+        } else {
+          header = cells;
+        }
       }
     }
     console.log(sheets);
@@ -228,20 +238,20 @@ const F = {
     table = document.getElementById('words');
     const queue = [];
     for (const row of sheets.nouns) {
-      if (!row[0] || !row[1]) continue;
+      if (!row.noun || !row.roots) continue;
       const tr = document.createElement('tr');
       table.appendChild(tr);
-      for (let coli = 0; coli < 2; ++coli) {
+      for (const cell of [row.noun, row.roots]) {
         const td = document.createElement('td');
         tr.appendChild(td);
-        td.innerText = row[coli] || '';
+        td.innerText = cell;
       }
-      queue.push({en: row[0], elements: row[1]});
+      queue.push({en: row.noun, elements: row.roots});
       const td = document.createElement('td');
       tr.appendChild(td);
       const tx = document.createElement('tx');
       td.appendChild(tx);
-      tx.innerText = row[1] || '';
+      tx.innerText = row.roots || '';
     }
     let prevLength = queue.length + 1;
     while (queue.length !== prevLength) {
@@ -277,14 +287,14 @@ const F = {
       console.log(`TODO define "${part}"`);
     }
 
-    for (const row of sheets.parts.slice(1)) {
-      for (const cell of row.slice(1)) {
+    for (const row of sheets.parts) {
+      for (const cell of [row.verb, row.adj, row.adv]) {
         if (!cell) continue;
-        console.log('part', cell, row[0], F.en2fw[row[0]]);
-        if (!F.en2fw[row[0]]) {
-          console.log(`TODO define ${row[0]}`);
+        console.log('part', cell, row[0], F.en2fw[row.noun]);
+        if (!F.en2fw[row.noun]) {
+          console.log(`TODO define ${row.noun}`);
         }
-        F.en2fw[cell] = F.en2fw[row[0]];
+        F.en2fw[cell] = F.en2fw[row.noun];
       }
     }
 
