@@ -278,7 +278,6 @@ const F = {
     }
 
     for (const row of sheets.parts.slice(1)) {
-      console.log('parts', row);
       for (const cell of row.slice(1)) {
         if (!cell) continue;
         console.log('part', cell, row[0], F.en2fw[row[0]]);
