@@ -202,7 +202,7 @@ const F = {
       let header;
       for (const row of sheet.data[0].rowData) {
         const cells = (row.values || []).map(v => ((v || {}).formattedValue || ''));
-        if (!['nouns', 'parts', 'words'].includes(sheet.properties.title)) {
+        if (sheet.properties.title !== 'words') {
           rows.push(cells);
           continue;
         }
@@ -235,6 +235,20 @@ const F = {
       }
     }
 
+    table = document.getElementById('words');
+    let tr = document.createElement('tr');
+    table.appendChild(tr);
+    for (const head of ['roots', null, 'nouns', 'verbs', 'adjectives', 'adverbs', 'prepositions', 'score']) {
+      const td = document.createElement('td');
+      tr.appendChild(td);
+      if (head !== null) {
+        td.innerText = head;
+      } else {
+        const tx = document.createElement('tx');
+        td.appendChild(tx);
+        tx.innerText = 'word few';
+      } 
+    }
     for (const row of sheets.words) {
       const fw = F.phrase(row.roots, true).replace(/ /g, '');
       F.fw2en[fw] = row.nouns.split('/')[0];
@@ -242,74 +256,24 @@ const F = {
         if (!en) continue;
         F.en2fw[en] = fw;
       }
-    }
-
-    table = document.getElementById('words');
-    const queue = [];
-    for (const row of sheets.nouns) {
-      if (!row.noun || !row.roots) continue;
-      const tr = document.createElement('tr');
+      tr = document.createElement('tr');
       table.appendChild(tr);
-      for (const cell of [row.noun, row.roots]) {
+      for (const cell of [row.roots, null, row.nouns, row.verbs, row.adjectives, row.adverbs, row.prepositions, row.score]) {
         const td = document.createElement('td');
         tr.appendChild(td);
-        td.innerText = cell;
-      }
-      queue.push({en: row.noun, elements: row.roots});
-      const td = document.createElement('td');
-      tr.appendChild(td);
-      const tx = document.createElement('tx');
-      td.appendChild(tx);
-      tx.innerText = row.roots || '';
-    }
-    let prevLength = queue.length + 1;
-    while (queue.length !== prevLength) {
-      for (let i = 0; i < queue.length; ++i) {
-        const {en, elements} = queue[i];
-        if (!elements) {
-          queue.splice(i, 1);
-          --i;
-          continue;
-        }
-        try {
-          const fw = F.phrase(elements, true).replace(/ /g, '');
-          queue.splice(i, 1);
-          --i;
-          F.en2fw[en] = fw;
-          F.fw2en[fw] = en;
-        } catch (e) {
-          console.log(`Error {en: "${en}", elements: "${elements}"}\n${e}`);
-        }
-      }
-      prevLength = queue.length;
-    }
-    const missing = new Set();
-    for (const {en, elements} of queue) {
-      for (const part of elements.split()) {
-        if (!F.en2fw[part]) {
-          missing.add(part);
-        }
-      }
-    }
-    for (const part of missing) {
-      console.log(`TODO define "${part}"`);
-    }
-
-    for (const row of sheets.parts) {
-      if (!F.en2fw[row.noun]) {
-        console.log(`TODO define ${row.noun}`);
-      }
-      for (const cell of [row.verb, row.adj, row.adv, row.prep]) {
-        if (!cell) continue;
-        for (const syn of cell.split('/')) {
-          F.en2fw[syn] = F.en2fw[row.noun];
+        if (cell !== null) {
+          td.innerText = cell;
+        } else {
+          const tx = document.createElement('tx');
+          td.appendChild(tx);
+          tx.innerText = row.roots;
         }
       }
     }
 
     table = document.getElementById('tokipona');
     for (const row of sheets['source:tokipona']) {
-      const tr = document.createElement('tr');
+      tr = document.createElement('tr');
       table.appendChild(tr);
       for (let coli = 0; coli < 2; ++coli) {
         const td = document.createElement('td');
@@ -330,7 +294,7 @@ const F = {
 
     table = document.getElementById('aui');
     for (const row of sheets['source:aUI']) {
-      const tr = document.createElement('tr');
+      tr = document.createElement('tr');
       table.appendChild(tr);
       for (let coli = 0; coli < 3; ++coli) {
         const td = document.createElement('td');
