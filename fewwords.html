@@ -244,6 +244,7 @@ const F = {
     for (const head of ['roots', null, 'nouns', 'verbs', 'adjectives', 'adverbs', 'prepositions', 'score']) {
       const td = document.createElement('td');
       tr.appendChild(td);
+      td.style.borderBottom = '2px solid black';
       if (head !== null) {
         td.innerText = head;
       } else {
