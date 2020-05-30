@@ -187,6 +187,9 @@ const F = {
         elem.en = elem.innerText;
       }
       elem.innerText = F.phrase(elem.en);
+      if (elem.glue) {
+        elem.innerText = elem.innerText.replace(/ /g, '');
+      }
     }
   },
 
@@ -266,6 +269,7 @@ const F = {
         } else {
           const tx = document.createElement('tx');
           td.appendChild(tx);
+          tx.glue = true;
           tx.innerText = row.roots;
         }
       }
