@@ -269,7 +269,7 @@ const F = {
         } else {
           const tx = document.createElement('tx');
           td.appendChild(tx);
-          tx.glue = true;
+          tx.glue = fw.length <= 10;
           tx.innerText = row.roots;
         }
       }
