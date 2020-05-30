@@ -201,7 +201,7 @@ const F = {
       sheets[sheet.properties.title] = rows;
       let header;
       for (const row of sheet.data[0].rowData) {
-        const cells = row.values.map(v => ((v || {}).formattedValue || ''));
+        const cells = (row.values || []).map(v => ((v || {}).formattedValue || ''));
         if (!['nouns', 'parts', 'words'].includes(sheet.properties.title)) {
           rows.push(cells);
           continue;
