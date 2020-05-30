@@ -187,7 +187,7 @@ const F = {
         elem.en = elem.innerText;
       }
       elem.innerText = F.phrase(elem.en);
-      if (elem.glue) {
+      if (elem.getAttribute('glue')) {
         elem.innerText = elem.innerText.replace(/ /g, '');
       }
     }
@@ -254,6 +254,7 @@ const F = {
       } 
     }
     const nums = document.getElementById('nums');
+    nums.appendChild(tr.cloneNode(true));
     const num = F.phrase('number', true).replace(/ /g, '');
     for (const row of sheets.words) {
       const fw = F.phrase(row.roots, true).replace(/ /g, '');
@@ -272,7 +273,7 @@ const F = {
         } else {
           const tx = document.createElement('tx');
           td.appendChild(tx);
-          tx.glue = fw.length <= 10;
+          tx.setAttribute('glue', fw.length <= 10);
           tx.innerText = row.roots;
         }
       }
