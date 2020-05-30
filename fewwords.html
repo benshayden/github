@@ -207,7 +207,7 @@ const F = {
           continue;
         }
         if (header) {
-          rows.push(Object.fromEntries(cells.map((v, i) => [header[i], v])));
+          rows.push(Object.fromEntries(header.map((h, i) => [h, cells[i] || ''])));
         } else {
           header = cells;
         }
