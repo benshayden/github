@@ -273,7 +273,7 @@ const F = {
         } else {
           const tx = document.createElement('tx');
           td.appendChild(tx);
-          tx.setAttribute('glue', fw.length <= 10);
+          if (fw.length <= 10) tx.setAttribute('glue', true);
           tx.innerText = row.roots;
         }
       }
