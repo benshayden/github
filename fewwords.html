@@ -2,7 +2,6 @@
 <!--
   TODO
   cell onclick => display notes, parts for root, root-not, root-.+, .+-root-.*
-  todo lists for each tab: untranslated nouns, untranslated toki pona, untranslated aUI
 -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>few words</title>
@@ -25,8 +24,6 @@
 <tx>word few</tx>
 <br>few words
 </center>
-
-<div id=todo></div>
 
 <br><button id="authorize_button">Authorize Google Sheets API</button>
 <table id=syllables></table>
@@ -228,6 +225,9 @@ const F = {
         const td = document.createElement('td');
         tr.appendChild(td);
         td.innerText = row[coli] || '';
+        td.addEventListener('click', () => {
+          console.log('TODO highlight', row[coli]);
+        });
       }
     }
     for (let rowi = 1; rowi < sheets.syllables.length; ++rowi) {
