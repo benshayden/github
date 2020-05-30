@@ -268,7 +268,7 @@ const F = {
         const td = document.createElement('td');
         tr.appendChild(td);
         if (cell !== null) {
-          td.innerText = cell;
+          td.innerText = cell.replace(/\//g, '/'+String.fromCharCode(0x200B));
         } else {
           const tx = document.createElement('tx');
           td.appendChild(tx);
