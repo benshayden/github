@@ -146,9 +146,6 @@ const F = {
         tx.innerText = 'word few';
       } 
     }
-    const nums = document.getElementById('nums');
-    nums.appendChild(tr.cloneNode(true));
-    const num = F.phrase('number', true).replace(/ /g, '');
     for (const row of sheets.words) {
       const fw = F.phrase(row.roots, true).replace(/ /g, '');
       F.fw2en[fw] = row.nouns.split('/')[0];
@@ -169,9 +166,6 @@ const F = {
           if (fw.length <= 10) tx.setAttribute('glue', true);
           tx.innerText = row.roots;
         }
-      }
-      if (fw.includes(num)) {
-        nums.appendChild(tr.cloneNode(true));
       }
     }
 
