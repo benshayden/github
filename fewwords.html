@@ -184,14 +184,15 @@ const F = {
         table.appendChild(ul);
       }
       if (!row.en && !row.tx) {
-        const li = document.createElement('li');
-        ul.appendChild(li);
-        li.innerText = row.en;
-        li.appendChild(document.createElement('br'));
-        const tx = document.createElement('tx');
-        li.appendChild(tx);
-        tx.innerText = row.tx;
+        continue;
       }
+      const li = document.createElement('li');
+      ul.appendChild(li);
+      li.innerText = row.en;
+      li.appendChild(document.createElement('br'));
+      const tx = document.createElement('tx');
+      li.appendChild(tx);
+      tx.innerText = row.tx;
     }
 
     table = document.getElementById('tokipona');
