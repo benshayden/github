@@ -1,8 +1,10 @@
 <!doctype html>
 <!--
   TODO
+  sentences
   cell onclick => display notes, parts for root, root-not, root-.+, .+-root-.*
 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/11.0.0/markdown-it.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>oligosynthesizer</title>
 <style>
@@ -55,6 +57,7 @@
   <textarea id=fw style="flex-grow: 1;"></textarea>
 </div>
 
+<p>About
 <p id=about></p>
 
 <script>
@@ -212,12 +215,13 @@ const F = {
       }
     }
 
-    F.transliterate();
-
     sheets.about = Object.fromEntries(sheets.about);
     document.head.querySelector('title').innerText = F.phrase(sheets.about.name_tx, true);
     document.body.querySelector('#name_en').innerText = sheets.about.name;
     document.body.querySelector('tx#name').innerText = sheets.about.name_tx;
+    document.body.querySelector('#about').innerHTML = markdownit().render(sheets.about.what || '');
+
+    F.transliterate();
   },
 };
 
