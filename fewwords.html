@@ -57,8 +57,11 @@ Click on a root to filter the Words table. Click again to reset.
 <p>About
 <p id=about></p>
 
+<p><a id=sheet></a>
+
+<p><button id=fork>Fork this language</button>
+
 <script>
-const spreadsheetId = '1lOF5iFM41Au5nf6oFgHLb7-kZQbtxVINLYktcYpjVsQ';
 const F = {
   fw2en: {},
   en2fw: {},
@@ -86,7 +89,7 @@ const F = {
 
   async load() {
     const response = await window.gapi.client.sheets.spreadsheets.get({
-      spreadsheetId,
+      spreadsheetId: location.hash.substr(1),
       includeGridData: true,
     });
     const sheets = {};
@@ -254,6 +257,10 @@ const F = {
     document.body.querySelector('tx#name').innerText = sheets.about.name_tx;
     document.body.querySelector('#about').innerHTML = markdownit().render(sheets.about.what || '');
 
+    const sheetA = document.querySelector('a#sheet');
+    sheetA.innerText = sheets.about.name;
+    sheetA.href = `https://docs.google.com/spreadsheets/d/${location.hash.substr(1)}`;
+    
     F.transliterate();
   },
 };
@@ -290,6 +297,10 @@ addEventListener('load', () => {
     });
   };
   document.head.appendChild(script);
+});
+  
+fork.addEventListener('click', () => {
+  console.log('create a new spreadsheet, write sheets to it, open it in a new tab');
 });
 
 function updateSigninStatus() {
