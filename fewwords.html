@@ -38,7 +38,7 @@
 </div>
 
 <p>Sentences
-<div style="max-height: 19.5em; overflow: auto; margin: auto;">
+<div style="max-height: 19.5em; overflow: auto; margin: auto;" id=sentences>
 </div>
 
 <p>Compare toki pona vocabulary
@@ -170,6 +170,27 @@ const F = {
           if (fw.length <= 10) tx.setAttribute('glue', true);
           tx.innerText = row.roots;
         }
+      }
+    }
+    
+    table = document.getElementById('sentences');
+    let ul;
+    for (const row of sheets.sentences) {
+      if (row[0]) {
+        const p = document.createElement('p');
+        p.innerText = row[0];
+        table.appendChild(p);
+        ul = document.createElement('ul');
+        table.appendChild(ul);
+      }
+      if (!row[1] && !row[2]) {
+        const li = document.createElement('li');
+        ul.appendChild(li);
+        li.innerText = row[1];
+        li.appendChild(document.createElement('br'));
+        const tx = document.createElement('tx');
+        li.appendChild(tx);
+        tx.innerText = row[2];
       }
     }
 
