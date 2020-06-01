@@ -120,8 +120,7 @@ const F = {
         td.addEventListener('click', () => {
           const table = document.getElementById('words');
           for (const tr of [...table.childNodes].slice(1)) {
-            console.log(row[coli], tr.getAttribute('filter'));
-            tr.style.display = tr.getAttribute('filter').includes(row[coli]) ? '' : 'none';
+            tr.style.display = tr.getAttribute('filter').includes(F.en2fw[row[coli]]) ? '' : 'none';
           }
         });
       }
