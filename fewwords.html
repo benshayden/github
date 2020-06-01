@@ -99,7 +99,7 @@ const F = {
       let header;
       for (const row of sheet.data[0].rowData) {
         const cells = (row.values || []).map(v => ((v || {}).formattedValue || ''));
-        if (sheet.properties.title !== 'words') {
+        if (!['words', 'sentences'].includes(sheet.properties.title)) {
           rows.push(cells);
           continue;
         }
@@ -176,21 +176,21 @@ const F = {
     table = document.getElementById('sentences');
     let ul;
     for (const row of sheets.sentences) {
-      if (row[0]) {
+      if (row.explanation) {
         const p = document.createElement('p');
-        p.innerText = row[0];
+        p.innerText = row.explanation;
         table.appendChild(p);
         ul = document.createElement('ul');
         table.appendChild(ul);
       }
-      if (!row[1] && !row[2]) {
+      if (!row.en && !row.tx) {
         const li = document.createElement('li');
         ul.appendChild(li);
-        li.innerText = row[1];
+        li.innerText = row.en;
         li.appendChild(document.createElement('br'));
         const tx = document.createElement('tx');
         li.appendChild(tx);
-        tx.innerText = row[2];
+        tx.innerText = row.tx;
       }
     }
 
