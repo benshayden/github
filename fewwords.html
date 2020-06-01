@@ -1,8 +1,4 @@
 <!doctype html>
-<!--
-  TODO
-  cell onclick => display notes, parts for root, root-not, root-.+, .+-root-.*
--->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/11.0.0/markdown-it.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>oligosynthesizer</title>
@@ -30,6 +26,8 @@
 
 <p>Roots
 <table id=syllables></table>
+
+Click on a root to filter the Words table. Click again to reset.
 
 <p>Words
 <div style="max-height: 19.5em; overflow: auto; margin: auto;">
@@ -120,7 +118,10 @@ const F = {
         tr.appendChild(td);
         td.innerText = row[coli] || '';
         td.addEventListener('click', () => {
-          console.log('TODO highlight', row[coli]);
+          const table = document.getElementById('words');
+          for (const tr of [...table.childNodes].slice(1)) {
+            tr.style.display = tr.getAttribute('filter').includes(row[coli]) ? '' : 'none';
+          }
         });
       }
     }
@@ -158,6 +159,7 @@ const F = {
       }
       tr = document.createElement('tr');
       table.appendChild(tr);
+      tr.setAttribute('filter', F.phrase(row.roots));
       for (const cell of [row.roots, null, row.nouns, row.verbs, row.adjectives, row.adverbs, row.prepositions, row.score]) {
         const td = document.createElement('td');
         tr.appendChild(td);
