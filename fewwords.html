@@ -119,8 +119,18 @@ const F = {
         td.innerText = row[coli] || '';
         td.addEventListener('click', () => {
           const table = document.getElementById('words');
+          let change = false;
           for (const tr of [...table.childNodes].slice(1)) {
+            const prevDisplay = tr.style.display;
             tr.style.display = tr.getAttribute('filter').includes(F.en2fw[row[coli]]) ? '' : 'none';
+            if (prevDisplay !== tr.style.display) {
+              change = true;
+            }
+          }
+          if (!change) {
+            for (const tr of [...table.childNodes].slice(1)) {
+              tr.style.display = '';
+            }
           }
         });
       }
