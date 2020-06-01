@@ -4,7 +4,7 @@
   cell onclick => display notes, parts for root, root-not, root-.+, .+-root-.*
 -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>few words</title>
+<title>oligosynthesizer</title>
 <style>
   table {
     border-collapse: collapse;
@@ -21,10 +21,11 @@
 </style>
 
 <center>
-<tx>word few</tx>
-<br>few words
+  <div id=name_en></div>
+  <tx id=name></tx>
 </center>
-<br><button id="authorize_button">Authorize Google Sheets API</button>
+
+<button id="authorize_button">Authorize Google Sheets API</button>
 
 <p>Roots
 <table id=syllables></table>
@@ -212,6 +213,11 @@ const F = {
     }
 
     F.transliterate();
+
+    sheets.about = Object.fromEntries(sheets.about);
+    document.head.querySelector('title').innerText = F.phrase(sheets.about.name_tx, true);
+    document.body.querySelector('#name_en').innerText = sheets.about.name;
+    document.body.querySelector('tx#name').innerText = sheets.about.name_tx;
   },
 };
 
