@@ -260,7 +260,7 @@ const F = {
 
     sheets.about = Object.fromEntries(sheets.about);
     document.head.querySelector('title').innerText = F.phrase(sheets.about.name_tx, true);
-    document.body.querySelector('#name_en').innerText = sheets.about.name;
+    document.body.querySelector('#name_en').innerText = response.result.properties.title;
     document.body.querySelector('tx#name').innerText = sheets.about.name_tx;
     document.body.querySelector('#about').innerHTML = markdownit().render(sheets.about.what || '');
 
@@ -308,6 +308,25 @@ addEventListener('load', () => {
   
 fork.addEventListener('click', () => {
   console.log('create a new spreadsheet, write sheets to it, open it in a new tab');
+  gapi.client.sheets.spreadsheets.create({
+    properties: {
+      title: document.body.querySelector('#name_en').innerText,
+    },
+    sheets: [
+      {
+        properties: {
+          title: 'about',
+        },
+        data: [
+          {
+            // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/sheets#GridData
+          },
+        ],
+      },
+    ],
+  }).then((response) => {
+    console.log(response);
+  });
 });
 en.addEventListener('keyup', () => {
   fw.value = F.phrase(en.value);
