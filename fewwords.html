@@ -18,11 +18,12 @@
 </style>
 
 <center>
-  <div id=name_en></div>
-  <tx id=name></tx>
+  <a id=sheet></a>
+  <br><tx id=name></tx>
+  <br><button id="authorize_button">Authorize Google Sheets API</button>
+  <button id=fork>Fork this language</button></center>
 </center>
-
-<button id="authorize_button">Authorize Google Sheets API</button>
+<p id=about></p>
 
 <hr>
 <center>Roots</center>
@@ -52,14 +53,6 @@
   <textarea id=en style="flex-grow: 1;"></textarea>
   <textarea id=fw style="flex-grow: 1;"></textarea>
 </div>
-
-<hr>
-<center>About</center>
-<p id=about></p>
-
-<center><a id=sheet></a></center>
-
-<center><button id=fork>Fork this language</button></center>
 
 <script>
 const F = {
@@ -253,12 +246,11 @@ const F = {
 
     sheets.about = Object.fromEntries(sheets.about);
     document.head.querySelector('title').innerText = F.phrase(sheets.about.name_tx, true);
-    document.body.querySelector('#name_en').innerText = response.result.properties.title;
     document.body.querySelector('tx#name').innerText = sheets.about.name_tx;
     document.body.querySelector('#about').innerHTML = markdownit().render(sheets.about.what || '');
 
     const sheetA = document.querySelector('a#sheet');
-    sheetA.innerText = sheets.about.name;
+    sheetA.innerText = response.result.properties.title;
     sheetA.href = `https://docs.google.com/spreadsheets/d/${location.hash.substr(1)}`;
     
     F.transliterate();
