@@ -144,7 +144,7 @@ const F = {
     table = document.getElementById('words');
     let tr = document.createElement('tr');
     table.appendChild(tr);
-    for (const head of ['roots', null, 'nouns', 'verbs', 'adjectives', 'adverbs', 'prepositions', 'score']) {
+    for (const head of ['roots', null, 'nouns', 'verbs', 'adjectives', 'adverbs', 'prepositions']) {
       const td = document.createElement('td');
       tr.appendChild(td);
       td.style.borderBottom = '2px solid black';
@@ -166,7 +166,7 @@ const F = {
       tr = document.createElement('tr');
       table.appendChild(tr);
       tr.setAttribute('filter', F.phrase(row.roots));
-      for (const cell of [row.roots, null, row.nouns, row.verbs, row.adjectives, row.adverbs, row.prepositions, row.score]) {
+      for (const cell of [row.roots, null, row.nouns, row.verbs, row.adjectives, row.adverbs, row.prepositions]) {
         const td = document.createElement('td');
         tr.appendChild(td);
         if (cell !== null) {
