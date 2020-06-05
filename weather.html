@@ -342,7 +342,6 @@ const W = {
           const target = W.hours[hours];
           if (!target) continue;
           target.uv = hourDatum.uv * (1 - 0.7 * (target.clouds || 0) / 100);
-          console.log(target.uv, hourDatum.uv, target.clouds);
         } else if (date > W.now) {
           const targetIndex = parseInt((new Date(date.toDateString()) - new Date(W.now.toDateString())) / MS_PER_DAY) - 1;
           const target = W.days[targetIndex];
