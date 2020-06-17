@@ -210,7 +210,7 @@ const F = {
     }
     
     for (const [name, sheet] of Object.entries(sheets)) {
-      if (!name.startswith('source:')) continue;
+      if (!name.startsWith('source:')) continue;
       const tab = document.createElement('div');
       tab.innerText = name.split(':')[1];
       tab.className = 'sourcetab';
