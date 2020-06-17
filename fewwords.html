@@ -31,34 +31,36 @@
 
 <center>Click on a root to filter the Words table. Click again to reset.</center>
 
-<!-- TODO Grammar, Vocabulary tabs -->
+<div style="display: flex;">
+  <div style="flex-grow: 1; border-bottom: 2px solid blue;" id=grammartab>
+    Grammar
+  </div>
+  <div style="flex-grow: 1; border-bottom: 2px solid white;" id=vocabtab>
+    Vocabulary
+  </div>
+</div>
 
-<hr>
-<center>Words</center>
-<table id=words></table>
-
-<hr>
-<center>Sentences</center>
 <div id=sentences></div>
-
-<!-- TODO tabs for each source -->
-
-<hr>
-<center>Compare toki pona vocabulary</center>
-<table id=tokipona></table>
-
-<hr>
-<center>Compare aUI vocabulary</center>
-<table id=aui></table>
+<table id=words></table>
+<div id=sourcetabs></div>
 
 <hr>
 <center>Transliterate</center>
 <div style="display: flex;">
-  <textarea id=en style="flex-grow: 1;"></textarea>
-  <textarea id=fw style="flex-grow: 1;"></textarea>
+  <textarea id=en style="flex-grow: 1; height: 50%;"></textarea>
+  <textarea id=fw style="flex-grow: 1; height: 50%;"></textarea>
 </div>
 
 <script>
+function lesson(tab) {
+  sentences.style.display = (tab === 0) ? 'block' : 'none';
+  grammartab.style.borderColor = (tab === 0) ? 'blue' : 'white';
+  words.style.display = (tab === 1) ? 'table' : 'none';
+  vocabtab.style.borderColor = (tab === 1) ? 'blue' : 'white';
+}
+grammartab.addEventListener('click', () => lesson(0));
+vocabtab.addEventListener('click', () => lesson(1));
+
 // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/sheets
 const F = {
   fw2en: {},
@@ -205,6 +207,22 @@ const F = {
       const tx = document.createElement('tx');
       li.appendChild(tx);
       tx.innerText = row.tx;
+    }
+    
+    for (const [name, sheet] of Object.entries(sheets)) {
+      if (!name.startswith('source:')) continue;
+      const tab = document.createElement('div');
+      tab.innerText = name.split(':')[1];
+      tab.className = 'sourcetab';
+      sourcetabs.appendChild(tab);
+      table = document.createElement('table');
+      table.className = 'source';
+      table.id = name.replace(':', '_');
+      for (const row of sheet) {
+        tr = document.createElement('tr');
+        table.appendChild(tr);
+        console.log(row);
+      }
     }
 
     table = document.getElementById('tokipona');
