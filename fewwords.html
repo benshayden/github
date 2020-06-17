@@ -222,48 +222,22 @@ const F = {
         tr = document.createElement('tr');
         table.appendChild(tr);
         console.log(row);
-      }
-    }
-
-    table = document.getElementById('tokipona');
-    for (const row of sheets['source:tokipona']) {
-      tr = document.createElement('tr');
-      table.appendChild(tr);
-      for (let coli = 0; coli < 2; ++coli) {
+        let en;
+        for (const cell of row) {
+          const td = document.createElement('td');
+          tr.appendChild(td);
+          td.innerText = en = cell;
+        }
         const td = document.createElement('td');
         tr.appendChild(td);
-        td.innerText = row[coli] || '';
-      }
-      const td = document.createElement('td');
-      tr.appendChild(td);
-      const tx = document.createElement('tx');
-      td.appendChild(tx);
-      tx.innerText = row[1];
-      try {
-        F.phrase(row[1], true)
-      } catch (e) {
-        console.log('TODO define', row[1]);
-      }
-    }
-
-    table = document.getElementById('aui');
-    for (const row of sheets['source:aUI']) {
-      tr = document.createElement('tr');
-      table.appendChild(tr);
-      for (let coli = 0; coli < 3; ++coli) {
-        const td = document.createElement('td');
-        tr.appendChild(td);
-        td.innerText = row[coli] || '';
-      }
-      const td = document.createElement('td');
-      tr.appendChild(td);
-      const tx = document.createElement('tx');
-      td.appendChild(tx);
-      tx.innerText = row[2] || '';
-      try {
-        F.phrase(row[2], true)
-      } catch (e) {
-        console.log('TODO define', row[1]);
+        const tx = document.createElement('tx');
+        td.appendChild(tx);
+        tx.innerText = row[1];
+        try {
+          F.phrase(row[1], true)
+        } catch (e) {
+          console.log('TODO define', row[1]);
+        }
       }
     }
 
