@@ -49,7 +49,7 @@
 
 <div id=sentences style="border: 1px solid blue;"></div>
 <div id=vocab style="border: 1px solid blue;">
-  <center>Click on a root to filter. Click again to reset.</center>
+  <center style="margin: 8px;">Click on a root in the Roots table above to filter. Click again to reset.</center>
   <table id=words></table>
 </div>
 
@@ -57,9 +57,9 @@
 
 <hr>
 <center>Transliterate</center>
-<div style="display: flex;">
-  <textarea id=en style="flex-grow: 1; height: 50%;"></textarea>
-  <textarea id=fw style="flex-grow: 1; height: 50%;"></textarea>
+<div style="display: flex; height: 300px;">
+  <textarea id=en style="flex-grow: 1;"></textarea>
+  <textarea id=fw style="flex-grow: 1;"></textarea>
 </div>
 
 <script>
@@ -80,7 +80,7 @@ const F = {
   
   phrase(s, strict = false) {
     let fw = '';
-    for (const en of s.split(' ')) {
+    for (const en of s.split(/([^\w]+)/)) {
       if (strict && !F.en2fw[en]) throw new Error(en);
       fw += ' ' + (F.en2fw[en] || en);
     }
@@ -326,7 +326,7 @@ en.addEventListener('keyup', () => {
   fw.value = F.phrase(en.value);
 });
 fw.addEventListener('keyup', () => {
-  en.value = en.value.split(' ').map(e => F.fw2en[e] || e).join(' ');
+  en.value = en.value.split(/([^\w]+)/).map(e => F.fw2en[e] || e).join(' ');
 });
 
 function updateSigninStatus() {
