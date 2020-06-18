@@ -25,6 +25,9 @@
     cursor: pointer;
   }
   flex { display: flex; }
+  #sourcetabs {
+    margin-top: 8px;
+  }
 </style>
 
 <center>
@@ -54,7 +57,9 @@
   <table id=words></table>
 </div>
 
-<flex id=sourcetabs>Compare</flex>
+<flex id=sourcetabs>
+  <div>Compare</div>
+</flex>
 <div id=sourcesheets></div>
 
 <hr>
@@ -232,7 +237,9 @@ const F = {
         for (const other of document.querySelectorAll('#sourcetabs tab')) {
           other.style.borderColor = (tab === other) ? 'blue' : 'white';
         }
-        console.log(tab.innerText);
+        for (const srcsheet of document.querySelectorAll('#sourcesheets table')) {
+          srcsheet.style.display = (srcsheet.id === ('source_' + tab.innerText)) ? 'table' : 'none';
+        }
       });
       sourcetabs.appendChild(tab);
       table = document.createElement('table');
