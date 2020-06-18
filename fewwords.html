@@ -73,7 +73,7 @@
 function lesson(tab) {
   sentences.style.display = (tab === 0) ? 'block' : 'none';
   grammartab.style.borderColor = (tab === 0) ? 'blue' : 'white';
-  vocab.style.display = (tab === 1) ? 'table' : 'none';
+  vocab.style.display = (tab === 1) ? 'block' : 'none';
   vocabtab.style.borderColor = (tab === 1) ? 'blue' : 'white';
 }
 grammartab.addEventListener('click', () => lesson(0));
