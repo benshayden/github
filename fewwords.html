@@ -81,8 +81,8 @@ const F = {
   
   phrase(s, strict = false) {
     let fw = '';
-    for (const en of s.split(/(\w+)/)) {
-      if (strict && en.match(/\w/) && !F.en2fw[en]) throw new Error(en);
+    for (const en of s.split(/(\s+)/)) {
+      if (strict && en.match(/\S/) && !F.en2fw[en]) throw new Error(en);
       fw += ' ' + (F.en2fw[en] || en);
     }
     return fw;
@@ -327,7 +327,7 @@ en.addEventListener('keyup', () => {
   fw.value = F.phrase(en.value);
 });
 fw.addEventListener('keyup', () => {
-  en.value = en.value.split(/(\w+)/).map(e => F.fw2en[e] || e).join(' ');
+  en.value = en.value.split(/(\s+)/).map(e => F.fw2en[e] || e).join(' ');
 });
 
 function updateSigninStatus() {
