@@ -58,7 +58,7 @@
 </div>
 
 <flex id=sourcetabs>
-  <div>Compare</div>
+  <div style="flex-grow: 1; margin: auto;">Compare</div>
 </flex>
 <div id=sourcesheets></div>
 
@@ -267,6 +267,7 @@ const F = {
         }
       }
     }
+    document.querySelector('#sourcetabs tab').click();
 
     sheets.about = Object.fromEntries(sheets.about);
     document.head.querySelector('title').innerText = fw.value = F.phrase(sheets.about.name_tx, true);
