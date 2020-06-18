@@ -24,6 +24,7 @@
     padding: 4px;
     cursor: pointer;
   }
+  flex { display: flex; }
 </style>
 
 <center>
@@ -38,14 +39,14 @@
 <center>Roots</center>
 <table id=syllables></table>
 
-<div style="display: flex;">
+<flex>
   <tab id=grammartab>
     Grammar
   </tab>
   <tab id=vocabtab>
     Vocabulary
   </tab>
-</div>
+</flex>
 
 <div id=sentences style="border: 1px solid blue;"></div>
 <div id=vocab style="border: 1px solid blue;">
@@ -53,7 +54,7 @@
   <table id=words></table>
 </div>
 
-<div id=sourcetabs>Compare</div>
+<flex id=sourcetabs>Compare</flex>
 <div id=sourcesheets></div>
 
 <hr>
@@ -227,6 +228,12 @@ const F = {
       const tab = document.createElement('tab');
       tab.innerText = name.split(':')[1];
       tab.className = 'sourcetab';
+      tab.addEventListener('click', () => {
+        for (const other of document.querySelectorAll('#sourcetabs tab')) {
+          other.style.borderColor = (tab === other) ? 'blue' : 'white';
+        }
+        console.log(tab.innerText);
+      });
       sourcetabs.appendChild(tab);
       table = document.createElement('table');
       sourcesheets.appendChild(table);
