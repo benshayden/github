@@ -53,7 +53,8 @@
   <table id=words></table>
 </div>
 
-<div id=sourcetabs></div>
+<div id=sourcetabs>Compare</div>
+<div id=sourcesheets></div>
 
 <hr>
 <center>Transliterate</center>
@@ -228,7 +229,7 @@ const F = {
       tab.className = 'sourcetab';
       sourcetabs.appendChild(tab);
       table = document.createElement('table');
-      table.className = 'source';
+      sourcesheets.appendChild(table);
       table.id = name.replace(':', '_');
       for (const row of sheet) {
         tr = document.createElement('tr');
