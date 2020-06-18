@@ -240,11 +240,11 @@ const F = {
         tr.appendChild(td);
         const tx = document.createElement('tx');
         td.appendChild(tx);
-        tx.innerText = row[1];
+        tx.innerText = en;
         try {
-          F.phrase(row[1], true)
+          F.phrase(en, true)
         } catch (e) {
-          console.log('TODO define', row[1]);
+          console.log('TODO define', en);
         }
       }
     }
