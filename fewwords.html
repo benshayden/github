@@ -254,6 +254,7 @@ const F = {
           tr.appendChild(td);
           td.innerText = en = cell;
         }
+        en = en.split('/')[0];
         const td = document.createElement('td');
         tr.appendChild(td);
         const tx = document.createElement('tx');
