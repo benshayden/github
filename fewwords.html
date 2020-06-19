@@ -19,7 +19,7 @@
     flex-grow: 1;
     border-bottom: 2px solid white;
     text-align: center;
-    background-color: #0000ff10;
+    background-color: #00000010;
     margin: 8px 2px 0 0;
     padding: 4px;
     cursor: pointer;
@@ -51,8 +51,8 @@
   </tab>
 </flex>
 
-<div id=sentences style="border: 1px solid blue;"></div>
-<div id=vocab style="border: 1px solid blue;">
+<div id=sentences style="border: 1px solid black; padding: 0 4px;"></div>
+<div id=vocab style="border: 1px solid black;">
   <center style="margin: 8px;">Click on a root in the Roots table above to filter. Click again to reset.</center>
   <table id=words></table>
 </div>
@@ -60,7 +60,7 @@
 <flex id=sourcetabs>
   <div style="flex-grow: 1; margin: auto;">Compare</div>
 </flex>
-<div id=sourcesheets></div>
+<div id=sourcesheets style="border: 1px solid black;"></div>
 
 <hr>
 <center>Transliterate</center>
@@ -72,9 +72,9 @@
 <script>
 function lesson(tab) {
   sentences.style.display = (tab === 0) ? 'block' : 'none';
-  grammartab.style.borderColor = (tab === 0) ? 'blue' : 'white';
+  grammartab.style.borderColor = (tab === 0) ? 'black' : 'white';
   vocab.style.display = (tab === 1) ? 'block' : 'none';
-  vocabtab.style.borderColor = (tab === 1) ? 'blue' : 'white';
+  vocabtab.style.borderColor = (tab === 1) ? 'black' : 'white';
 }
 grammartab.addEventListener('click', () => lesson(0));
 vocabtab.addEventListener('click', () => lesson(1));
@@ -235,7 +235,7 @@ const F = {
       tab.className = 'sourcetab';
       tab.addEventListener('click', () => {
         for (const other of document.querySelectorAll('#sourcetabs tab')) {
-          other.style.borderColor = (tab === other) ? 'blue' : 'white';
+          other.style.borderColor = (tab === other) ? 'black' : 'white';
         }
         for (const srcsheet of document.querySelectorAll('#sourcesheets table')) {
           srcsheet.style.display = (srcsheet.id === ('source_' + tab.innerText)) ? 'table' : 'none';
