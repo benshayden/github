@@ -28,7 +28,11 @@
   #sourcetabs {
     margin-top: 8px;
   }
+  #loaded { display: none; }
 </style>
+
+<div id=loading>Loading</div>
+<div id=loaded>
 
 <center>
   <tx id=name></tx>
@@ -67,6 +71,8 @@
 <div style="display: flex; height: 300px;">
   <textarea id=en style="flex-grow: 1;"></textarea>
   <textarea id=fw style="flex-grow: 1;"></textarea>
+</div>
+
 </div>
 
 <script>
@@ -279,6 +285,9 @@ const F = {
     sheetA.href = `https://docs.google.com/spreadsheets/d/${location.hash.substr(1)}`;
     
     F.transliterate();
+    
+    loading.style.display = 'none';
+    loaded.style.display = 'block';
   },
 };
 
