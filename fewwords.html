@@ -32,46 +32,42 @@ Section about this oligosynthesizer at the bottom.
     cursor: pointer;
   }
   flex { display: flex; }
-  #sourcetabs {
-    margin-top: 8px;
-  }
   #loaded { display: none; }
 </style>
 
+<button id="authorize_button">Authorize Google Sheets API</button>
 <div id=loading>Loading</div>
 <div id=loaded>
 
 <center>
   <tx id=name></tx>
   <br><a id=sheet></a>
-  <br><button id="authorize_button">Authorize Google Sheets API</button>
 </center>
-<p id=about></p>
-<br><center><button id=fork>Fork this language</button></center>
 
-<hr>
-<center>Roots</center>
 <table id=syllables></table>
 
-<flex>
-  <tab id=grammartab>
-    Grammar
-  </tab>
-  <tab id=vocabtab>
-    Vocabulary
-  </tab>
+<flex id=tabs>
+  <tab id=description>Description</tab>
+  <tab id=grammar>Grammar</tab>
+  <tab id=vocabulary>Vocabulary</tab>
+  <tab id=compare>Compare</tab>
 </flex>
 
-<div id=sentences style="border: 1px solid black; padding: 0 4px;"></div>
-<div id=vocab style="border: 1px solid black;">
-  <center style="margin: 8px;">Click on a root in the Roots table above to filter. Click again to reset.</center>
-  <table id=words></table>
+<div style="border: 1px solid black; padding: 4px;" id=tab_contents>
+  <div tab=description>
+    <p id=about></p>
+    <br><button id=fork>Copy this language</button>
+  </div>
+  <div tab=grammar></div>
+  <div tab=vocabulary>
+    <center style="margin: 8px;">Click on a root in the Roots table above to filter. Click again to reset.</center>
+    <table id=words></table>
+  </div>
+  <div tab=compare>
+    <flex id=comparetabs></flex>
+    <div id=compare_contents></div>
+  </div>
 </div>
-
-<flex id=sourcetabs>
-  <div style="flex-grow: 1; margin: auto;">Compare</div>
-</flex>
-<div id=sourcesheets style="border: 1px solid black;"></div>
 
 <hr>
 <center>Transliterate</center>
@@ -83,15 +79,17 @@ Section about this oligosynthesizer at the bottom.
 </div>
 
 <script>
-function lesson(tab) {
-  sentences.style.display = (tab === 0) ? 'block' : 'none';
-  grammartab.style.borderColor = (tab === 0) ? 'black' : 'white';
-  vocab.style.display = (tab === 1) ? 'block' : 'none';
-  vocabtab.style.borderColor = (tab === 1) ? 'black' : 'white';
+for (const tab of document.querySelectorAll('#tabs tab')) {
+  tab.addEventListener('click', e => {
+    for (const other of document.querySelectorAll('#tabs tab')) {
+      other.style.borderColor = (tab === other) ? 'black' : 'white';
+    }
+    for (const content of document.querySelectorAll('#tab_contents div')) {
+      content.style.display = (content.getAttribute('tab') === tab.id) ? 'block' : 'none';
+    }
+  });
 }
-grammartab.addEventListener('click', () => lesson(0));
-vocabtab.addEventListener('click', () => lesson(1));
-lesson(0);
+description.click();
 
 // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/sheets
 const F = {
