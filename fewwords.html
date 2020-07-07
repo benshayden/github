@@ -217,7 +217,7 @@ const F = {
       }
     }
     
-    table = document.getElementById('sentences');
+    table = document.querySelector('div[tab=grammar]');
     let ul;
     for (const row of sheets.sentences) {
       if (row.explanation) {
@@ -240,21 +240,21 @@ const F = {
     }
     
     for (const [name, sheet] of Object.entries(sheets)) {
-      if (!name.startsWith('source:')) continue;
+      if (['votes', 'about', 'syllables', 'sentences', 'words'].includes(name)) continue;
       const tab = document.createElement('tab');
-      tab.innerText = name.split(':')[1];
+      tab.innerText = name;
       tab.className = 'sourcetab';
       tab.addEventListener('click', () => {
-        for (const other of document.querySelectorAll('#sourcetabs tab')) {
+        for (const other of document.querySelectorAll('#comparetabs tab')) {
           other.style.borderColor = (tab === other) ? 'black' : 'white';
         }
-        for (const srcsheet of document.querySelectorAll('#sourcesheets table')) {
+        for (const srcsheet of document.querySelectorAll('#compare_contents table')) {
           srcsheet.style.display = (srcsheet.id === ('source_' + tab.innerText)) ? 'table' : 'none';
         }
       });
-      sourcetabs.appendChild(tab);
+      comparetabs.appendChild(tab);
       table = document.createElement('table');
-      sourcesheets.appendChild(table);
+      compare_contents.appendChild(table);
       table.id = name.replace(':', '_');
       for (const row of sheet) {
         tr = document.createElement('tr');
@@ -278,7 +278,7 @@ const F = {
         }
       }
     }
-    document.querySelector('#sourcetabs tab').click();
+    document.querySelector('#comparetabs tab').click();
 
     sheets.about = Object.fromEntries(sheets.about);
     document.head.querySelector('title').innerText = fw.value = F.phrase(sheets.about.name_tx, true);
