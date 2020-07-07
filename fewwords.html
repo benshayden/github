@@ -84,7 +84,7 @@ for (const tab of document.querySelectorAll('#tabs tab')) {
     for (const other of document.querySelectorAll('#tabs tab')) {
       other.style.borderColor = (tab === other) ? 'black' : 'white';
     }
-    for (const content of document.querySelectorAll('#tab_contents div')) {
+    for (const content of document.querySelectorAll('#tab_contents div[tab]')) {
       content.style.display = (content.getAttribute('tab') === tab.id) ? 'block' : 'none';
     }
   });
