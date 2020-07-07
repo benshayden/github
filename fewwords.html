@@ -249,7 +249,7 @@ const F = {
           other.style.borderColor = (tab === other) ? 'black' : 'white';
         }
         for (const srcsheet of document.querySelectorAll('#compare_contents table')) {
-          srcsheet.style.display = (srcsheet.id === ('source_' + tab.innerText)) ? 'table' : 'none';
+          srcsheet.style.display = (srcsheet.id === tab.innerText) ? 'table' : 'none';
         }
       });
       comparetabs.appendChild(tab);
