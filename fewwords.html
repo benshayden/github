@@ -268,9 +268,9 @@ const F = {
         for (const cell of row) {
           const td = document.createElement('td');
           tr.appendChild(td);
-          td.innerText = en = cell;
+          en = cell.split('/')[0];
+          td.innerText = cell.replace(/\//g, '/'+String.fromCharCode(0x200B));
         }
-        en = en.split('/')[0];
         const td = document.createElement('td');
         tr.appendChild(td);
         const tx = document.createElement('tx');
