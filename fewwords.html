@@ -44,13 +44,32 @@ Click a word in the Vocabulary tab to vote on it.
 <table id=syllables></table>
 
 <flex id=tabs>
-  <tab id=description>Description</tab>
+  <tab id=tool>About this tool</tab>
+  <tab id=description>About this language</tab>
   <tab id=grammar>Grammar</tab>
   <tab id=vocabulary>Vocabulary</tab>
   <tab id=compare>Compare</tab>
 </flex>
 
 <div style="border: 1px solid black; padding: 4px;" id=tab_contents>
+  <div tab=tool>
+    <h3>The Problem of Oligosynthesis</h3>
+    Oligosynthesis sounds like a wonderful idea: collect a few root words and combine them to form any other word.
+    Oligosynthetic languages should be easy to learn because learners would only need to learn a few root words.
+    However, there is a problem that does not seem to be solved yet: the quality of compound words can vary significantly.
+    A high-quality compound word such as "anti+good = bad" is intuitive and would not require separate memorization.
+    A low-quality compound word such as "one+quantity+above+life+towards = banana" is not intuitive, and would require memorization separate from the list of root words.
+    Before auxlangs give up on oligosynthesis and pursue the pidgin path exclusively instead, there are still a few methods of problem-solving that have not yet been applied to this problem.
+    This tool facilitates measuring the quality of compound words in an oligosynthetic language by vote.
+    
+    This static html page
+    <ul>
+    <li>loads a google spreadsheet,
+    <li>displays the contents,
+    <li>transliterates words in the words sheet<!--,
+    <li>automates voting on translations using a google form-->.
+    </ul>
+  </div>
   <div tab=description>
     <p id=about></p>
     <br><button id=fork>Copy this language</button>
@@ -72,15 +91,6 @@ Click a word in the Vocabulary tab to vote on it.
   <textarea id=en style="flex-grow: 1;"></textarea>
   <textarea id=fw style="flex-grow: 1;"></textarea>
 </div>
-  
-<h3>About this tool</h3>
-This static html page
-<ul>
-<li>loads a google spreadsheet,
-<li>displays the contents,
-<li>transliterates words in the words sheet<!--,
-<li>automates voting on translations using a google form-->.
-</ul>
 
 </div>
 
