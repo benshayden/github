@@ -1,7 +1,6 @@
 <!doctype html>
 <!--TODO
-Copy this language button.
-Click a word in the Vocabulary tab to vote on it.
+vote form
 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/11.0.0/markdown-it.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -71,9 +70,7 @@ Click a word in the Vocabulary tab to vote on it.
     <li>automates voting on translations using a google form-->.
     </ul>
   </div>
-  <div tab=description>
-    <p id=about></p>
-    <br><button id=fork>Copy this language</button>
+  <div tab=description id=about>
   </div>
   <div tab=grammar></div>
   <div tab=vocabulary>
@@ -345,29 +342,7 @@ addEventListener('load', () => {
   };
   document.head.appendChild(script);
 });
-  
-fork.addEventListener('click', () => {
-  console.log('create a new spreadsheet, write sheets to it, open it in a new tab');
-  gapi.client.sheets.spreadsheets.create({
-    properties: {
-      title: document.body.querySelector('#name_en').innerText,
-    },
-    sheets: [
-      {
-        properties: {
-          title: 'about',
-        },
-        data: [
-          {
-            // https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/sheets#GridData
-          },
-        ],
-      },
-    ],
-  }).then((response) => {
-    console.log(response);
-  });
-});
+
 en.addEventListener('keyup', () => {
   fw.value = F.phrase(en.value);
 });
