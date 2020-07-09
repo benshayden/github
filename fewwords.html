@@ -116,7 +116,7 @@ const F = {
     let fw = '';
     for (const en of s.split(/(\s+)/)) {
       if (strict && en.match(/\S/) && !F.en2fw[en]) throw new Error(en);
-      fw += ' ' + (F.en2fw[en] || en);
+      fw += F.en2fw[en] || en;
     }
     return fw;
   },
