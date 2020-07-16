@@ -32,6 +32,7 @@ vote form
   #tab_contents, #compare_contents {
     border-top: 1px solid black;
   }
+  #vote {display: none; }
 </style>
 
 <button id="authorize_button">Authorize Google Sheets API</button>
@@ -91,6 +92,12 @@ vote form
       <textarea id=fw style="flex-grow: 1;"></textarea>
     </flex>
   </div>
+</div>
+  
+<div id=vote>
+  <span id=upvote>&#9650;</span> <span id=upvotes></span>
+  <br><span id=downvote>&#9650;</span> <span id=downvotes></span>
+  <br><span id=pctvotes></span>
 </div>
 
 </div>
