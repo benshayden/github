@@ -140,6 +140,31 @@ const F = {
       }
     }
   },
+  
+  async loadVotes() {
+    const response = await window.gapi.client.sheets.spreadsheets.get({
+      spreadsheetId: '12Qk6K5gUz__M7lRcfzQY18UYZmnkx0H8qVHQqassER0',
+      includeGridData: true,
+    });
+    console.log(response);
+    const map = new Map();  // `email,complex,roots` => intuitive
+    for (const [timestamp, email, complex, roots, intuitive] of response.result.sheets[0].data[0].rowData.slice(1)) {
+      map.set(`${email},${complex},${roots}`, intuitive === 'Intuitive');
+    }
+    console.log(map);
+    const summary = new Map();  // `complex,roots` => [num_intuitive, num_not]
+    for (const [key, intuitive] of map.entries()) {
+      // TODO normalize roots? not v opposite
+      const skey = key.split(',').slice(1).join(',');
+      let [num_intuitive, num_not] = summary.get(skey);
+      if (intuitive) {
+        ++num_intuitive;
+      } else {
+        ++num_not;
+      summary.set(skey, [num_intuitive, num_not]);
+    }
+    console.log(summary);
+  },
 
   async load() {
     const response = await window.gapi.client.sheets.spreadsheets.get({
