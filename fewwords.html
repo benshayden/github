@@ -1,7 +1,4 @@
 <!doctype html>
-<!--TODO
-vote form
--->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/11.0.0/markdown-it.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Oligosynthesizer loading</title>
@@ -32,7 +29,7 @@ vote form
   #tab_contents, #compare_contents {
     border-top: 1px solid black;
   }
-  #vote {display: none; }
+  #vote_summary { display: none; }
 </style>
 
 <button id="authorize_button">Authorize Google Sheets API</button>
@@ -51,6 +48,7 @@ vote form
   <tab id=description>About this language</tab>
   <tab id=grammar>Grammar</tab>
   <tab id=vocabulary>Vocabulary</tab>
+  <tab id=vote>Vote</tab>
   <tab id=compare>Compare</tab>
   <tab id=transliterate>Transliterate</tab>
 </flex>
@@ -82,6 +80,9 @@ vote form
     <center style="margin: 8px;">Click on a root in the Roots table above to filter. Click again to reset.</center>
     <table id=words></table>
   </div>
+  <div tab=vote>
+    <iframe id=vote_frame onLoad="F.voteFrameLoad()" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
+  </div>
   <div tab=compare>
     <flex id=comparetabs></flex>
     <div id=compare_contents></div>
@@ -94,10 +95,9 @@ vote form
   </div>
 </div>
   
-<div id=vote>
-  <span id=upvote>&#9650;</span> <span id=upvotes></span>
-  <br><span id=downvote>&#9650;</span> <span id=downvotes></span>
-  <br><span id=pctvotes></span>
+<div id=vote_summary>
+  <span id=upvotes></span> (<span id=upvotes_pct></span>%) Intuitive
+  <br><span id=downvotes></span> Requires separate memorization
 </div>
 
 </div>
@@ -152,19 +152,32 @@ const F = {
       map.set(`${email},${complex},${roots}`, intuitive === 'Intuitive');
     }
     console.log(map);
-    const summary = new Map();  // `complex,roots` => [num_intuitive, num_not]
+
+    F.votes = new Map();  // `complex,roots` => [num_intuitive, num_not]
+    F.myvotes = new Map();  // `complex,roots` => intuitive
     for (const [key, intuitive] of map.entries()) {
       // TODO normalize roots? not v opposite
-      const skey = key.split(',').slice(1).join(',');
-      let [num_intuitive, num_not] = summary.get(skey);
+      const [email, complex, roots] = key.split(',');
+      const skey = [complex, roots].join(',');
+      let [num_intuitive, num_not] = F.votes.get(skey);
       if (intuitive) {
         ++num_intuitive;
       } else {
         ++num_not;
       }
-      summary.set(skey, [num_intuitive, num_not]);
+      F.votes.set(skey, [num_intuitive, num_not]);
+      if (email === myemail) {
+        F.myvotes.set(skey, intuitive);
+      }
     }
-    console.log(summary);
+  },
+  
+  vote(complex, roots) {
+    vote.src = `https://docs.google.com/forms/d/e/1FAIpQLSfIpGuyDRV8IeoENRrL5jXUCOiYoj-ITENNEZZX_wesS4gYIQ/viewform?usp=pp_url&entry.469972115=${encodeURIComponent(complex)}&entry.977780023=${encodeURIComponent(roots)}`;
+  },
+  
+  voteFrameLoad() {
+    console.log('voteFrameLoad');
   },
 
   async load() {
