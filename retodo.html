@@ -139,7 +139,8 @@ async function listTodos() {
   const input = document.createElement('input');
   input.placeholder = 'once task';
   input.addEventListener('keyup', e => {
-    console.log(input.value);
+    console.log(e);
+    input.value
   });
   document.body.appendChild(input);
 
