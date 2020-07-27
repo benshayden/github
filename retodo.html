@@ -136,7 +136,12 @@ async function listTodos() {
     todo.display();
   }
 
-  displayOnceInput();
+  const input = document.createElement('input');
+  input.placeholder = 'once task';
+  input.onsubmit = () => {
+    alert(input.value);
+  };
+  document.body.appendChild(input);
 
   // Display links to sheets.
   for (const sheet of sheets) {
@@ -386,15 +391,6 @@ class Spreadsheet {
     a.target = '_blank';
     a.className = 'sheet';
     document.body.appendChild(a);
-  }
-  
-  displayOnceInput() {
-    const input = document.createElement('input');
-    input.placeholder = 'once task';
-    input.onsubmit = () => {
-      alert(input.value);
-    };
-    document.body.appendChild(input);
   }
 }
 
