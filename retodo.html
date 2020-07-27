@@ -144,7 +144,7 @@ async function listTodos() {
       const t = new Todo(sheets[0], sheets[0].todos.length + 2, input.value, 'once', '', '', '', '');
       sheets[0].todos.push(t);
       t.startNow();
-      t.display();
+      t.display(true);
       input.value = '';
     });
     document.body.appendChild(input);
@@ -289,7 +289,7 @@ class Todo {
     return since;
   }
 
-  display() {
+  display(top = false) {
     const tr = document.createElement('tr');
     tr.className = 'todo';
     tr.style.display = this.isDone ? 'none' : '';
@@ -298,7 +298,12 @@ class Todo {
       tr.appendChild(td);
       return td;
     }
-    document.body.querySelector('#todos').appendChild(tr);
+    const table = document.body.querySelector('#todos');
+    if (top) {
+      table.insertBefore(tr, table.childNodes[0]);
+    } else {
+      table.appendChild(tr);
+    }
 
     const label = document.createElement('label');
     const checkbox = document.createElement('input');
