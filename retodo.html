@@ -138,9 +138,9 @@ async function listTodos() {
 
   const input = document.createElement('input');
   input.placeholder = 'once task';
-  input.onsubmit = () => {
-    alert(input.value);
-  };
+  input.addEventListener('keyup', e => {
+    console.log(input.value);
+  });
   document.body.appendChild(input);
 
   // Display links to sheets.
