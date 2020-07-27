@@ -138,7 +138,7 @@ async function listTodos() {
 
   if (sheets.length === 1) {
     const input = document.createElement('input');
-    input.placeholder = 'once task';
+    input.placeholder = 'create once task';
     input.addEventListener('keyup', e => {
       if (e.key !== 'Enter') return;
       const t = new Todo(sheets[0], sheets[0].todos.length + 2, input.value, 'once', '', '', '', '');
