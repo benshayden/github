@@ -136,13 +136,19 @@ async function listTodos() {
     todo.display();
   }
 
-  const input = document.createElement('input');
-  input.placeholder = 'once task';
-  input.addEventListener('keyup', e => {
-    console.log(e);
-    input.value
-  });
-  document.body.appendChild(input);
+  if (sheets.length === 1) {
+    const input = document.createElement('input');
+    input.placeholder = 'once task';
+    input.addEventListener('keyup', e => {
+      if (e.key !== 'Enter') return;
+      const t = new Todo(sheets[0], sheets[0].todos.length + 2, input.value, 'once', '', '', '', '');
+      sheets[0].todos.push(t);
+      t.startNow();
+      t.display();
+      input.value = '';
+    });
+    document.body.appendChild(input);
+  }
 
   // Display links to sheets.
   for (const sheet of sheets) {
