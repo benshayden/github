@@ -379,7 +379,7 @@ const W = {
           datum[a.fields[i]] = row[i];
         }
         return datum;
-      }).filter(datum => datum.Lat !== null && datum.Lon !== null && datum.age < 30);
+      }).filter(datum => datum.Lat !== null && datum.Lon !== null && datum.age < 30 && datum.Type === 0);
       console.log(data);
       // Mean particulate mass < 2.5um in ug/m^3.
       W.pm25 = W._mean(data.map(s => s.pm_1 || 0));
