@@ -169,10 +169,14 @@ const W = {
       return cached.response;
     }
 
-    const response = await (await fetch(url, options)).json();
-    const expires = now.getTime() + expiryMs;
-    localStorage.setItem(url, JSON.stringify({expires, response}));
-    return response;
+    try {
+      const response = await (await fetch(url, options)).json();
+      const expires = now.getTime() + expiryMs;
+      localStorage.setItem(url, JSON.stringify({expires, response}));
+      return response;
+    } catch (e) {
+      console.error({e, url});
+    }
   },
 
   sweepStorage() {
