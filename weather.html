@@ -383,7 +383,7 @@ const W = {
       console.log(data);
       // Mean particulate mass < 2.5um in ug/m^3.
       W.pm25 = W._mean(data.map(s => s.pm_1 || 0));
-      W.aqi = W.pm25 * 50 / 30;
+      W.aqi = W.pm25 * 2.83;
     } catch(e) {
       console.error(`Error fetching air quality:\n${e.stack}\n`);
       return;
