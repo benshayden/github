@@ -439,7 +439,7 @@ const W = {
     if (W.aqi === null) {
       card.style.display = 'none';
     } else {
-      card.style.color = card.style.borderColor = ['#00cc00', '#66cc00', '#ffff00', '#ff9900', '#ff0000', '#a52a2a'][parseInt(W.aqi / 50)];
+      card.style.color = `hsl(${(W.aqi < 120) ? 120 - W.aqi : 300},80%, 50%)`;
       card.innerText = parseInt(W.aqi);
       card.onclick = () => {
         open(`https://www.purpleair.com/map?opt=1/mAQI/a10/cC0#11/${W.lat}/${W.lon}`);
