@@ -335,7 +335,7 @@ const W = {
     })));
     await W.weatherLoaded;
     for (const dayDatum of uv) {
-      for (const hourDatum of dayDatum.result) {
+      for (const hourDatum of (dayDatum.result || [])) {
         const date = new Date(hourDatum.uv_time);
         if (date.getDate() === W.now.getDate()) {
           let hours = date.getHours();
