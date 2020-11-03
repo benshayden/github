@@ -171,6 +171,9 @@ const W = {
 
     try {
       const response = await (await fetch(url, options)).json();
+      if (response.error) {
+        throw response.error;
+      }
       const expires = now.getTime() + expiryMs;
       localStorage.setItem(url, JSON.stringify({expires, response}));
       return response;
