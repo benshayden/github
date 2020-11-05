@@ -373,7 +373,7 @@ const W = {
     const maxlon = W.lon + W.airSensorDegrees;
     try {
       const a = await W.fetchCachedJson({
-        url: `https://www.purpleair.com/data.json?opt=1/mAQI/a10/cC0&fetch=true&nwlat=${maxlat}&selat=${minlat}&nwlng=${minlon}&selng=${maxlon}&fields=pm_1`,
+        url: `https://www.purpleair.com/data.json?opt=1/i/mAQI/a0/cC0&fetch=true&nwlat=${maxlat}&selat=${minlat}&nwlng=${minlon}&selng=${maxlon}&fields=pm_1`,
         expiryMs: MS_PER_HOUR / 2,
       });
       const data = a.data.map(row => {
