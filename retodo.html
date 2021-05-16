@@ -382,6 +382,7 @@ class Spreadsheet {
       this._url = response.result.spreadsheetUrl;
       this._title = response.result.properties.title;
 
+      console.log(response.result.sheets[0].data[0].rowData);
       const rows = response.result.sheets[0].data[0].rowData.map(({values}) => values).filter(i => i).map(values => values.map(v => v.formattedValue));
       for (let i = 1; i < rows.length; ++i) {
         if (!rows[i][0]) continue;
