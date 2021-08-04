@@ -254,8 +254,9 @@ const W = {
     const d = yesterday.getDate().toString().padStart(2, '0');
     // TODO get maps api key, reverse geocode to zip
     // http://maps.googleapis.com/maps/api/geocode/json?latlng=0,0&sensor=true
+    // TODO 
     W._covid = await W.fetchCachedJson({
-      url: `https://localcoviddata.com/covid19/v1/cases/newYorkTimes?zipCode=94089&daysInPast=4`,
+      url: `https://thingproxy.freeboard.io/fetch/https://localcoviddata.com/covid19/v1/cases/newYorkTimes?zipCode=94089&daysInPast=4`,
       expiryMs: MS_PER_DAY,
     });
   },
