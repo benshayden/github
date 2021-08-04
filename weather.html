@@ -198,7 +198,7 @@ const W = {
       }
     }
   },
-  
+
   async reload() {
     return await W.load({latitude: W.lat, longitude: W.lon});
   },
@@ -235,7 +235,7 @@ const W = {
     }
     W.loading = false;
   },
-  
+
   setupCanvas() {
     W._canvas = document.getElementById('canvas');
     const h = (130 + (W.lineHeightPx * (7 + HOURS_PER_DAY - W.now.getHours()))) / (devicePixelRatio || 1);
@@ -246,30 +246,36 @@ const W = {
     W._ctx = W._canvas.getContext('2d');
     W._ctx.clearRect(0, 0, W._canvas.width, W._canvas.height);
   },
-  
+
   async loadCovid() {
     const yesterday = new Date(new Date(W.now.toDateString()) - MS_PER_DAY);
     const y = yesterday.getFullYear();
     const m = (yesterday.getMonth() + 1).toString().padStart(2, '0');
     const d = yesterday.getDate().toString().padStart(2, '0');
+    // TODO get maps api key, reverse geocode to zip
+    // http://maps.googleapis.com/maps/api/geocode/json?latlng=0,0&sensor=true
     W._covid = await W.fetchCachedJson({
-      url: `https://api.covidtracking.com/v1/states/ca/${y}${m}${d}.json`,
+      url: `https://localcoviddata.com/covid19/v1/cases/newYorkTimes?zipCode=94089&daysInPast=4`,
       expiryMs: MS_PER_DAY,
     });
   },
-  
+
   drawCovid() {
     const card = document.getElementById('covid');
-    if (typeof((W._covid || {}).positiveIncrease) !== 'number') {
+    try {
+      // Display average daily increase for last few days.
+      console.log(W._covid);
+      const days = W._covid.counties[0].historicData.map(d => d.positiveCt);
+      card.innerText = '+' + ((days[0] - days[days.length - 1]) / (days.length - 1));
+      card.onclick = () => {
+        open(`https://coronavirus.jhu.edu/us-map`);
+      };
+      card.style.display = 'inline-block';
+    } catch (e) {
+      console.log(e);
       card.style.display = 'none';
       return;
     }
-
-    card.style.display = 'inline-block';
-    card.innerText = '+' + W._covid.positiveIncrease;
-    card.onclick = () => {
-      open(`https://coronavirus.jhu.edu/us-map`);
-    };
   },
 
   async loadWeather() {
@@ -386,6 +392,11 @@ const W = {
         }
         return datum;
       }).filter(datum => datum.Lat !== null && datum.Lon !== null && datum.age < 30 && datum.Type === 0);
+      data.sort((a, b) => a.pm_1 < b.pm_1 ? -1 : (a.pm_1 == b.pm_1 ? 0 : 1));
+      console.log(data);
+      const outliers = Math.round(0.05 * data.length);
+      data.splice(0, outliers);
+      data.splice(data.length - outliers, outliers);
       console.log(data);
       // Mean particulate mass < 2.5um in ug/m^3.
       W.pm25 = W._mean(data.map(s => s.pm_1 || 0));
