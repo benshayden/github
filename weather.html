@@ -258,6 +258,7 @@ const W = {
     W._covid = await W.fetchCachedJson({
       url: `https://thingproxy.freeboard.io/fetch/https://localcoviddata.com/covid19/v1/cases/newYorkTimes?zipCode=94089&daysInPast=4`,
       expiryMs: MS_PER_DAY,
+      headers: {origin: 'https://benshayden.github.io'},
     });
   },
 
