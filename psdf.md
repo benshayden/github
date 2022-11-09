@@ -26,42 +26,44 @@ Robot:
   factor: a * a # values can be glsl expressions referencing parameters
   radius: a / 2
   parts:
-  - sphere:
-      radius: vec3(1, 2, 4) # float|vec3
-      rotation: vec3(0, 0.1, 0.2) # euler turns XYZ
-      position: vec3(1, 2, 3)
-      material: metal
-  - union:
-      order: 4
-      factor: 0.1
-      radius: 1 # rounding
-      parts:
-      - cylinder:
-          topRadius: 1
-          bottomRadius: 2
-          height: 3
-          position: [2, 2, 2] # vec3
-          rotation: [0.1, 0.2, 0] # euler turns XYZ
-          material: bark
-      - box:
-          size: 2 # float|vec3
-          position:
-          rotation:
-          material: glass
-  - complement: # like union but subtracted from parent
+  - shape: sphere
+    radius: vec3(1, 2, 4) # float|vec3
+    rotation: vec3(0, 0.1, 0.2) # euler turns XYZ
+    position: vec3(1, 2, 3)
+    material: metal
+  - shape: union
+    order: 4
+    factor: 0.1
+    radius: 1 # rounding
+    parts:
+    - shape: cylinder
+      topRadius: 1
+      bottomRadius: 2
+      height: 3
+      position: [2, 2, 2] # vec3
+      rotation: [0.1, 0.2, 0] # euler turns XYZ
+      material: bark
+    - shape: box
+      size: 2 # float|vec3
+      position:
+      rotation:
+      material: glass
+  - shape: complement # like union but subtracted from parent
+    order:
+    factor:
+    radius:
+    parts:
+    - shape: intersection # like union but exclusive
       order:
       factor:
       radius:
       parts:
-      - intersection: # like union but exclusive
-          order:
-          factor:
-          radius:
-          parts:
-          -
+      -
 ```
 
-The PSDF compiler should produce the following GLSL.
+Shapes: union, intersection, complement, sphere, box, cylinder, curve.
+
+The PSDF compiler should produce GLSL like this:
 
 ```
 void psdfRobot(
