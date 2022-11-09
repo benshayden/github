@@ -1,18 +1,17 @@
-A Parametric Signed Distance Field, PSDF, is an object that
- - can be configured in a GUI with gizmos or
- - edited as text, and
+A Parametric Signed Distance Field, PSDF, is an object that can be
+ - configured in a GUI with gizmos like womp3d.com,
+ - edited as text,
  - compiled to an SDF pixel shader fragment,
- - which could then be ray-marched in your pixel shader, or
+ - ray-marched in your pixel shader,
  - generate a trimesh using marching cubes.
- - Parameter values could be passed from CPU or compute shader or vertex shader.
 
 ```
 parameters:
-  # cannot include rayOrigin, rayDirection, distance, materialWeights, time
+  # cannot include point, time, distance, materialWeights, other glsl builtins
   # can include any builtin glsl type or structs
-  # set to specific values for pre-rendering
-  a: 1.0 # indicates that 'a' is a float that a prerender can set to 1.0
-  tex: grid.png # 'tex' is a texture that a prerender can set to grid.png in the same directory as this file
+  # set to specific values for preview
+  a: 1.0 # indicates that 'a' is a float that a preview can set to 1.0
+  tex: grid.png # 'tex' is a texture that a preview can set to grid.png in the same directory as this file
 materials:
   metal:
     metalness: 1.0
@@ -66,7 +65,7 @@ The PSDF compiler should produce the following GLSL.
 
 ```
 void psdfRobot(
-    vec3 rayOrigin, vec3 rayDirection, float time,
+    vec3 point, float time,
     float a, texture tex,
     out float distance, out float materialWeights[5]) {
 }
