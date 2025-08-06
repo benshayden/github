@@ -1,0 +1,8 @@
+{
+  "name": "fen",
+  "description": "window manager",
+  "version": "1.0",
+  "manifest_version": 3,
+  "background": {"service_worker": "worker.js"},
+  "permissions": ["system.display", "tabs"]
+}
